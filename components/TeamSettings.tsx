@@ -4,6 +4,7 @@ import { Users, UserPlus, Copy, Trash2, Shield, Loader2, Ban, RefreshCw, Archive
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
+import GoalsTab from './GoalsTab';
 
 interface TeamMember {
     id: string;
@@ -52,7 +53,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     const [isUnarchiving, setIsUnarchiving] = useState(false);
 
     // Tab state
-    const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+    const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'goals'>('active');
 
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
@@ -251,9 +252,20 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 >
                     Arquivados{archivedMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({archivedMembers.length})</span>}
                 </button>
+                <button
+                    onClick={() => setActiveTab('goals')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === 'goals'
+                    ? 'bg-slate-700 text-white'
+                    : 'text-slate-400 hover:text-slate-300'
+                    }`}
+                >
+                    Metas
+            </button>
             </div>
 
-            {/* Members List */}
+            {/* Members List — só para abas de equipe */}
+            {activeTab !== 'goals' && (
             <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                 <div className="divide-y divide-slate-800">
                     {isFetchingUsers ? (
@@ -355,6 +367,10 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                     ))}
                 </div>
             </div>
+            )}
+
+            {/* Goals Tab — isolado */}
+            {activeTab === 'goals' && <GoalsTab />}
 
             {/* Block Confirmation Modal */}
             <AnimatePresence>

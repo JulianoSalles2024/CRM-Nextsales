@@ -249,3 +249,44 @@ export type CreateGroupData = Omit<Group, 'id'>;
 export type UpdateGroupData = Partial<CreateGroupData>;
 export type CreateGroupAnalysisData = Omit<GroupAnalysis, 'id' | 'createdAt'>;
 export type UpdateGroupAnalysisData = Partial<Omit<GroupAnalysis, 'id' | 'createdAt' | 'groupId'>>;
+
+// ─── Goals ───────────────────────────────────────────────────────────────────
+
+export type GoalType =
+  | 'receita'
+  | 'vendas'
+  | 'ticket_medio'
+  | 'novos_clientes'
+  | 'churn';
+
+export type GoalFrequency = 'monthly' | 'quarterly' | 'yearly';
+
+export interface Goal {
+  id: string;
+  companyId: string;
+  name: string;
+  goalType: GoalType;
+  frequency: GoalFrequency;
+  targetValue: number;
+  isActive: boolean;
+  createdAt: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface GoalPeriod {
+  id: string;
+  goalId: string;
+  periodStart: string;
+  periodEnd: string;
+}
+
+export interface CreateGoalData {
+  name: string;
+  goalType: GoalType;
+  frequency: GoalFrequency;
+  targetValue: number;
+  isActive: boolean;
+  periodStart: string;
+  periodEnd: string;
+}
