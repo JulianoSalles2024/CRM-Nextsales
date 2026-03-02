@@ -7,7 +7,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../services/supabaseClient';
+import { useActiveGoal } from '../hooks/useActiveGoal';
 import type { User } from '../types';
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
