@@ -1,4 +1,4 @@
-import { supabase } from './services/supabaseClient';
+import { supabase } from '@/src/lib/supabase';
 import { GoogleGenAI, Type } from '@google/genai';
 import type { ColumnData, Lead, Id, CreateLeadData, UpdateLeadData, Activity, User, Task, CreateTaskData, UpdateTaskData, Tone, Group, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, CreateGroupData, UpdateGroupData, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, ChatChannel, Notification, ChatConversationStatus } from './types';
 import { initialColumns } from './data';
