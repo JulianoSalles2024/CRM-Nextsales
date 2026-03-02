@@ -92,6 +92,7 @@ export interface Lead {
   boardId?: Id;
   isArchived?: boolean;
   ownerId?: string;
+  wonAt?: string; // ISO string — set when status changes to 'GANHO'
 }
 
 export interface Board {

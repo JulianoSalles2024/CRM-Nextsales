@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 import { useActiveGoal } from '../src/hooks/useActiveGoal';
+import { useAuth } from '../src/features/auth/AuthContext';
 import type { User } from '../types';
 
 
@@ -34,7 +35,7 @@ interface SellerProfileData {
     company_id: string;
 }
 
-type Period = 'hoje' | 'semana' | 'mes' | 'ano';
+type Period = 'hoje' | 'semana' | 'mes' | 'ano' | 'custom';
 
 interface SellerDetail360Props {
     seller: User;
@@ -223,9 +224,18 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
     const [prevSales, setPrevSales] = useState<{ valor: number; status: string }[]>([]);
     const [profile, setProfile] = useState<SellerProfileData | null>(null);
     const [teamSales, setTeamSales] = useState<{ seller_id: string; valor: number }[]>([]);
-    const [companyId, setCompanyId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'individual' | 'team'>('individual');
+    const [individualWonLeads, setIndividualWonLeads] = useState<{ value: number }[]>([]);
+    const [prevIndividualWonLeads, setPrevIndividualWonLeads] = useState<{ value: number }[]>([]);
+    const [teamWonLeads, setTeamWonLeads] = useState<{ value: number }[]>([]);
+    const [prevTeamWonLeads, setPrevTeamWonLeads] = useState<{ value: number }[]>([]);
+    const [teamGoal, setTeamGoal] = useState<{ targetValue: number } | null>(null);
+    const [teamGoalLoading, setTeamGoalLoading] = useState(true);
+    const [customStart, setCustomStart] = useState('');
+    const [customEnd, setCustomEnd] = useState('');
+    const { companyId } = useAuth();
 
-    const { activeGoal } = useActiveGoal(companyId, seller.id);
+    const { activeGoal, loading: goalLoading } = useActiveGoal(companyId, seller.id);
 
     // Table state
     const [page, setPage] = useState(1);
@@ -239,12 +249,31 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
 
     const fetchData = useCallback(async () => {
         if (!supabase) { setLoading(false); return; }
+
+        // Custom period: wait until both dates are filled
+        if (period === 'custom' && (!customStart || !customEnd)) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
 
-        const { start, end } = getDateRange(period);
-        const { start: prevStart, end: prevEnd } = getPrevDateRange(period);
+        const { start, end } = period === 'custom'
+            ? { start: customStart, end: customEnd }
+            : getDateRange(period);
+        const { start: prevStart, end: prevEnd } = period === 'custom'
+            ? { start: customStart, end: customEnd } // no "prev" concept for custom → growth = 0
+            : getPrevDateRange(period as Exclude<Period, 'custom'>);
 
-        const [curRes, prevRes, profileRes, teamRes] = await Promise.all([
+        const today = new Date().toISOString().split('T')[0];
+
+        const [
+            curRes, prevRes, profileRes, teamRes,
+            indWonRes, prevIndWonRes,
+            teamWonRes, prevTeamWonRes,
+            teamGoalRes,
+        ] = await Promise.all([
+            // ── Sales existentes (sem alteração) ──────────────────────────────
             supabase
                 .from('sales')
                 .select('*')
@@ -271,18 +300,87 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .select('seller_id, valor')
                 .gte('data_fechamento', start)
                 .lte('data_fechamento', end),
+
+            // ── Individual: leads GANHO do vendedor — período atual ───────
+            // Filtra por won_at: campo preenchido com now() ao mover para coluna 'won'.
+            supabase
+                .from('leads')
+                .select('value')
+                .eq('owner_id', seller.id)
+                .eq('company_id', companyId)
+                .eq('status', 'GANHO')
+                .eq('is_archived', false)
+                .is('deleted_at', null)
+                .gte('won_at', start)
+                .lte('won_at', end + 'T23:59:59'),
+
+            // ── Individual: leads GANHO do vendedor — período anterior ─────
+            supabase
+                .from('leads')
+                .select('value')
+                .eq('owner_id', seller.id)
+                .eq('company_id', companyId)
+                .eq('status', 'GANHO')
+                .eq('is_archived', false)
+                .is('deleted_at', null)
+                .gte('won_at', prevStart)
+                .lte('won_at', prevEnd + 'T23:59:59'),
+
+            // ── Time: todos leads GANHO da empresa — período atual ────────
+            supabase
+                .from('leads')
+                .select('value')
+                .eq('company_id', companyId)
+                .eq('status', 'GANHO')
+                .eq('is_archived', false)
+                .is('deleted_at', null)
+                .gte('won_at', start)
+                .lte('won_at', end + 'T23:59:59'),
+
+            // ── Time: todos leads GANHO da empresa — período anterior ──────
+            supabase
+                .from('leads')
+                .select('value')
+                .eq('company_id', companyId)
+                .eq('status', 'GANHO')
+                .eq('is_archived', false)
+                .is('deleted_at', null)
+                .gte('won_at', prevStart)
+                .lte('won_at', prevEnd + 'T23:59:59'),
+
+            // ── Meta global (user_id IS NULL) — query direta ──────────────
+            supabase
+                .from('goals')
+                .select('id, goal_value, goal_type')
+                .eq('company_id', companyId)
+                .is('user_id', null)
+                .eq('is_active', true)
+                .lte('start_date', today)
+                .gte('end_date', today)
+                .order('created_at', { ascending: false })
+                .limit(1),
         ]);
 
         setSales((curRes.data as SaleRecord[]) ?? []);
         setPrevSales((prevRes.data as SaleRecord[]) ?? []);
         setProfile((profileRes.data as SellerProfileData) ?? null);
-        setCompanyId((profileRes.data as SellerProfileData)?.company_id ?? null);
-        setTeamSales(
-            (teamRes.data as { seller_id: string; valor: number }[]) ?? []
-        );
+        setTeamSales((teamRes.data as { seller_id: string; valor: number }[]) ?? []);
+
+        setIndividualWonLeads((indWonRes.data as { value: number }[]) ?? []);
+        setPrevIndividualWonLeads((prevIndWonRes.data as { value: number }[]) ?? []);
+        setTeamWonLeads((teamWonRes.data as { value: number }[]) ?? []);
+        setPrevTeamWonLeads((prevTeamWonRes.data as { value: number }[]) ?? []);
+
+        const rawTeamGoal = (teamGoalRes.data as { id: string; goal_value: number; goal_type: string }[] | null)?.[0] ?? null;
+        setTeamGoal(rawTeamGoal ? { targetValue: rawTeamGoal.goal_value ?? 0 } : null);
+        setTeamGoalLoading(false);
+
+        console.log('[SellerDetail360] indWonLeads:', indWonRes.data, '| erro:', indWonRes.error);
+        console.log('[SellerDetail360] teamWonLeads:', teamWonRes.data, '| erro:', teamWonRes.error);
+        console.log('[SellerDetail360] teamGoal:', rawTeamGoal, '| erro:', teamGoalRes.error);
         setPage(1);
         setLoading(false);
-    }, [seller.id, period]);
+    }, [seller.id, period, companyId, customStart, customEnd]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -290,8 +388,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
 
     const kpis = useMemo(() => {
         const total = sales.length;
-        const faturamento = sales.reduce((s, r) => s + r.valor, 0);
-        const prevFaturamento = prevSales.reduce((s, r) => s + r.valor, 0);
+        const faturamento = individualWonLeads.reduce((s, r) => s + r.value, 0);
+        const prevFaturamento = prevIndividualWonLeads.reduce((s, r) => s + r.value, 0);
         const crescimento = prevFaturamento > 0
             ? ((faturamento - prevFaturamento) / prevFaturamento) * 100
             : 0;
@@ -329,7 +427,9 @@ sales.forEach(s => {
         sales.forEach(s => typeMap.set(s.tipo_operacao, (typeMap.get(s.tipo_operacao) ?? 0) + s.valor));
         const typeData = [...typeMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
 
-        const metaMensal = activeGoal?.targetValue ?? 0;
+        // Só usa a meta se ela for realmente individual (userId = seller.id).
+        // useActiveGoal faz fallback para global — esse fallback não deve aparecer na aba Individual.
+        const metaMensal = activeGoal?.userId === seller.id ? (activeGoal?.targetValue ?? 0) : 0;
         const metaPct = metaMensal > 0 ? Math.min((faturamento / metaMensal) * 100, 100) : 0;
         const faltamParaMeta = Math.max(metaMensal - faturamento, 0);
         const ticketMedio = total > 0 ? faturamento / total : 0;
@@ -375,7 +475,32 @@ sales.forEach(s => {
             rankingPos, rankingTotal,
             score, dailyData,
         };
-    }, [sales, prevSales, profile, teamSales, period, seller.id, activeGoal]);
+    }, [sales, prevSales, profile, teamSales, period, seller.id, activeGoal, individualWonLeads, prevIndividualWonLeads]);
+
+    // ── KPI Time ──────────────────────────────────────────────────────────────
+
+    const kpisTeam = useMemo(() => {
+        const faturamento = teamWonLeads.reduce((s, r) => s + r.value, 0);
+        const prevFaturamento = prevTeamWonLeads.reduce((s, r) => s + r.value, 0);
+        const crescimento = prevFaturamento > 0
+            ? ((faturamento - prevFaturamento) / prevFaturamento) * 100
+            : 0;
+        const metaMensal = teamGoal?.targetValue ?? 0;
+        const metaPct = metaMensal > 0 ? Math.min((faturamento / metaMensal) * 100, 100) : 0;
+        const faltamParaMeta = Math.max(metaMensal - faturamento, 0);
+        const ticketMedio = teamWonLeads.length > 0 ? faturamento / teamWonLeads.length : 0;
+        const now = new Date();
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysRemaining = Math.max(lastDay - now.getDate() + 1, 1);
+        const metaDiaria = period === 'mes' ? faltamParaMeta / daysRemaining : 0;
+        return { faturamento, prevFaturamento, crescimento, metaMensal, metaPct, faltamParaMeta, ticketMedio, metaDiaria };
+    }, [teamWonLeads, prevTeamWonLeads, teamGoal, period]);
+
+    // ── KPI ativo (Individual ou Time) ────────────────────────────────────────
+
+    const activeFinancialKpis = activeTab === 'individual'
+        ? { faturamento: kpis.faturamento, prevFaturamento: kpis.prevFaturamento, crescimento: kpis.crescimento, metaMensal: kpis.metaMensal, metaPct: kpis.metaPct, faltamParaMeta: kpis.faltamParaMeta, ticketMedio: kpis.ticketMedio, metaDiaria: kpis.metaDiaria }
+        : kpisTeam;
 
     // ── Table Filtering & Pagination ──────────────────────────────────────────
 
@@ -401,8 +526,19 @@ sales.forEach(s => {
     };
 
     const periodLabels: Record<Period, string> = {
-        hoje: 'Hoje', semana: 'Semana', mes: 'Mês', ano: 'Ano'
+        hoje: 'Hoje', semana: 'Semana', mes: 'Mês', ano: 'Ano', custom: 'Personalizado'
     };
+
+    // ── Helpers de meta por aba ───────────────────────────────────────────────
+
+    const currentGoalLoading = activeTab === 'individual' ? goalLoading : teamGoalLoading;
+    // Na aba Individual, só exibe meta se for realmente individual (userId = seller.id).
+    // Se activeGoal.userId for null significa que useActiveGoal retornou o fallback global — não exibir.
+    const individualGoal = activeGoal?.userId === seller.id ? activeGoal : null;
+    const currentGoal    = activeTab === 'individual' ? individualGoal : teamGoal;
+    const noMetaLabel        = activeTab === 'individual'
+        ? 'Sem meta individual definida'
+        : 'Sem meta global definida';
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -421,6 +557,23 @@ sales.forEach(s => {
                 <ArrowLeft className="w-4 h-4" />
                 Voltar à lista
             </button>
+
+            {/* ── Abas Individual / Time ── */}
+            <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
+                {(['individual', 'team'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            activeTab === tab
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        {tab === 'individual' ? 'Individual' : 'Time'}
+                    </button>
+                ))}
+            </div>
 
             {/* ── HEADER ── */}
             <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-2xl p-6 space-y-5">
@@ -444,62 +597,93 @@ sales.forEach(s => {
                     </div>
 
                     {/* Period filter */}
-                    <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
-                        <Calendar className="w-4 h-4 text-slate-500 ml-2" />
-                        {(['hoje', 'semana', 'mes', 'ano'] as Period[]).map(p => (
+                    <div className="flex flex-col gap-2 items-end">
+                        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
+                            <Calendar className="w-4 h-4 text-slate-500 ml-2" />
+                            {(['hoje', 'semana', 'mes', 'ano', 'custom'] as Period[]).map(p => (
+                                <button
+                                    key={p}
+                                    onClick={() => setPeriod(p)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                        period === p
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                            : 'text-slate-400 hover:text-white'
+                                    }`}
+                                >
+                                    {periodLabels[p]}
+                                </button>
+                            ))}
                             <button
-                                key={p}
-                                onClick={() => setPeriod(p)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                    period === p
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                        : 'text-slate-400 hover:text-white'
-                                }`}
+                                onClick={fetchData}
+                                className="ml-1 p-1.5 text-slate-600 hover:text-slate-400 transition-colors"
+                                title="Atualizar"
                             >
-                                {periodLabels[p]}
+                                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                             </button>
-                        ))}
-                        <button
-                            onClick={fetchData}
-                            className="ml-1 p-1.5 text-slate-600 hover:text-slate-400 transition-colors"
-                            title="Atualizar"
-                        >
-                            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
+                        </div>
+                        {period === 'custom' && (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    value={customStart}
+                                    onChange={e => setCustomStart(e.target.value)}
+                                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                                />
+                                <span className="text-slate-500 text-xs">até</span>
+                                <input
+                                    type="date"
+                                    value={customEnd}
+                                    onChange={e => setCustomEnd(e.target.value)}
+                                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Meta progress */}
-                <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-medium">
-                        <span className="text-slate-400">Meta: {fmt.format(kpis.metaMensal)}</span>
-                        <span className={kpis.metaPct >= 100 ? 'text-emerald-400 font-bold' : 'text-white'}>
-                            {kpis.metaPct.toFixed(1)}% atingida
-                        </span>
+                {/* Meta progress — tab-aware */}
+                {currentGoalLoading ? (
+                    <div className="space-y-2">
+                        <div className="h-3 bg-slate-800 rounded-full overflow-hidden animate-pulse" />
+                        <div className="h-2 w-32 bg-slate-800 rounded animate-pulse" />
                     </div>
-                    <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${kpis.metaPct}%` }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                            className={`h-full rounded-full ${
-                                kpis.metaPct >= 100 ? 'bg-emerald-500' :
-                                kpis.metaPct >= 70  ? 'bg-blue-500' :
-                                kpis.metaPct >= 40  ? 'bg-amber-500' : 'bg-red-500'
-                            }`}
-                        />
+                ) : !currentGoal ? (
+                    <div className="flex items-center gap-2 text-xs text-slate-500 italic">
+                        <Target className="w-3.5 h-3.5 flex-shrink-0" />
+                        {noMetaLabel}
                     </div>
-                </div>
+                ) : (
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-medium">
+                            <span className="text-slate-400">Meta: {fmt.format(activeFinancialKpis.metaMensal)}</span>
+                            <span className={activeFinancialKpis.metaPct >= 100 ? 'text-emerald-400 font-bold' : 'text-white'}>
+                                {activeFinancialKpis.metaPct.toFixed(1)}% atingida
+                            </span>
+                        </div>
+                        <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${activeFinancialKpis.metaPct}%` }}
+                                transition={{ duration: 0.8, ease: 'easeOut' }}
+                                className={`h-full rounded-full ${
+                                    activeFinancialKpis.metaPct >= 100 ? 'bg-emerald-500' :
+                                    activeFinancialKpis.metaPct >= 70  ? 'bg-blue-500' :
+                                    activeFinancialKpis.metaPct >= 40  ? 'bg-amber-500' : 'bg-red-500'
+                                }`}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* Key metrics row */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 pt-2 border-t border-white/5">
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Faturado</p>
-                        <p className="text-lg font-bold text-white">{fmt.format(kpis.faturamento)}</p>
+                        <p className="text-lg font-bold text-white">{fmt.format(activeFinancialKpis.faturamento)}</p>
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ticket Médio</p>
-                        <p className="text-lg font-bold text-white">{fmt.format(kpis.ticketMedio)}</p>
+                        <p className="text-lg font-bold text-white">{fmt.format(activeFinancialKpis.ticketMedio)}</p>
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ranking</p>
@@ -509,14 +693,14 @@ sales.forEach(s => {
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Faltam</p>
-                        <p className={`text-lg font-bold ${kpis.faltamParaMeta === 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {kpis.faltamParaMeta === 0 ? '🎉 Meta!' : fmt.format(kpis.faltamParaMeta)}
+                        <p className={`text-lg font-bold ${activeFinancialKpis.faltamParaMeta === 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {activeFinancialKpis.faltamParaMeta === 0 ? '🎉 Meta!' : fmt.format(activeFinancialKpis.faltamParaMeta)}
                         </p>
                     </div>
                     {period === 'mes' && (
                         <div className="space-y-0.5">
                             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Meta/dia</p>
-                            <p className="text-lg font-bold text-blue-400">{fmt.format(kpis.metaDiaria)}</p>
+                            <p className="text-lg font-bold text-blue-400">{fmt.format(activeFinancialKpis.metaDiaria)}</p>
                         </div>
                     )}
                     <div className="space-y-0.5">
@@ -550,24 +734,24 @@ sales.forEach(s => {
                             </div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Faturamento</p>
                         </div>
-                        <p className="text-2xl font-bold text-white">{fmt.format(kpis.faturamento)}</p>
+                        <p className="text-2xl font-bold text-white">{fmt.format(activeFinancialKpis.faturamento)}</p>
                         <p className="text-xs text-slate-600">{kpis.total} operações no período</p>
                     </div>
 
                     {/* KPI 2 – Crescimento */}
                     <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpis.crescimento >= 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
-                                {kpis.crescimento >= 0
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${activeFinancialKpis.crescimento >= 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                                {activeFinancialKpis.crescimento >= 0
                                     ? <TrendingUp className="w-4 h-4 text-emerald-400" />
                                     : <TrendingDown className="w-4 h-4 text-red-400" />}
                             </div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crescimento</p>
                         </div>
-                        <p className={`text-2xl font-bold ${kpis.crescimento >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {kpis.crescimento >= 0 ? '+' : ''}{kpis.crescimento.toFixed(1)}%
+                        <p className={`text-2xl font-bold ${activeFinancialKpis.crescimento >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {activeFinancialKpis.crescimento >= 0 ? '+' : ''}{activeFinancialKpis.crescimento.toFixed(1)}%
                         </p>
-                        <p className="text-xs text-slate-600">vs período anterior ({fmt.format(kpis.prevFaturamento)})</p>
+                        <p className="text-xs text-slate-600">vs período anterior ({fmt.format(activeFinancialKpis.prevFaturamento)})</p>
                     </div>
 
                     {/* KPI 3 – Banco campeão */}

@@ -414,11 +414,14 @@ const App: React.FC = () => {
         const now = new Date().toISOString();
         const newProbability = calculateProbabilityForStage(newColumnId, columns);
 
+        const isWon = newColumn.type === 'won' && oldColumn?.type !== 'won';
+
         let updates: Partial<Lead> = {
             columnId: newColumnId,
             lastActivity: 'agora',
             lastActivityTimestamp: now,
             probability: newProbability,
+            ...(isWon ? { status: 'GANHO', wonAt: now } : {}),
         };
 
         // Playbook logic — check if lead has active playbook leaving its stages
