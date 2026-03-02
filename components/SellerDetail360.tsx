@@ -6,8 +6,10 @@ import {
     Filter, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../services/supabaseClient';
+import { supabase } from '@/src/lib/supabase';
+import { useActiveGoal } from '../src/hooks/useActiveGoal';
 import type { User } from '../types';
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,7 @@ interface SellerProfileData {
     name: string;
     email: string;
     role: string;
+    company_id: string;
 }
 
 type Period = 'hoje' | 'semana' | 'mes' | 'ano';
@@ -217,9 +220,12 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
     const [period, setPeriod] = useState<Period>('mes');
     const [loading, setLoading] = useState(true);
     const [sales, setSales] = useState<SaleRecord[]>([]);
-    const [prevSales, setPrevSales] = useState<SaleRecord[]>([]);
+    const [prevSales, setPrevSales] = useState<{ valor: number; status: string }[]>([]);
     const [profile, setProfile] = useState<SellerProfileData | null>(null);
     const [teamSales, setTeamSales] = useState<{ seller_id: string; valor: number }[]>([]);
+    const [companyId, setCompanyId] = useState<string | null>(null);
+
+    const { activeGoal } = useActiveGoal(companyId, seller.id);
 
     // Table state
     const [page, setPage] = useState(1);
@@ -256,7 +262,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
 
             supabase
                 .from('profiles')
-                .select('meta_mensal, name, email, role')
+                .select('meta_mensal, name, email, role, company_id')
                 .eq('id', seller.id)
                 .single(),
 
@@ -270,6 +276,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
         setSales((curRes.data as SaleRecord[]) ?? []);
         setPrevSales((prevRes.data as SaleRecord[]) ?? []);
         setProfile((profileRes.data as SellerProfileData) ?? null);
+        setCompanyId((profileRes.data as SellerProfileData)?.company_id ?? null);
         setTeamSales(
             (teamRes.data as { seller_id: string; valor: number }[]) ?? []
         );
@@ -306,7 +313,15 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
 
         // Bank breakdown
         const bankMap = new Map<string, number>();
-        sales.forEach(s => bankMap.set(s.banco, (bankMap.get(s.banco) ?? 0) + s.valor));
+
+sales.forEach(s => {
+  const banco = s.banco ?? 'Sem Banco';
+  const valor = s.valor ?? 0;
+
+  const current = bankMap.get(banco) ?? 0;
+  bankMap.set(banco, current + valor);
+});
+
         const bankData = [...bankMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
 
         // Operation type breakdown
@@ -314,7 +329,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
         sales.forEach(s => typeMap.set(s.tipo_operacao, (typeMap.get(s.tipo_operacao) ?? 0) + s.valor));
         const typeData = [...typeMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
 
-        const metaMensal = profile?.meta_mensal ?? 0;
+        const metaMensal = activeGoal?.targetValue ?? 0;
         const metaPct = metaMensal > 0 ? Math.min((faturamento / metaMensal) * 100, 100) : 0;
         const faltamParaMeta = Math.max(metaMensal - faturamento, 0);
         const ticketMedio = total > 0 ? faturamento / total : 0;
@@ -360,7 +375,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
             rankingPos, rankingTotal,
             score, dailyData,
         };
-    }, [sales, prevSales, profile, teamSales, period, seller.id]);
+    }, [sales, prevSales, profile, teamSales, period, seller.id, activeGoal]);
 
     // ── Table Filtering & Pagination ──────────────────────────────────────────
 

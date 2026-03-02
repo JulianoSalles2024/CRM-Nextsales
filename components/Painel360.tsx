@@ -4,7 +4,7 @@ import { Search, User, Trophy, FileText, Plus, ArrowRight, ShieldCheck, ShieldAl
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User as UserType, Id } from '../types';
 import SellerDetail360 from './SellerDetail360';
-import { supabase } from '../services/supabaseClient';
+import { supabase } from '@/src/lib/supabase';
 
 interface Painel360Props {
     users: UserType[];

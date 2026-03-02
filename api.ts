@@ -1,4 +1,4 @@
-import { supabase } from './services/supabaseClient';
+import { supabase } from '@/src/lib/supabase';
 import { GoogleGenAI, Type } from '@google/genai';
 import type { ColumnData, Lead, Id, CreateLeadData, UpdateLeadData, Activity, User, Task, CreateTaskData, UpdateTaskData, Tone, Group, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, CreateGroupData, UpdateGroupData, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, ChatChannel, Notification, ChatConversationStatus } from './types';
 import { initialColumns } from './data';
@@ -76,7 +76,11 @@ export const getLeads = async (): Promise<Lead[]> => {
 };
 
 export const createLead = async (leadData: CreateLeadData): Promise<Lead> => {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("User not authenticated");
+
     const { columnId, avatarUrl, assignedTo, clientId, createdAt, dueDate, lastActivity, groupInfo, ...rest } = leadData;
+
     const { data, error } = await supabase
         .from('leads')
         .insert({ 
@@ -89,6 +93,7 @@ export const createLead = async (leadData: CreateLeadData): Promise<Lead> => {
             due_date: dueDate,
             last_activity: lastActivity,
             group_info: groupInfo,
+            owner_id: user.id,   // 🔥 ESSENCIAL
         })
         .select()
         .single();
