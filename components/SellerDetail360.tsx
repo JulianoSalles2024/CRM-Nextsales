@@ -31,6 +31,7 @@ interface SellerProfileData {
     name: string;
     email: string;
     role: string;
+    company_id: string;
 }
 
 type Period = 'hoje' | 'semana' | 'mes' | 'ano';
@@ -219,7 +220,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
     const [period, setPeriod] = useState<Period>('mes');
     const [loading, setLoading] = useState(true);
     const [sales, setSales] = useState<SaleRecord[]>([]);
-    const [prevSales, setPrevSales] = useState<SaleRecord[]>([]);
+    const [prevSales, setPrevSales] = useState<{ valor: number; status: string }[]>([]);
     const [profile, setProfile] = useState<SellerProfileData | null>(null);
     const [teamSales, setTeamSales] = useState<{ seller_id: string; valor: number }[]>([]);
 
@@ -308,7 +309,15 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
 
         // Bank breakdown
         const bankMap = new Map<string, number>();
-        sales.forEach(s => bankMap.set(s.banco, (bankMap.get(s.banco) ?? 0) + s.valor));
+
+sales.forEach(s => {
+  const banco = s.banco ?? 'Sem Banco';
+  const valor = s.valor ?? 0;
+
+  const current = bankMap.get(banco) ?? 0;
+  bankMap.set(banco, current + valor);
+});
+
         const bankData = [...bankMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
 
         // Operation type breakdown
