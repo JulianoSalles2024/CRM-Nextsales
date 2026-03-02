@@ -3,7 +3,7 @@ import { Lead, Id } from '../types';
 import { ArchiveRestore, RefreshCw, User, Calendar, MessageCircle, Download, Trash2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import { GlassCard } from '@/src/shared/components/GlassCard';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface RecoveryViewProps {
     leads: Lead[];
@@ -107,7 +107,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                     </div>
                 </div>
 
-                <GlassCard className="p-0">
+                <FlatCard className="p-0">
                     {sortedLeads.length > 0 ? (
                         <ul className="divide-y divide-slate-800">
                             {sortedLeads.map(lead => (
@@ -162,7 +162,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                             <p className="text-sm text-slate-500 mt-1">Nenhum lead perdido foi agendado para reativação neste período.</p>
                         </div>
                     )}
-                </GlassCard>
+                </FlatCard>
             </div>
 
             <AnimatePresence>

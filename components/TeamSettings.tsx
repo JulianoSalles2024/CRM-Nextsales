@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import GoalsTab from './GoalsTab';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface TeamMember {
     id: string;
@@ -297,7 +298,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
 
             {/* Members List — só para abas de equipe */}
             {activeTab !== 'goals' && (
-            <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+            <FlatCard className="overflow-hidden">
                 <div className="divide-y divide-slate-800">
                     {isFetchingUsers ? (
                         <div className="p-6 flex justify-center">
@@ -415,7 +416,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                         ))}
                     </div>
                 )}
-            </div>
+            </FlatCard>
             )}
 
             {/* Goals Tab — isolado */}

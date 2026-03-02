@@ -7,6 +7,7 @@ import { Users, Target, TrendingUp, DollarSign, UserCheck, AlertTriangle, Wallet
 import KpiCard from './KpiCard';
 import TopSellers from './TopSellers';
 import RecentActivities from './RecentActivities';
+import FlatCard from './ui/FlatCard';
 
 interface DashboardProps {
     leads: Lead[];
@@ -254,7 +255,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Distribution Card */}
-                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-6 flex flex-col justify-center h-full">
+                    <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full">
                         <div className="mb-4">
                             <p className="text-sm font-medium text-slate-400 mb-2">Distribuição da Carteira</p>
                             <div className="flex items-baseline gap-2">
@@ -271,11 +272,11 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                         
                         <div className="flex justify-between text-xs font-medium text-slate-400">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div> 
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                 <span>Ativos ({walletHealth.activeCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-amber-500"></div> 
+                                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
                                 <span>Inativos ({walletHealth.inactiveCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -283,10 +284,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                                 <span>Perdidos ({walletHealth.lostCount})</span>
                             </div>
                         </div>
-                    </div>
+                    </FlatCard>
 
                     {/* Churn Risk Card */}
-                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
+                    <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
                         <div className="relative z-10">
                             <p className="text-sm font-medium text-slate-400 mb-2">Risco de Churn</p>
                             <div className="flex items-center gap-3 mb-3">
@@ -302,10 +303,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             </button>
                         </div>
                         <AlertTriangle className="absolute right-4 top-4 w-12 h-12 text-slate-800/50" />
-                    </div>
+                    </FlatCard>
 
                     {/* LTV Card */}
-                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
+                    <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
                         <div className="relative z-10">
                             <p className="text-sm font-medium text-slate-400 mb-2">LTV Médio</p>
                             <div className="flex items-center gap-3 mb-3">
@@ -315,14 +316,14 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             <p className="text-xs text-slate-500 leading-relaxed">Valor médio vitalício por cliente ativo.</p>
                         </div>
                         <Wallet className="absolute right-4 top-4 w-12 h-12 text-slate-800/50" />
-                    </div>
+                    </FlatCard>
                 </div>
             </div>
 
             {/* Bottom Section: Top Sellers & Activities */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
-                    <TopSellers columns={activeColumns} leads={periodFilteredLeads} users={users} />
+                    <TopSellers leads={activeLeadPool} users={users} selectedPeriod={selectedPeriod} />
                 </div>
                 <div className="lg:col-span-2">
                     <RecentActivities activities={activities} leads={leads} onNavigate={onNavigate} />

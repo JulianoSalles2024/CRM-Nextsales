@@ -5,11 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { User as UserType, Id } from '../types';
 import SellerDetail360 from './SellerDetail360';
 import { supabase } from '@/src/lib/supabase';
+import { useAuth } from '../src/features/auth/AuthContext';
 
 interface Painel360Props {
     users: UserType[];
     onSelectSeller?: (seller: UserType) => void;
 }
+
+const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
 const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
     const [activeTab, setActiveTab] = useState<'Vendedores' | 'Score' | 'Normativas'>('Vendedores');
@@ -17,6 +20,9 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
     const [selectedSeller, setSelectedSeller] = useState<UserType | null>(null);
     const [supabaseUsers, setSupabaseUsers] = useState<UserType[]>([]);
     const [isFetchingUsers, setIsFetchingUsers] = useState(true);
+    const [rankingMap, setRankingMap] = useState<Record<string, number>>({});
+    const [rankingLoading, setRankingLoading] = useState(true);
+    const { companyId } = useAuth();
 
     useEffect(() => {
         const fetchSellers = async () => {
@@ -48,6 +54,37 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
 
         fetchSellers();
     }, []);
+
+    // ── Ranking: agrupa leads GANHO do mês por owner_id ───────────────────────
+    useEffect(() => {
+        if (!companyId) return;
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+
+        (async () => {
+            setRankingLoading(true);
+            const { data, error } = await supabase
+                .from('leads')
+                .select('owner_id, value')
+                .eq('company_id', companyId)
+                .eq('status', 'GANHO')
+                .eq('is_archived', false)
+                .is('deleted_at', null)
+                .gte('won_at', monthStart)
+                .lte('won_at', monthEnd);
+
+            if (!error && data) {
+                const map: Record<string, number> = {};
+                data.forEach((r: { owner_id: string | null; value: number }) => {
+                    if (!r.owner_id) return;
+                    map[r.owner_id] = (map[r.owner_id] ?? 0) + Number(r.value || 0);
+                });
+                setRankingMap(map);
+            }
+            setRankingLoading(false);
+        })();
+    }, [companyId]);
 
     const handleSelectSeller = (seller: UserType) => {
         setSelectedSeller(seller);
@@ -186,55 +223,71 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                         >
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-bold text-white">Ranking de Performance</h3>
+                                <span className="text-xs text-slate-500">Mês atual · leads GANHO</span>
                             </div>
 
-                            {/* Quick ranking list linking to individual 360 */}
-                            {sellers.length > 0 ? (
-                                <div className="space-y-3">
-                                    {sellers.map((seller, idx) => (
-                                        <button
-                                            key={seller.id}
-                                            onClick={() => handleSelectSeller(seller)}
-                                            className="w-full flex items-center gap-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-blue-500/30 hover:bg-slate-900 transition-all group text-left"
-                                        >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                                                idx === 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                                                idx === 1 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
-                                                idx === 2 ? 'bg-orange-700/20 text-orange-400 border border-orange-700/30' :
-                                                'bg-slate-800 text-slate-500 border border-slate-700'
-                                            }`}>
-                                                {idx + 1}
-                                            </div>
-                                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-bold border border-slate-700 overflow-hidden flex-shrink-0">
-                                                {seller.avatarUrl
-                                                    ? <img src={seller.avatarUrl} alt="" className="w-full h-full object-cover" />
-                                                    : seller.name.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors truncate">
-                                                    {seller.name}
-                                                </p>
-                                                <p className="text-xs text-slate-500">Score — ver 360º individual</p>
-                                            </div>
-                                            <Trophy className={`w-4 h-4 flex-shrink-0 ${
-                                                idx === 0 ? 'text-amber-400' : 'text-slate-700 group-hover:text-blue-400'
-                                            } transition-colors`} />
-                                        </button>
-                                    ))}
+                            {rankingLoading || isFetchingUsers ? (
+                                <div className="flex items-center justify-center py-16">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
                                 </div>
-                            ) : (
-                                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4">
-                                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
-                                        <Trophy className="w-8 h-8" />
+                            ) : (() => {
+                                // Apenas vendedores (exclui admins do ranking)
+                                const rankableSellers = allUsers
+                                    .filter(u => u.role === 'Vendedor')
+                                    .map(u => ({ ...u, totalValue: rankingMap[u.id] ?? 0 }))
+                                    .sort((a, b) => b.totalValue - a.totalValue);
+
+                                return rankableSellers.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {rankableSellers.map((seller, idx) => (
+                                            <button
+                                                key={seller.id}
+                                                onClick={() => handleSelectSeller(seller)}
+                                                className="w-full flex items-center gap-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-blue-500/30 hover:bg-slate-900 transition-all group text-left"
+                                            >
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                                                    idx === 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                                    idx === 1 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
+                                                    idx === 2 ? 'bg-orange-700/20 text-orange-400 border border-orange-700/30' :
+                                                    'bg-slate-800 text-slate-500 border border-slate-700'
+                                                }`}>
+                                                    {idx + 1}
+                                                </div>
+                                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-bold border border-slate-700 overflow-hidden flex-shrink-0">
+                                                    {seller.avatarUrl
+                                                        ? <img src={seller.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                                        : seller.name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors truncate">
+                                                        {seller.name}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        {seller.totalValue > 0
+                                                            ? fmt.format(seller.totalValue)
+                                                            : 'Sem vendas no mês'}
+                                                    </p>
+                                                </div>
+                                                <Trophy className={`w-4 h-4 flex-shrink-0 ${
+                                                    idx === 0 ? 'text-amber-400' : 'text-slate-700 group-hover:text-blue-400'
+                                                } transition-colors`} />
+                                            </button>
+                                        ))}
                                     </div>
-                                    <div>
-                                        <h4 className="text-white font-bold">Nenhum vendedor cadastrado</h4>
-                                        <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
-                                            Convide membros para a equipe para ver o ranking aqui.
-                                        </p>
+                                ) : (
+                                    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4">
+                                        <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
+                                            <Trophy className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-bold">Nenhum vendedor cadastrado</h4>
+                                            <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                                                Convide membros para a equipe para ver o ranking aqui.
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
                         </motion.div>
                     )}
 

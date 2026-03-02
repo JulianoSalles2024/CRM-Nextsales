@@ -10,6 +10,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useActiveGoal } from '../src/hooks/useActiveGoal';
 import { useAuth } from '../src/features/auth/AuthContext';
 import type { User } from '../types';
+import GlassCard from './ui/GlassCard';
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -811,17 +812,17 @@ sales.forEach(s => {
             {/* ── CHARTS ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Evolution chart */}
-                <div className="lg:col-span-2 bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-6 space-y-4">
+                <GlassCard className="lg:col-span-2 rounded-xl p-6 space-y-4">
                     <h3 className="text-sm font-bold text-white">
                         Evolução de Vendas — {periodLabels[period]}
                     </h3>
                     <SVGLineChart data={kpis.dailyData} color="#3b82f6" />
-                </div>
+                </GlassCard>
 
                 {/* Breakdowns */}
                 <div className="flex flex-col gap-4">
                     {/* By bank */}
-                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-4 flex-1">
+                    <GlassCard className="rounded-xl p-5 space-y-4 flex-1">
                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                             <Building2 className="w-3 h-3" /> Por Banco
                         </h3>
@@ -841,10 +842,10 @@ sales.forEach(s => {
                         ) : (
                             <p className="text-xs text-slate-600 italic">Sem dados</p>
                         )}
-                    </div>
+                    </GlassCard>
 
                     {/* By operation type */}
-                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-4 flex-1">
+                    <GlassCard className="rounded-xl p-5 space-y-4 flex-1">
                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                             <Briefcase className="w-3 h-3" /> Por Tipo de Operação
                         </h3>
@@ -864,7 +865,7 @@ sales.forEach(s => {
                         ) : (
                             <p className="text-xs text-slate-600 italic">Sem dados</p>
                         )}
-                    </div>
+                    </GlassCard>
                 </div>
             </div>
 

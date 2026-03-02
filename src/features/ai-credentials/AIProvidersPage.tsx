@@ -4,6 +4,7 @@ import { useAIProviders } from './useAIProviders';
 import { AIProviderCard } from './AIProviderCard';
 import { AIProviderId } from './aiProviders.types';
 import { useAuth } from '@/src/features/auth/AuthContext';
+import FlatCard from '@/components/ui/FlatCard';
 
 export const AIProvidersPage: React.FC = () => {
   const { currentPermissions } = useAuth();
@@ -14,7 +15,7 @@ export const AIProvidersPage: React.FC = () => {
   if (!currentPermissions.canManageCredentials) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-        <div className="p-4 rounded-2xl bg-slate-800 border border-slate-700">
+        <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700">
           <Lock className="w-8 h-8 text-slate-400" />
         </div>
         <h2 className="text-lg font-semibold text-white">IA configurada pela organização</h2>
@@ -34,7 +35,7 @@ export const AIProvidersPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <FlatCard className="p-6 space-y-8">
       <div className="flex items-center gap-4 mb-8">
         <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20">
           <Key className="w-8 h-8 text-sky-500" />
@@ -73,6 +74,6 @@ export const AIProvidersPage: React.FC = () => {
           <p>Caso múltiplos provedores estejam conectados, a prioridade segue a ordem: Gemini {'>'} OpenAI {'>'} Anthropic.</p>
         </div>
       </div>
-    </div>
+    </FlatCard>
   );
 };

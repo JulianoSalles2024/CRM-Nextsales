@@ -2,6 +2,7 @@
 import React from 'react';
 import { Activity as ActivityIcon, MessageSquare, ArrowRight, ChevronsRight, Mail, MoreVertical } from 'lucide-react';
 import { Activity, Lead } from '../types';
+import FlatCard from './ui/FlatCard';
 
 const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -43,7 +44,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
     };
 
     return (
-         <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] p-6 rounded-xl border border-white/5 h-full flex flex-col">
+        <FlatCard className="p-6 rounded-xl h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="font-bold text-white text-lg">Atividades Recentes</h2>
                 <button className="text-slate-500 hover:text-white transition-colors">
@@ -91,7 +92,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                     Ver todas as atividades
                 </button>
             </div>
-        </div>
+        </FlatCard>
     );
 };
 

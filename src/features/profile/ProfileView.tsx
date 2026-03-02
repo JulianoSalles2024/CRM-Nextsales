@@ -2,6 +2,7 @@ import { useAuth } from '@/src/features/auth/AuthContext';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Phone, Shield, Check, Save, User, AtSign, Lock, Pencil } from 'lucide-react';
 import { ProfileAvatar } from './components/ProfileAvatar';
+import FlatCard from '@/components/ui/FlatCard';
 
 // ⚠️ mantenha o mesmo import do seu projeto (o que já está funcionando)
 import { supabase } from '@/src/lib/supabase';
@@ -171,7 +172,7 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto py-10 px-6 space-y-6">
       {/* ── Card 1: User Info ──────────────────────────────── */}
-      <div className="relative bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
+      <FlatCard className="relative rounded-2xl">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-white/[0.06]">
@@ -290,10 +291,10 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
+      </FlatCard>
 
       {/* ── Card 2: Security ──────────────────────────────── */}
-      <div className="relative bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
+      <FlatCard className="relative rounded-2xl">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         <div className="flex items-center justify-between px-8 py-6 border-b border-white/[0.06]">
@@ -359,7 +360,7 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </FlatCard>
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Lead, ColumnData, Tag, ListDisplaySettings, User } from '../types';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import LeadListHeader from './LeadListHeader';
-import { GlassCard } from '@/src/shared/components/GlassCard';
+import FlatCard from '@/components/ui/FlatCard';
 import { getLeadComputedStatus, STATUS_BADGE, STATUS_DOT_COLOR } from '@/src/lib/leadStatus';
 import { useAuth } from '@/src/features/auth/AuthContext';
 
@@ -234,7 +234,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onOpenCreateLeadModal={onOpenCreateLeadModal}
                 onOpenCreateTaskModal={onOpenCreateTaskModal}
             />
-            <GlassCard className="overflow-hidden flex-1 flex flex-col p-0">
+            <FlatCard className="overflow-hidden flex-1 flex flex-col p-0">
                 {sortedLeads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64">
                         <h3 className="text-lg font-semibold text-slate-300">Nenhum {viewType === 'Clientes' ? 'cliente' : 'lead'} encontrado</h3>
@@ -326,7 +326,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                         </table>
                     </div>
                  )}
-            </GlassCard>
+            </FlatCard>
         </div>
     );
 };

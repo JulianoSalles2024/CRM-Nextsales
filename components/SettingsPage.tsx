@@ -15,7 +15,7 @@ import TeamSettings from './TeamSettings';
 import { AIHubView } from '@/src/features/ai/AIHubView';
 import { AIProvidersPage } from '@/src/features/ai-credentials/AIProvidersPage';
 import { Key } from 'lucide-react';
-import { GlassCard } from '@/src/shared/components/GlassCard';
+import FlatCard from '@/components/ui/FlatCard';
 import { GlassSection } from '@/src/shared/components/GlassSection';
 import type { Board } from '../types';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -105,7 +105,7 @@ const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, 
 
     return (
         <>
-            <GlassCard className="p-0">
+            <FlatCard className="p-0">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-white">Seus Pipelines (Boards)</h2>
@@ -146,7 +146,7 @@ const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, 
                         </GlassSection>
                     ))}
                 </div>
-            </GlassCard>
+            </FlatCard>
 
             <AnimatePresence>
                 {boardToDelete && (
@@ -243,7 +243,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
 
     return (
         <>
-            <GlassCard className="p-0">
+            <FlatCard className="p-0">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
@@ -263,7 +263,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
                     </div>
                     <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
                 </DndContext>
-            </GlassCard>
+            </FlatCard>
 
             <AnimatePresence>
                 {isCreateStageModalOpen && (
@@ -290,10 +290,10 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
 
 // --- Placeholder ---
 const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
-    <GlassCard className="text-center p-10 border-2 border-dashed border-white/10">
+    <FlatCard className="text-center p-10 border-2 border-dashed border-white/10">
         <h2 className="text-lg font-semibold text-white">WIP: {title}</h2>
         <p className="text-slate-400 mt-2">Esta seção estará disponível em breve!</p>
-    </GlassCard>
+    </FlatCard>
 );
 
 
