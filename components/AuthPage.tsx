@@ -233,28 +233,6 @@ const AuthPage: React.FC<AuthPageProps> = ({
         </button>
       </form>
 
-      {/* Divider */}
-      <div className="relative my-5">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-600/60" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-slate-800 px-3 text-slate-500 uppercase tracking-wide">ou</span>
-        </div>
-      </div>
-
-      {/* Google */}
-      <button
-        type="button"
-        onClick={handleGoogleLogin}
-        disabled={isSubmitting || isGoogleSubmitting}
-        className="w-full flex justify-center items-center gap-3 py-3 px-4 rounded-xl border border-slate-600 bg-slate-700/40 text-sm font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-        aria-label="Continuar com Google"
-      >
-        {isGoogleSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
-        {isGoogleSubmitting ? 'Redirecionando...' : 'Continuar com Google'}
-      </button>
-
       {/* Mode toggle */}
       <p className="mt-6 text-center text-sm text-slate-400">
         {mode === 'login' ? (
@@ -288,18 +266,12 @@ const AuthPage: React.FC<AuthPageProps> = ({
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-[#0f1c3a] to-slate-950 px-4 py-12">
+  <div className="min-h-screen w-full flex items-center justify-center px-4 py-12">
     <div className="w-full max-w-md">
-      {/* Logo */}
-      <div className="flex items-center justify-center gap-2 mb-8">
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-          <span className="text-white text-sm font-bold">C</span>
-        </div>
-        <span className="text-xl font-bold text-white tracking-tight">CRM</span>
-      </div>
+      
 
       {/* Card */}
-      <div className="bg-slate-800 rounded-2xl shadow-2xl shadow-black/40 border border-slate-700/50 px-8 py-10">
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/40 border border-white/10 px-8 py-10 transition-all duration-200 hover:-translate-y-1 hover:bg-slate-900/55 hover:border-blue-500/30 hover:shadow-blue-500/10 hover:ring-1 hover:ring-blue-500/20">
         {children}
       </div>
 
@@ -311,7 +283,7 @@ const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const CardHeader: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
-  <div className="mb-8">
+  <div className="mb-8 text-center">
     <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
     <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
   </div>

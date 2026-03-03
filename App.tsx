@@ -853,6 +853,9 @@ const App: React.FC = () => {
             <main className="flex-1 overflow-auto p-6 bg-transparent">
                 <AppRouter {...routerProps} />
             </main>
+            <footer className="text-center text-xs text-slate-500 py-2">
+                © 2026 CRM ZENIUS. Todos os direitos reservados.
+            </footer>
         </div>
 
         <AnimatePresence>

@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    ArrowLeft, DollarSign, TrendingUp, TrendingDown, Building2,
-    Briefcase, Clock, Target, Star, AlertTriangle,
+    DollarSign, TrendingUp, TrendingDown, Building2,
+    Briefcase, Target, Globe,
     ChevronLeft, ChevronRight, RefreshCw, Award, Zap,
-    Filter, Calendar
+    Filter, Calendar, Trophy,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
-import { useActiveGoal } from '../src/hooks/useActiveGoal';
 import { useAuth } from '../src/features/auth/AuthContext';
-import type { User } from '../types';
 import GlassCard from './ui/GlassCard';
-
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,33 +20,14 @@ interface SaleRecord {
     tipo_operacao: string;
     valor: number;
     status: 'pendente' | 'aprovado' | 'recusado' | 'cancelado';
-    data_fechamento: string; // YYYY-MM-DD
+    data_fechamento: string;
     created_at: string;
-    company_id?: string;
-}
-
-interface SellerProfileData {
-    meta_mensal: number;
-    name: string;
-    email: string;
-    role: string;
-    company_id: string;
 }
 
 type Period = 'hoje' | 'semana' | 'mes' | 'ano' | 'custom';
 
-interface SellerDetail360Props {
-    seller: User;
-    onBack: () => void;
-}
-
 // ── Date Utilities ────────────────────────────────────────────────────────────
 
-/**
- * Formata um Date usando getters locais (getFullYear/getMonth/getDate).
- * Evita o bug de toISOString() que converte para UTC e pode retornar
- * o dia anterior em fusos UTC+ (ex: UTC-3 = Brasil).
- */
 function toLocalDateStr(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -58,70 +36,55 @@ function toLocalDateStr(d: Date): string {
 }
 
 function getDateRange(period: Period): { start: string; end: string } {
-    const now  = new Date();
-    const y    = now.getFullYear();
-    const mo   = now.getMonth();
-    const d    = now.getDate();
+    const now = new Date();
+    const y = now.getFullYear();
+    const mo = now.getMonth();
+    const d = now.getDate();
 
-    // Todos os casos usam new Date(y, m, d) — meia-noite local, sem horário residual.
-    // JS resolve automaticamente overflows (ex: d-6 negativo vira mês anterior).
     const end = new Date(y, mo, d);
     let start: Date;
 
     switch (period) {
-        case 'hoje':
-            start = new Date(y, mo, d);
-            break;
-        case 'semana':
-            start = new Date(y, mo, d - 6);
-            break;
-        case 'ano':
-            start = new Date(y, 0, 1);
-            break;
+        case 'hoje':   start = new Date(y, mo, d); break;
+        case 'semana': start = new Date(y, mo, d - 6); break;
+        case 'ano':    start = new Date(y, 0, 1); break;
         case 'mes':
-        default:
-            start = new Date(y, mo, 1);
+        default:       start = new Date(y, mo, 1);
     }
-
-    return {
-        start: toLocalDateStr(start),
-        end:   toLocalDateStr(end),
-    };
+    return { start: toLocalDateStr(start), end: toLocalDateStr(end) };
 }
 
 function getPrevDateRange(period: Period): { start: string; end: string } {
-    const now  = new Date();
-    const y    = now.getFullYear();
-    const mo   = now.getMonth();
-    const d    = now.getDate();
+    const now = new Date();
+    const y = now.getFullYear();
+    const mo = now.getMonth();
+    const d = now.getDate();
 
-    // Mesmo padrão: new Date(y, m, d) puro em todos os casos.
     switch (period) {
         case 'hoje': {
             const s = toLocalDateStr(new Date(y, mo, d - 1));
             return { start: s, end: s };
         }
         case 'semana':
-            // Janela anterior: 13 dias atrás até 7 dias atrás (7 dias, imediatamente antes da atual)
             return {
                 start: toLocalDateStr(new Date(y, mo, d - 13)),
                 end:   toLocalDateStr(new Date(y, mo, d - 7)),
             };
         case 'ano':
             return {
-                start: toLocalDateStr(new Date(y - 1, 0,  1)),
+                start: toLocalDateStr(new Date(y - 1, 0, 1)),
                 end:   toLocalDateStr(new Date(y - 1, 11, 31)),
             };
         case 'mes':
         default:
             return {
                 start: toLocalDateStr(new Date(y, mo - 1, 1)),
-                end:   toLocalDateStr(new Date(y, mo,     0)),
+                end:   toLocalDateStr(new Date(y, mo, 0)),
             };
     }
 }
 
-// ── SVG Line Chart ────────────────────────────────────────────────────────────
+// ── SVG Line Chart ─────────────────────────────────────────────────────────────
 
 const SVGLineChart: React.FC<{
     data: { label: string; value: number }[];
@@ -159,12 +122,11 @@ const SVGLineChart: React.FC<{
         <div>
             <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32" preserveAspectRatio="none">
                 <defs>
-                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="globalAreaGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor={color} stopOpacity="0.18" />
                         <stop offset="100%" stopColor={color} stopOpacity="0" />
                     </linearGradient>
                 </defs>
-                {/* Grid lines */}
                 {[0.25, 0.5, 0.75, 1].map((pct, i) => (
                     <line
                         key={i}
@@ -173,9 +135,7 @@ const SVGLineChart: React.FC<{
                         stroke="#1e293b" strokeWidth="1"
                     />
                 ))}
-                {/* Area */}
-                <polygon points={areaPoints} fill="url(#areaGrad)" />
-                {/* Line */}
+                <polygon points={areaPoints} fill="url(#globalAreaGrad)" />
                 <polyline
                     points={points}
                     fill="none"
@@ -184,7 +144,6 @@ const SVGLineChart: React.FC<{
                     strokeLinejoin="round"
                     vectorEffect="non-scaling-stroke"
                 />
-                {/* Dots on significant points */}
                 {data.map((d, i) => (
                     showLabels.includes(i) && (
                         <circle key={i} cx={toX(i)} cy={toY(d.value)} r="3" fill={color} vectorEffect="non-scaling-stroke" />
@@ -227,44 +186,32 @@ const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL',
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => {
-    const [period, setPeriod] = useState<Period>('mes');
-    const [loading, setLoading] = useState(true);
-    const [sales, setSales] = useState<SaleRecord[]>([]);
-    const [prevSales, setPrevSales] = useState<{ valor: number; status: string }[]>([]);
-    const [profile, setProfile] = useState<SellerProfileData | null>(null);
-    const [teamSales, setTeamSales] = useState<{ seller_id: string; valor: number }[]>([]);
-    const [activeTab, setActiveTab] = useState<'individual' | 'team'>('individual');
-    const [individualWonLeads, setIndividualWonLeads] = useState<{ value: number }[]>([]);
-    const [prevIndividualWonLeads, setPrevIndividualWonLeads] = useState<{ value: number }[]>([]);
-    const [teamWonLeads, setTeamWonLeads] = useState<{ value: number }[]>([]);
-    const [prevTeamWonLeads, setPrevTeamWonLeads] = useState<{ value: number }[]>([]);
-    const [teamGoal, setTeamGoal] = useState<{ targetValue: number } | null>(null);
-    const [teamGoalLoading, setTeamGoalLoading] = useState(true);
-    const [customStart, setCustomStart] = useState('');
-    const [customEnd, setCustomEnd] = useState('');
+const GlobalSales360: React.FC = () => {
     const { companyId } = useAuth();
 
-    const { activeGoal, loading: goalLoading } = useActiveGoal(companyId, seller.id);
+    const [period, setPeriod] = useState<Period>('mes');
+    const [loading, setLoading] = useState(true);
+    const [customStart, setCustomStart] = useState('');
+    const [customEnd, setCustomEnd] = useState('');
+
+    const [wonLeads, setWonLeads] = useState<{ value: number; owner_id: string | null }[]>([]);
+    const [prevWonLeads, setPrevWonLeads] = useState<{ value: number }[]>([]);
+    const [sales, setSales] = useState<SaleRecord[]>([]);
+    const [globalGoal, setGlobalGoal] = useState<{ targetValue: number } | null>(null);
+    const [sellers, setSellers] = useState<{ id: string; name: string }[]>([]);
 
     // Table state
     const [page, setPage] = useState(1);
     const [bankFilter, setBankFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-
     const PAGE_SIZE = 10;
 
     // ── Data Fetching ──────────────────────────────────────────────────────────
 
     const fetchData = useCallback(async () => {
-        if (!supabase) { setLoading(false); return; }
-
-        // Custom period: wait until both dates are filled
-        if (period === 'custom' && (!customStart || !customEnd)) {
-            setLoading(false);
-            return;
-        }
+        if (!companyId) { setLoading(false); return; }
+        if (period === 'custom' && (!customStart || !customEnd)) { setLoading(false); return; }
 
         setLoading(true);
 
@@ -272,51 +219,27 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
             ? { start: customStart, end: customEnd }
             : getDateRange(period);
         const { start: prevStart, end: prevEnd } = period === 'custom'
-            ? { start: customStart, end: customEnd } // no "prev" concept for custom → growth = 0
+            ? { start: customStart, end: customEnd }
             : getPrevDateRange(period as Exclude<Period, 'custom'>);
-
         const today = toLocalDateStr(new Date());
 
-        const [
-            curRes, prevRes, profileRes, teamRes,
-            indWonRes, prevIndWonRes,
-            teamWonRes, prevTeamWonRes,
-            teamGoalRes,
-        ] = await Promise.all([
-            // ── Sales existentes (sem alteração) ──────────────────────────────
-            supabase
-                .from('sales')
-                .select('*')
-                .eq('seller_id', seller.id)
-                .gte('data_fechamento', start)
-                .lte('data_fechamento', end)
-                .order('data_fechamento', { ascending: true }),
+        // Step 1: resolve seller IDs/names for this company
+        const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .eq('company_id', companyId)
+            .eq('is_active', true);
 
-            supabase
-                .from('sales')
-                .select('valor, status')
-                .eq('seller_id', seller.id)
-                .gte('data_fechamento', prevStart)
-                .lte('data_fechamento', prevEnd),
+        const resolvedSellers = (profilesData ?? []).map(p => ({ id: p.id as string, name: (p.name as string) ?? '—' }));
+        setSellers(resolvedSellers);
+        const sellerIds = resolvedSellers.map(s => s.id);
 
-            supabase
-                .from('profiles')
-                .select('meta_mensal, name, email, role, company_id')
-                .eq('id', seller.id)
-                .single(),
-
-            supabase
-                .from('sales')
-                .select('seller_id, valor')
-                .gte('data_fechamento', start)
-                .lte('data_fechamento', end),
-
-            // ── Individual: leads GANHO do vendedor — período atual ───────
-            // Filtra por won_at: campo preenchido com now() ao mover para coluna 'won'.
+        // Step 2: parallel queries
+        const [wonRes, prevWonRes, salesRes, goalRes] = await Promise.all([
+            // Won leads current period — all company
             supabase
                 .from('leads')
-                .select('value')
-                .eq('owner_id', seller.id)
+                .select('value, owner_id')
                 .eq('company_id', companyId)
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
@@ -324,30 +247,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .gte('won_at', start + 'T00:00:00')
                 .lte('won_at', end + 'T23:59:59.999'),
 
-            // ── Individual: leads GANHO do vendedor — período anterior ─────
-            supabase
-                .from('leads')
-                .select('value')
-                .eq('owner_id', seller.id)
-                .eq('company_id', companyId)
-                .eq('status', 'GANHO')
-                .eq('is_archived', false)
-                .is('deleted_at', null)
-                .gte('won_at', prevStart + 'T00:00:00')
-                .lte('won_at', prevEnd + 'T23:59:59.999'),
-
-            // ── Time: todos leads GANHO da empresa — período atual ────────
-            supabase
-                .from('leads')
-                .select('value')
-                .eq('company_id', companyId)
-                .eq('status', 'GANHO')
-                .eq('is_archived', false)
-                .is('deleted_at', null)
-                .gte('won_at', start + 'T00:00:00')
-                .lte('won_at', end + 'T23:59:59.999'),
-
-            // ── Time: todos leads GANHO da empresa — período anterior ──────
+            // Won leads previous period — all company
             supabase
                 .from('leads')
                 .select('value')
@@ -358,10 +258,21 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .gte('won_at', prevStart + 'T00:00:00')
                 .lte('won_at', prevEnd + 'T23:59:59.999'),
 
-            // ── Meta global (user_id IS NULL) — query direta ──────────────
+            // Sales current period — filtered by company sellers
+            sellerIds.length > 0
+                ? supabase
+                    .from('sales')
+                    .select('*')
+                    .in('seller_id', sellerIds)
+                    .gte('data_fechamento', start)
+                    .lte('data_fechamento', end)
+                    .order('data_fechamento', { ascending: false })
+                : Promise.resolve({ data: [] as SaleRecord[], error: null }),
+
+            // Global goal (user_id IS NULL)
             supabase
                 .from('goals')
-                .select('id, goal_value, goal_type')
+                .select('goal_value')
                 .eq('company_id', companyId)
                 .is('user_id', null)
                 .eq('is_active', true)
@@ -371,103 +282,45 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .limit(1),
         ]);
 
-        setSales((curRes.data as SaleRecord[]) ?? []);
-        setPrevSales((prevRes.data as SaleRecord[]) ?? []);
-        setProfile((profileRes.data as SellerProfileData) ?? null);
-        setTeamSales((teamRes.data as { seller_id: string; valor: number }[]) ?? []);
+        setWonLeads((wonRes.data as { value: number; owner_id: string | null }[]) ?? []);
+        setPrevWonLeads((prevWonRes.data as { value: number }[]) ?? []);
+        setSales((salesRes.data as SaleRecord[]) ?? []);
 
-        setIndividualWonLeads((indWonRes.data as { value: number }[]) ?? []);
-        setPrevIndividualWonLeads((prevIndWonRes.data as { value: number }[]) ?? []);
-        setTeamWonLeads((teamWonRes.data as { value: number }[]) ?? []);
-        setPrevTeamWonLeads((prevTeamWonRes.data as { value: number }[]) ?? []);
+        const rawGoal = (goalRes.data as { goal_value: number }[] | null)?.[0] ?? null;
+        setGlobalGoal(rawGoal ? { targetValue: rawGoal.goal_value ?? 0 } : null);
 
-        const rawTeamGoal = (teamGoalRes.data as { id: string; goal_value: number; goal_type: string }[] | null)?.[0] ?? null;
-        setTeamGoal(rawTeamGoal ? { targetValue: rawTeamGoal.goal_value ?? 0 } : null);
-        setTeamGoalLoading(false);
-
-        console.log('[SellerDetail360] indWonLeads:', indWonRes.data, '| erro:', indWonRes.error);
-        console.log('[SellerDetail360] teamWonLeads:', teamWonRes.data, '| erro:', teamWonRes.error);
-        console.log('[SellerDetail360] teamGoal:', rawTeamGoal, '| erro:', teamGoalRes.error);
         setPage(1);
         setLoading(false);
-    }, [seller.id, period, companyId, customStart, customEnd]);
+    }, [companyId, period, customStart, customEnd]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
     // ── KPI Computations ──────────────────────────────────────────────────────
 
     const kpis = useMemo(() => {
-        const total = sales.length;
-        const faturamento = individualWonLeads.reduce((s, r) => s + r.value, 0);
-        const prevFaturamento = prevIndividualWonLeads.reduce((s, r) => s + r.value, 0);
+        const faturamento = wonLeads.reduce((s, r) => s + r.value, 0);
+        const prevFaturamento = prevWonLeads.reduce((s, r) => s + r.value, 0);
         const crescimento = prevFaturamento > 0
             ? ((faturamento - prevFaturamento) / prevFaturamento) * 100
             : 0;
+        const totalVendas = wonLeads.length;
+        const ticketMedio = totalVendas > 0 ? faturamento / totalVendas : 0;
 
-        const aprovados = sales.filter(s => s.status === 'aprovado').length;
-        const conversao = total > 0 ? (aprovados / total) * 100 : 0;
-
-        // Average closing time (created_at → data_fechamento)
-        const closingTimes = sales
-            .filter(s => s.created_at)
-            .map(s => {
-                const diff = new Date(s.data_fechamento).getTime() - new Date(s.created_at).getTime();
-                return diff / (1000 * 60 * 60 * 24); // days
-            })
-            .filter(d => d >= 0);
-        const tempoMedio = closingTimes.length > 0
-            ? closingTimes.reduce((a, b) => a + b, 0) / closingTimes.length
-            : 0;
-
-        // Bank breakdown
-        const bankMap = new Map<string, number>();
-
-sales.forEach(s => {
-  const banco = s.banco ?? 'Sem Banco';
-  const valor = s.valor ?? 0;
-
-  const current = bankMap.get(banco) ?? 0;
-  bankMap.set(banco, current + valor);
-});
-
-        const bankData = [...bankMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
-
-        // Operation type breakdown
-        const typeMap = new Map<string, number>();
-        sales.forEach(s => typeMap.set(s.tipo_operacao, (typeMap.get(s.tipo_operacao) ?? 0) + s.valor));
-        const typeData = [...typeMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
-
-        // Só usa a meta se ela for realmente individual (userId = seller.id).
-        // useActiveGoal faz fallback para global — esse fallback não deve aparecer na aba Individual.
-        const metaMensal = activeGoal?.userId === seller.id ? (activeGoal?.targetValue ?? 0) : 0;
+        const metaMensal = globalGoal?.targetValue ?? 0;
         const metaPct = metaMensal > 0 ? Math.min((faturamento / metaMensal) * 100, 100) : 0;
         const faltamParaMeta = Math.max(metaMensal - faturamento, 0);
-        const ticketMedio = total > 0 ? faturamento / total : 0;
 
-        // Days remaining in month
         const now = new Date();
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const daysRemaining = Math.max(lastDay - now.getDate() + 1, 1);
         const metaDiaria = period === 'mes' ? faltamParaMeta / daysRemaining : 0;
 
-        // Team ranking
-        const teamTotals = new Map<string, number>();
-        teamSales.forEach(s => teamTotals.set(s.seller_id, (teamTotals.get(s.seller_id) ?? 0) + s.valor));
-        const sorted = [...teamTotals.entries()].sort(([, a], [, b]) => b - a);
-        const rankingPos = sorted.findIndex(([id]) => id === seller.id) + 1;
-        const rankingTotal = sorted.length;
-
-        // Performance score
-        const metaPts = (metaPct / 100) * 50;
-        const aprovPts = (conversao / 100) * 30;
-        const volPts = Math.min(total / 10, 1) * 20;
-        const score = Math.round(metaPts + aprovPts + volPts);
-
-        // Daily evolution data
+        // Daily evolution from won leads (grouped by won_at date)
         const dailyMap = new Map<string, number>();
-        sales.forEach(s => {
-            const d = s.data_fechamento;
-            dailyMap.set(d, (dailyMap.get(d) ?? 0) + s.valor);
+        wonLeads.forEach(l => {
+            const dateStr = (l as any).won_at as string | undefined;
+            const d = dateStr?.split('T')[0] ?? '';
+            if (d) dailyMap.set(d, (dailyMap.get(d) ?? 0) + l.value);
         });
         const dailyData = [...dailyMap.entries()]
             .sort(([a], [b]) => a.localeCompare(b))
@@ -476,43 +329,41 @@ sales.forEach(s => {
                 value,
             }));
 
+        // Bank breakdown from sales
+        const bankMap = new Map<string, number>();
+        sales.forEach(s => {
+            const banco = s.banco ?? 'Sem Banco';
+            bankMap.set(banco, (bankMap.get(banco) ?? 0) + s.valor);
+        });
+        const bankData = [...bankMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
+
+        // Operation type breakdown from sales
+        const typeMap = new Map<string, number>();
+        sales.forEach(s => typeMap.set(s.tipo_operacao, (typeMap.get(s.tipo_operacao) ?? 0) + s.valor));
+        const typeData = [...typeMap.entries()].sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
+
+        // Seller ranking from won leads
+        const sellerMap = new Map<string, number>();
+        wonLeads.forEach(l => {
+            if (l.owner_id) sellerMap.set(l.owner_id, (sellerMap.get(l.owner_id) ?? 0) + l.value);
+        });
+        const sellerRanking = [...sellerMap.entries()]
+            .sort(([, a], [, b]) => b - a)
+            .map(([sellerId, value]) => ({
+                id: sellerId,
+                name: sellers.find(s => s.id === sellerId)?.name ?? '—',
+                value,
+            }));
+
         return {
             faturamento, prevFaturamento, crescimento,
-            total, aprovados, conversao, tempoMedio,
-            bankData, typeData,
-            metaMensal, metaPct, faltamParaMeta, ticketMedio,
-            metaDiaria, daysRemaining,
-            rankingPos, rankingTotal,
-            score, dailyData,
+            totalVendas, ticketMedio,
+            metaMensal, metaPct, faltamParaMeta, metaDiaria,
+            dailyData, bankData, typeData, sellerRanking,
         };
-    }, [sales, prevSales, profile, teamSales, period, seller.id, activeGoal, individualWonLeads, prevIndividualWonLeads]);
+    }, [wonLeads, prevWonLeads, sales, globalGoal, period, sellers]);
 
-    // ── KPI Time ──────────────────────────────────────────────────────────────
-
-    const kpisTeam = useMemo(() => {
-        const faturamento = teamWonLeads.reduce((s, r) => s + r.value, 0);
-        const prevFaturamento = prevTeamWonLeads.reduce((s, r) => s + r.value, 0);
-        const crescimento = prevFaturamento > 0
-            ? ((faturamento - prevFaturamento) / prevFaturamento) * 100
-            : 0;
-        const metaMensal = teamGoal?.targetValue ?? 0;
-        const metaPct = metaMensal > 0 ? Math.min((faturamento / metaMensal) * 100, 100) : 0;
-        const faltamParaMeta = Math.max(metaMensal - faturamento, 0);
-        const ticketMedio = teamWonLeads.length > 0 ? faturamento / teamWonLeads.length : 0;
-        const now = new Date();
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysRemaining = Math.max(lastDay - now.getDate() + 1, 1);
-        const metaDiaria = period === 'mes' ? faltamParaMeta / daysRemaining : 0;
-        return { faturamento, prevFaturamento, crescimento, metaMensal, metaPct, faltamParaMeta, ticketMedio, metaDiaria };
-    }, [teamWonLeads, prevTeamWonLeads, teamGoal, period]);
-
-    // ── KPI ativo (Individual ou Time) ────────────────────────────────────────
-
-    const activeFinancialKpis = activeTab === 'individual'
-        ? { faturamento: kpis.faturamento, prevFaturamento: kpis.prevFaturamento, crescimento: kpis.crescimento, metaMensal: kpis.metaMensal, metaPct: kpis.metaPct, faltamParaMeta: kpis.faltamParaMeta, ticketMedio: kpis.ticketMedio, metaDiaria: kpis.metaDiaria }
-        : kpisTeam;
-
-    // ── Table Filtering & Pagination ──────────────────────────────────────────
+    // ── Table ─────────────────────────────────────────────────────────────────
 
     const filteredSales = useMemo(() => sales.filter(s =>
         (!bankFilter || s.banco === bankFilter) &&
@@ -522,11 +373,8 @@ sales.forEach(s => {
 
     const totalPages = Math.max(Math.ceil(filteredSales.length / PAGE_SIZE), 1);
     const paginatedSales = filteredSales.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
     const uniqueBanks = useMemo(() => [...new Set(sales.map(s => s.banco))].sort(), [sales]);
     const uniqueTypes = useMemo(() => [...new Set(sales.map(s => s.tipo_operacao))].sort(), [sales]);
-
-    // ── Status badge ──────────────────────────────────────────────────────────
 
     const statusConfig: Record<string, { label: string; cls: string }> = {
         aprovado:  { label: 'Aprovado',  cls: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' },
@@ -536,72 +384,32 @@ sales.forEach(s => {
     };
 
     const periodLabels: Record<Period, string> = {
-        hoje: 'Hoje', semana: 'Semana', mes: 'Mês', ano: 'Ano', custom: 'Personalizado'
+        hoje: 'Hoje', semana: 'Semana', mes: 'Mês', ano: 'Ano', custom: 'Personalizado',
     };
 
-    // ── Helpers de meta por aba ───────────────────────────────────────────────
-
-    const currentGoalLoading = activeTab === 'individual' ? goalLoading : teamGoalLoading;
-    // Na aba Individual, só exibe meta se for realmente individual (userId = seller.id).
-    // Se activeGoal.userId for null significa que useActiveGoal retornou o fallback global — não exibir.
-    const individualGoal = activeGoal?.userId === seller.id ? activeGoal : null;
-    const currentGoal    = activeTab === 'individual' ? individualGoal : teamGoal;
-    const noMetaLabel        = activeTab === 'individual'
-        ? 'Sem meta individual definida'
-        : 'Sem meta global definida';
-
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            key="global"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             className="flex flex-col gap-6 pb-10"
         >
-            {/* ── Back button ── */}
-            <button
-                onClick={onBack}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium w-fit"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                Voltar à lista
-            </button>
-
-            {/* ── Abas Individual / Time ── */}
-            <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
-                {(['individual', 'team'] as const).map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            activeTab === tab
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                : 'text-slate-400 hover:text-white'
-                        }`}
-                    >
-                        {tab === 'individual' ? 'Individual' : 'Global'}
-                    </button>
-                ))}
-            </div>
-
-            {/* ── HEADER ── */}
+            {/* ── HEADER ─────────────────────────────────────────────────────── */}
             <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-2xl p-6 space-y-5">
-                {/* Top row: identity + period filter */}
+                {/* Identity + period filter */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        {seller.avatarUrl ? (
-                            <img src={seller.avatarUrl} alt="" className="w-14 h-14 rounded-full border-2 border-slate-700 object-cover" />
-                        ) : (
-                            <div className="w-14 h-14 rounded-full bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center text-blue-400 text-xl font-bold">
-                                {seller.name.charAt(0).toUpperCase()}
-                            </div>
-                        )}
+                        <div className="w-14 h-14 rounded-full bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center text-blue-400">
+                            <Globe className="w-7 h-7" />
+                        </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white">{seller.name}</h2>
-                            <p className="text-sm text-slate-500 mt-0.5">{seller.email}</p>
+                            <h2 className="text-2xl font-bold text-white">Vendas Globais</h2>
+                            <p className="text-sm text-slate-500 mt-0.5">Consolidado da empresa</p>
                             <span className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                                <Star className="w-3 h-3" /> Vendedor
+                                <Building2 className="w-3 h-3" /> Empresa
                             </span>
                         </div>
                     </div>
@@ -651,34 +459,29 @@ sales.forEach(s => {
                     </div>
                 </div>
 
-                {/* Meta progress — tab-aware */}
-                {currentGoalLoading ? (
-                    <div className="space-y-2">
-                        <div className="h-3 bg-slate-800 rounded-full overflow-hidden animate-pulse" />
-                        <div className="h-2 w-32 bg-slate-800 rounded animate-pulse" />
-                    </div>
-                ) : !currentGoal ? (
+                {/* Global goal progress bar */}
+                {!globalGoal ? (
                     <div className="flex items-center gap-2 text-xs text-slate-500 italic">
                         <Target className="w-3.5 h-3.5 flex-shrink-0" />
-                        {noMetaLabel}
+                        Sem meta global definida
                     </div>
                 ) : (
                     <div className="space-y-2">
                         <div className="flex justify-between text-xs font-medium">
-                            <span className="text-slate-400">Meta: {fmt.format(activeFinancialKpis.metaMensal)}</span>
-                            <span className={activeFinancialKpis.metaPct >= 100 ? 'text-emerald-400 font-bold' : 'text-white'}>
-                                {activeFinancialKpis.metaPct.toFixed(1)}% atingida
+                            <span className="text-slate-400">Meta global: {fmt.format(kpis.metaMensal)}</span>
+                            <span className={kpis.metaPct >= 100 ? 'text-emerald-400 font-bold' : 'text-white'}>
+                                {kpis.metaPct.toFixed(1)}% atingida
                             </span>
                         </div>
                         <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${activeFinancialKpis.metaPct}%` }}
+                                animate={{ width: `${kpis.metaPct}%` }}
                                 transition={{ duration: 0.8, ease: 'easeOut' }}
                                 className={`h-full rounded-full ${
-                                    activeFinancialKpis.metaPct >= 100 ? 'bg-emerald-500' :
-                                    activeFinancialKpis.metaPct >= 70  ? 'bg-blue-500' :
-                                    activeFinancialKpis.metaPct >= 40  ? 'bg-amber-500' : 'bg-red-500'
+                                    kpis.metaPct >= 100 ? 'bg-emerald-500' :
+                                    kpis.metaPct >= 70  ? 'bg-blue-500' :
+                                    kpis.metaPct >= 40  ? 'bg-amber-500' : 'bg-red-500'
                                 }`}
                             />
                         </div>
@@ -686,48 +489,35 @@ sales.forEach(s => {
                 )}
 
                 {/* Key metrics row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 pt-2 border-t border-white/5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 pt-2 border-t border-white/5">
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Faturado</p>
-                        <p className="text-lg font-bold text-white">{fmt.format(activeFinancialKpis.faturamento)}</p>
+                        <p className="text-lg font-bold text-white">{fmt.format(kpis.faturamento)}</p>
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ticket Médio</p>
-                        <p className="text-lg font-bold text-white">{fmt.format(activeFinancialKpis.ticketMedio)}</p>
+                        <p className="text-lg font-bold text-white">{fmt.format(kpis.ticketMedio)}</p>
                     </div>
                     <div className="space-y-0.5">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ranking</p>
-                        <p className="text-lg font-bold text-amber-400">
-                            {kpis.rankingPos > 0 ? `${kpis.rankingPos}º/${kpis.rankingTotal}` : '—'}
-                        </p>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Vendas</p>
+                        <p className="text-lg font-bold text-blue-400">{kpis.totalVendas}</p>
                     </div>
                     <div className="space-y-0.5">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Faltam</p>
-                        <p className={`text-lg font-bold ${activeFinancialKpis.faltamParaMeta === 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {activeFinancialKpis.faltamParaMeta === 0 ? '🎉 Meta!' : fmt.format(activeFinancialKpis.faltamParaMeta)}
+                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Crescimento</p>
+                        <p className={`text-lg font-bold ${kpis.crescimento >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {kpis.crescimento >= 0 ? '+' : ''}{kpis.crescimento.toFixed(1)}%
                         </p>
                     </div>
                     {period === 'mes' && (
                         <div className="space-y-0.5">
                             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Meta/dia</p>
-                            <p className="text-lg font-bold text-blue-400">{fmt.format(activeFinancialKpis.metaDiaria)}</p>
+                            <p className="text-lg font-bold text-blue-400">{fmt.format(kpis.metaDiaria)}</p>
                         </div>
                     )}
-                    <div className="space-y-0.5">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Score</p>
-                        <div className="flex items-center gap-2">
-                            <p className={`text-lg font-bold ${
-                                kpis.score >= 80 ? 'text-emerald-400' :
-                                kpis.score >= 60 ? 'text-blue-400' :
-                                kpis.score >= 40 ? 'text-amber-400' : 'text-red-400'
-                            }`}>{kpis.score}</p>
-                            <Zap className="w-3.5 h-3.5 text-amber-400" />
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            {/* ── KPI CARDS ── */}
+            {/* ── KPI CARDS ──────────────────────────────────────────────────── */}
             {loading ? (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -736,35 +526,63 @@ sales.forEach(s => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* KPI 1 – Faturamento */}
+                    {/* Faturamento Total */}
                     <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
                                 <DollarSign className="w-4 h-4 text-blue-400" />
                             </div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Faturamento</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Faturamento Total</p>
                         </div>
-                        <p className="text-2xl font-bold text-white">{fmt.format(activeFinancialKpis.faturamento)}</p>
-                        <p className="text-xs text-slate-600">{kpis.total} operações no período</p>
+                        <p className="text-2xl font-bold text-white">{fmt.format(kpis.faturamento)}</p>
+                        <p className="text-xs text-slate-600">{kpis.totalVendas} leads ganhos no período</p>
                     </div>
 
-                    {/* KPI 2 – Crescimento */}
+                    {/* Crescimento */}
                     <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${activeFinancialKpis.crescimento >= 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
-                                {activeFinancialKpis.crescimento >= 0
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpis.crescimento >= 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                                {kpis.crescimento >= 0
                                     ? <TrendingUp className="w-4 h-4 text-emerald-400" />
                                     : <TrendingDown className="w-4 h-4 text-red-400" />}
                             </div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crescimento</p>
                         </div>
-                        <p className={`text-2xl font-bold ${activeFinancialKpis.crescimento >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {activeFinancialKpis.crescimento >= 0 ? '+' : ''}{activeFinancialKpis.crescimento.toFixed(1)}%
+                        <p className={`text-2xl font-bold ${kpis.crescimento >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {kpis.crescimento >= 0 ? '+' : ''}{kpis.crescimento.toFixed(1)}%
                         </p>
-                        <p className="text-xs text-slate-600">vs período anterior ({fmt.format(activeFinancialKpis.prevFaturamento)})</p>
+                        <p className="text-xs text-slate-600">vs período anterior ({fmt.format(kpis.prevFaturamento)})</p>
                     </div>
 
-                    {/* KPI 3 – Banco campeão */}
+                    {/* Meta Global */}
+                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                <Target className="w-4 h-4 text-amber-400" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Meta Global</p>
+                        </div>
+                        <p className="text-2xl font-bold text-white">{kpis.metaPct.toFixed(1)}%</p>
+                        <p className="text-xs text-slate-600">
+                            {globalGoal
+                                ? kpis.faltamParaMeta === 0 ? '🎉 Meta atingida!' : `${fmt.format(kpis.faltamParaMeta)} restantes`
+                                : 'Sem meta definida'}
+                        </p>
+                    </div>
+
+                    {/* Ticket Médio */}
+                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                                <Award className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ticket Médio</p>
+                        </div>
+                        <p className="text-2xl font-bold text-white">{fmt.format(kpis.ticketMedio)}</p>
+                        <p className="text-xs text-slate-600">por lead ganho</p>
+                    </div>
+
+                    {/* Banco Campeão */}
                     <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
@@ -774,63 +592,36 @@ sales.forEach(s => {
                         </div>
                         <p className="text-2xl font-bold text-white truncate">{kpis.bankData[0]?.name ?? '—'}</p>
                         <p className="text-xs text-slate-600">
-                            {kpis.bankData[0] ? fmt.format(kpis.bankData[0].value) + ' em vendas' : 'Nenhuma venda'}
+                            {kpis.bankData[0] ? fmt.format(kpis.bankData[0].value) + ' em operações' : 'Nenhuma venda'}
                         </p>
                     </div>
 
-                    {/* KPI 4 – Tipo campeão */}
-                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-                                <Briefcase className="w-4 h-4 text-orange-400" />
-                            </div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo Mais Vendido</p>
-                        </div>
-                        <p className="text-2xl font-bold text-white truncate">{kpis.typeData[0]?.name ?? '—'}</p>
-                        <p className="text-xs text-slate-600">
-                            {kpis.typeData[0] ? fmt.format(kpis.typeData[0].value) + ' em vendas' : 'Nenhuma venda'}
-                        </p>
-                    </div>
-
-                    {/* KPI 5 – Conversão */}
+                    {/* Total de Vendas */}
                     <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                <Target className="w-4 h-4 text-emerald-400" />
+                                <Zap className="w-4 h-4 text-emerald-400" />
                             </div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxa de Conversão</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total de Vendas</p>
                         </div>
-                        <p className="text-2xl font-bold text-emerald-400">{kpis.conversao.toFixed(1)}%</p>
-                        <p className="text-xs text-slate-600">{kpis.aprovados} aprovados de {kpis.total}</p>
-                    </div>
-
-                    {/* KPI 6 – Tempo médio */}
-                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-slate-700/50 border border-slate-600/30 flex items-center justify-center">
-                                <Clock className="w-4 h-4 text-slate-400" />
-                            </div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tempo Médio</p>
-                        </div>
-                        <p className="text-2xl font-bold text-white">{kpis.tempoMedio.toFixed(0)} dias</p>
-                        <p className="text-xs text-slate-600">do cadastro ao fechamento</p>
+                        <p className="text-2xl font-bold text-white">{kpis.totalVendas}</p>
+                        <p className="text-xs text-slate-600">leads ganhos no período</p>
                     </div>
                 </div>
             )}
 
-            {/* ── CHARTS ── */}
+            {/* ── CHARTS ─────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Evolution chart */}
                 <GlassCard className="lg:col-span-2 rounded-xl p-6 space-y-4">
                     <h3 className="text-sm font-bold text-white">
-                        Evolução de Vendas — {periodLabels[period]}
+                        Evolução de Faturamento — {periodLabels[period]}
                     </h3>
                     <SVGLineChart data={kpis.dailyData} color="#3b82f6" />
                 </GlassCard>
 
                 {/* Breakdowns */}
                 <div className="flex flex-col gap-4">
-                    {/* By bank */}
                     <GlassCard className="rounded-xl p-5 space-y-4 flex-1">
                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                             <Building2 className="w-3 h-3" /> Por Banco
@@ -853,7 +644,6 @@ sales.forEach(s => {
                         )}
                     </GlassCard>
 
-                    {/* By operation type */}
                     <GlassCard className="rounded-xl p-5 space-y-4 flex-1">
                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                             <Briefcase className="w-3 h-3" /> Por Tipo de Operação
@@ -878,9 +668,45 @@ sales.forEach(s => {
                 </div>
             </div>
 
-            {/* ── TABELA DETALHADA ── */}
+            {/* ── RANKING DE VENDEDORES ───────────────────────────────────────── */}
+            {kpis.sellerRanking.length > 0 && (
+                <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-4">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-amber-400" />
+                        Ranking de Vendedores
+                        <span className="text-xs font-normal text-slate-500">({periodLabels[period]})</span>
+                    </h3>
+                    <div className="space-y-3">
+                        {kpis.sellerRanking.slice(0, 10).map((seller, idx) => (
+                            <div key={seller.id} className="flex items-center gap-3">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                                    idx === 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                    idx === 1 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
+                                    idx === 2 ? 'bg-orange-700/20 text-orange-400 border border-orange-700/30' :
+                                    'bg-slate-800 text-slate-500 border border-slate-700'
+                                }`}>
+                                    {idx + 1}
+                                </div>
+                                <BarChartRow
+                                    name={seller.name}
+                                    value={seller.value}
+                                    maxValue={kpis.sellerRanking[0].value}
+                                    formatter={fmt.format.bind(fmt)}
+                                    color={
+                                        idx === 0 ? '#f59e0b' :
+                                        idx === 1 ? '#94a3b8' :
+                                        idx === 2 ? '#f97316' : '#3b82f6'
+                                    }
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── TABELA DETALHADA ────────────────────────────────────────────── */}
             <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl overflow-hidden">
-                {/* Table header + filters */}
+                {/* Header + filters */}
                 <div className="p-5 border-b border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
                         <Filter className="w-4 h-4 text-slate-500" />
@@ -922,6 +748,7 @@ sales.forEach(s => {
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-slate-800/60 bg-slate-950/30">
+                                <th className="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Vendedor</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Banco</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tipo</th>
@@ -934,6 +761,9 @@ sales.forEach(s => {
                             {paginatedSales.length > 0 ? (
                                 paginatedSales.map(sale => (
                                     <tr key={sale.id} className="hover:bg-slate-900/30 transition-colors">
+                                        <td className="px-5 py-3.5 text-sm text-slate-400">
+                                            {sellers.find(s => s.id === sale.seller_id)?.name ?? '—'}
+                                        </td>
                                         <td className="px-5 py-3.5 text-sm text-white font-medium">
                                             {sale.client_name || '—'}
                                         </td>
@@ -954,7 +784,7 @@ sales.forEach(s => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="px-5 py-12 text-center text-slate-500 italic text-sm">
+                                    <td colSpan={7} className="px-5 py-12 text-center text-slate-500 italic text-sm">
                                         {loading ? 'Carregando...' : 'Nenhuma operação encontrada para os filtros selecionados.'}
                                     </td>
                                 </tr>
@@ -998,8 +828,7 @@ sales.forEach(s => {
                                         >
                                             {n}
                                         </button>
-                                ))
-                            }
+                                ))}
                             <button
                                 onClick={() => setPage(p => Math.min(p + 1, totalPages))}
                                 disabled={page === totalPages}
@@ -1015,4 +844,4 @@ sales.forEach(s => {
     );
 };
 
-export default SellerDetail360;
+export default GlobalSales360;

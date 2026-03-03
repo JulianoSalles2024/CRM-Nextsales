@@ -87,11 +87,17 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
                             <p className="text-slate-400">{metrics.currentMembers} / {group.memberGoal}</p>
                         </div>
                          <div className="w-full bg-slate-700 rounded-full h-2">
-                            <div className="bg-violet-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+                            <div className="bg-gradient-to-r from-sky-500 to-blue-500 h-2 rounded-full"
+  style={{ width: `${progress}%` }}></div>
                         </div>
                     </div>
                 )}
-                <button onClick={() => onSelect(group.id)} className="w-full bg-slate-700 text-white font-semibold py-2 rounded-md hover:bg-slate-600 transition-colors text-sm">Ver Membros</button>
+                <button
+  onClick={() => onSelect(group.id)}
+   className="w-full bg-sky-500 text-white font-semibold py-2 rounded-md hover:bg-sky-400 transition-colors text-sm"
+>
+  Ver Membros
+</button>
             </div>
         </FlatCard>
     );

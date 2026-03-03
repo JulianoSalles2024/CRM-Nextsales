@@ -90,15 +90,18 @@ const response = await fetch('/api/ai/generate', {
   }
 
   async runTool(tool: AIToolConfig, variables: Record<string, any>, systemInstruction?: string): Promise<string> {
-    let prompt = tool.basePrompt;
-    
-    // Simple variable replacement
+    // Para sdr_vendas: se houver systemInstruction customizado, usa exclusivamente ele.
+    // Para todas as outras tools: usa basePrompt normalmente.
+    const useCustomPrompt = tool.id === 'sdr_vendas' && !!systemInstruction?.trim();
+    let prompt = useCustomPrompt ? systemInstruction! : tool.basePrompt;
+
+    // Simple variable replacement (continua funcionando em ambos os casos)
     Object.entries(variables).forEach(([key, value]) => {
       const placeholder = `{{${key}}}`;
       prompt = prompt.replace(new RegExp(placeholder, 'g'), String(value));
     });
 
-    return this.generate(prompt, systemInstruction);
+    return this.generate(prompt, useCustomPrompt ? undefined : systemInstruction);
   }
 
   async generateSalesScript(tool: AIToolConfig, dealTitle: string, scriptType: string, context: string): Promise<string> {
