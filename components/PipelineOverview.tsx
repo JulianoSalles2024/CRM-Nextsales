@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react';
 import { ColumnData, Lead } from '../types';
 import { ChevronsRight } from 'lucide-react';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface PipelineOverviewProps {
     columns: ColumnData[];
@@ -30,10 +31,8 @@ const PipelineOverview: React.FC<PipelineOverviewProps> = ({ columns, leads, onN
     }, [columns, leads]);
 
     return (
-        <div 
-            onClick={() => onNavigate('Pipeline')}
-            className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-full flex flex-col cursor-pointer hover:border-slate-700 hover:shadow-lg transition-all duration-200"
-        >
+        <div onClick={() => onNavigate('Pipeline')} className="h-full">
+        <FlatCard className="p-6 h-full flex flex-col cursor-pointer hover:border-slate-700 hover:shadow-lg transition-all duration-200">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="font-bold text-white text-lg">Funil de Vendas</h2>
                 <ChevronsRight className="w-5 h-5 text-slate-500" />
@@ -56,6 +55,7 @@ const PipelineOverview: React.FC<PipelineOverviewProps> = ({ columns, leads, onN
                     </div>
                 ))}
             </div>
+        </FlatCard>
         </div>
     );
 };

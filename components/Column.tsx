@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Card from './Card';
 import type { ColumnData, Lead, User, CardDisplaySettings, Id, Task } from '../types';
 import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { GlassSection } from '@/src/shared/components/GlassSection';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface ColumnProps {
     column: ColumnData;
@@ -46,7 +46,7 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
             className="flex-shrink-0 h-full"
         >
-            <GlassSection className={`flex flex-col h-full p-0 transition-colors ${isOver ? 'bg-violet-100/10 dark:bg-slate-800/80' : ''}`}>
+            <FlatCard className={`flex flex-col h-full p-0 transition-colors ${isOver ? 'bg-slate-800/80' : ''}`}>
                 <AnimatePresence initial={false}>
                     {isMinimized ? (
                         <motion.div
@@ -125,7 +125,7 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </GlassSection>
+            </FlatCard>
         </motion.div>
     );
 };

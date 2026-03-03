@@ -6,6 +6,7 @@ import type { Lead, Id, GroupInfo, UpdateLeadData, Group, GroupAnalysis, CreateG
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { GlassCard } from '@/src/shared/components/GlassCard';
 import { GlassSection } from '@/src/shared/components/GlassSection';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface GroupsViewProps {
     group: Group;
@@ -184,8 +185,8 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
     const handleExportCSV = () => {
         const headers = [
             'Nome', 'Empresa', 'Email', 'Telefone', 
-            'Entrou no Grupo', 'Permanece no Grupo', 'Onboarding Realizado', 
-            'Data Call Onboarding', 'Churn', 'Data de Saída'
+            'Entrou no Grupo', 'Permanece no Grupo', 'Fechado', 
+            'Data Fechamento', 'Churn', 'Data de Saída'
         ];
 
         const escapeCsvCell = (cellData: any): string => {
@@ -260,10 +261,10 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <button onClick={onBack} className="p-2 rounded-full text-slate-400 hover:bg-slate-800 transition-colors">
-                            <ChevronLeft className="w-6 h-6 text-violet-500/70 hover:text-violet-500" />
+                            <ChevronLeft className="w-6 h-6 text-blue-500/70 hover:text-blue-500" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-white">Membros do Grupo: {group.name}</h1>
+                            <h1 className="text-3xl font-bold text-white">Membros do Grupo: {group.name}</h1>
                             <p className="text-slate-400">{group.description || 'Gerencie os membros deste grupo.'}</p>
                         </div>
                     </div>
@@ -292,7 +293,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <KpiCard icon={Users} title="Membros Atuais" value={groupMetrics.currentMembers.toString()} colorClass="text-violet-400" />
-                    <KpiCard icon={UserCheck} title="Onboarding" value={`${groupMetrics.onboardingRate.toFixed(0)}%`} colorClass="text-green-400" />
+                    <KpiCard icon={UserCheck} title="Fechado" value={`${groupMetrics.onboardingRate.toFixed(0)}%`} colorClass="text-green-400" />
                     <KpiCard icon={UserX} title="Churn" value={`${groupMetrics.churnRate.toFixed(1)}%`} colorClass="text-red-400" />
                     {group.memberGoal ? (
                         <KpiCard icon={Goal} title="Meta" value={`${groupMetrics.currentMembers} / ${group.memberGoal}`} colorClass="text-blue-400" />
@@ -367,7 +368,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                     )}
                 </AnimatePresence>
                 
-                <GlassCard className="overflow-hidden flex-1 flex flex-col p-0">
+                <FlatCard className="overflow-hidden flex-1 flex flex-col p-0">
                     <div className="overflow-auto h-full">
                         <table className="min-w-full divide-y divide-slate-700">
                             <thead className="bg-slate-900/50 sticky top-0 z-10">
@@ -375,8 +376,8 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-1/5">Lead</th>
                                     <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Entrou</th>
                                     <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Permanece</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Onboarding</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Data Call</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Fechado</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Data Fechamento</th>
                                     <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Churn</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Data de Saída</th>
                                     <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Ações</th>
@@ -423,7 +424,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                             </tbody>
                         </table>
                     </div>
-                </GlassCard>
+                </FlatCard>
             </div>
             <AnimatePresence>
                 {leadToRemove && (

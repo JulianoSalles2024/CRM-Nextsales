@@ -1,11 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Playbook, Id, ColumnData } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, PlusCircle, Edit, Trash2, MoreVertical, FileText, ChevronDown } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreVertical, FileText, ChevronDown } from 'lucide-react';
 import CreateEditPlaybookModal from './CreateEditPlaybookModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import { GlassCard } from '@/src/shared/components/GlassCard';
-import { GlassSection } from '@/src/shared/components/GlassSection';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface PlaybookSettingsProps {
     initialPlaybooks: Playbook[];
@@ -50,13 +49,11 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
 
     return (
         <>
-            <GlassCard 
-                className="p-0"
-                header={
+            <FlatCard>
+                <div className="px-6 py-4 border-b border-slate-800">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                                <BookOpen className="w-5 h-5 text-violet-400" />
+                            <h2 className="text-3xl font-bold text-white">
                                 Playbooks de Cadência
                             </h2>
                             <p className="text-sm text-slate-400 mt-1">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
@@ -66,12 +63,12 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                             <span>Novo Playbook</span>
                         </button>
                     </div>
-                }
-            >
+                </div>
+                <div className="p-6">
                 <div className="space-y-3">
                     {playbooks.length > 0 ? (
                         playbooks.map(playbook => (
-                            <GlassSection key={playbook.id} className="p-0 overflow-hidden">
+                            <FlatCard key={playbook.id} className="p-0 overflow-hidden">
                                 <div className="p-4 flex items-center gap-4">
                                     <button onClick={() => setExpandedPlaybookId(expandedPlaybookId === playbook.id ? null : playbook.id)} className="p-1 text-slate-400 hover:text-white">
                                         <ChevronDown className={`w-5 h-5 transition-transform ${expandedPlaybookId === playbook.id ? 'rotate-180' : ''}`} />
@@ -106,7 +103,7 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                                                 <ul className="mt-4 space-y-2">
                                                     {playbook.steps.map((step, index) => (
                                                         <li key={index} className="flex items-center gap-3 text-sm">
-                                                            <span className="font-bold text-violet-400 w-10">D+{step.day}</span>
+                                                            <span className="font-bold text-blue-400 w-10">D+{step.day}</span>
                                                             <span className="font-semibold text-slate-300 w-20">{step.type}</span>
                                                             <span className="text-slate-400 flex-1">{step.instructions}</span>
                                                         </li>
@@ -116,7 +113,7 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            </GlassSection>
+                            </FlatCard>
                         ))
                     ) : (
                         <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-lg">
@@ -126,7 +123,8 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                         </div>
                     )}
                 </div>
-            </GlassCard>
+                </div>
+            </FlatCard>
 
             <AnimatePresence>
                 {isModalOpen && (

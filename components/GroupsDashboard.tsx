@@ -3,8 +3,7 @@ import { Group, Lead, Id } from '../types';
 import { Users, PlusCircle, MoreVertical, Edit, Trash2, Link as LinkIcon, Users as MembersIcon, UserPlus, TrendingDown, CheckCircle, Target, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import { GlassCard } from '@/src/shared/components/GlassCard';
-import { GlassSection } from '@/src/shared/components/GlassSection';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface GroupCardProps {
     group: Group;
@@ -29,7 +28,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
     };
 
     return (
-        <GlassCard className="flex flex-col transition-all duration-200 ease-in-out hover:border-violet-500/80 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-900/30 p-0 overflow-hidden">
+        <FlatCard className="flex flex-col transition-all duration-200 ease-in-out hover:border-blue-500/80 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-900/30 p-0 overflow-hidden">
             {/* Header */}
             <div className="p-5 border-b border-white/10">
                 <div className="flex justify-between items-start">
@@ -94,7 +93,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
                 )}
                 <button onClick={() => onSelect(group.id)} className="w-full bg-slate-700 text-white font-semibold py-2 rounded-md hover:bg-slate-600 transition-colors text-sm">Ver Membros</button>
             </div>
-        </GlassCard>
+        </FlatCard>
     );
 };
 
@@ -143,9 +142,8 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
         <div className="flex flex-col gap-6 h-full">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Users className="w-8 h-8 text-violet-500" />
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Dashboard de Grupos</h1>
+                        <h1 className="text-3xl font-bold text-white">Dashboard de Grupos</h1>
                         <p className="text-slate-400">Visão geral da saúde e performance de suas comunidades</p>
                     </div>
                 </div>

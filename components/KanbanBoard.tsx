@@ -1,6 +1,7 @@
 
 
 import React, { useState, useMemo } from 'react';
+import FlatCard from '@/components/ui/FlatCard';
 import {
     DndContext,
     DragEndEvent,
@@ -171,7 +172,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         </DragOverlay>
                     </DndContext>
                 ) : (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                    <FlatCard className="overflow-hidden">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-950 border-b border-slate-800">
@@ -218,7 +219,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    </FlatCard>
                 )}
             </div>
 
