@@ -34,7 +34,7 @@ export function useTasks(companyId: string | null) {
     }
 
     if (result.error) {
-      if (result.error.code !== TABLE_NOT_FOUND) console.error('useTasks fetch error:', result.error);
+      if (result.error.code !== TABLE_NOT_FOUND) safeError('useTasks fetch error:', result.error);
     } else {
       setTasks((result.data ?? []).map(mapTaskFromDb));
     }
@@ -53,7 +53,7 @@ export function useTasks(companyId: string | null) {
       .single();
     if (error) {
       if (error.code === TABLE_NOT_FOUND) {
-        console.warn('useTasks: tasks table not found, skipping createTask');
+        safeWarn('useTasks: tasks table not found, skipping createTask');
         return { ...task, id: `tmp-${Date.now()}` } as Task;
       }
       throw error;
@@ -71,7 +71,7 @@ export function useTasks(companyId: string | null) {
       .insert(taskList.map(t => mapTaskToDb(t)));
     if (error) {
       if (error.code === TABLE_NOT_FOUND) {
-        console.warn('useTasks: tasks table not found, skipping createManyTasks');
+        safeWarn('useTasks: tasks table not found, skipping createManyTasks');
         return;
       }
       throw error;
@@ -87,7 +87,7 @@ export function useTasks(companyId: string | null) {
       .eq('id', id);
     if (error) {
       if (error.code === TABLE_NOT_FOUND) {
-        console.warn('useTasks: tasks table not found, skipping updateTask');
+        safeWarn('useTasks: tasks table not found, skipping updateTask');
         return;
       }
       throw error;
@@ -99,7 +99,7 @@ export function useTasks(companyId: string | null) {
     const { error } = await supabase.from('tasks').delete().eq('id', id);
     if (error) {
       if (error.code === TABLE_NOT_FOUND) {
-        console.warn('useTasks: tasks table not found, skipping deleteTask');
+        safeWarn('useTasks: tasks table not found, skipping deleteTask');
         return;
       }
       throw error;
@@ -112,7 +112,7 @@ export function useTasks(companyId: string | null) {
     const { error } = await supabase.from('tasks').delete().in('id', ids);
     if (error) {
       if (error.code === TABLE_NOT_FOUND) {
-        console.warn('useTasks: tasks table not found, skipping deleteManyTasks');
+        safeWarn('useTasks: tasks table not found, skipping deleteManyTasks');
         return;
       }
       throw error;

@@ -26,7 +26,7 @@ export function useTeamMembers(companyId: string | null) {
       .eq('is_archived', false);
 
     if (error) {
-      console.error('useTeamMembers fetch error:', error);
+      safeError('useTeamMembers fetch error:', error);
     } else {
       setMembers(
         (data ?? []).map(row => ({

@@ -44,7 +44,7 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
         .rpc('validate_invite', { p_token: token });
 
       if (error) {
-        console.error('[InvitePage] validate_invite error:', {
+        safeError('[InvitePage] validate_invite error:', {
           message: error.message,
           code: error.code,
           details: error.details,
@@ -55,7 +55,7 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
       }
 
       if (!data || data.length === 0) {
-        console.warn('[InvitePage] token not found:', token);
+        safeWarn('[InvitePage] token not found:', token);
         setState({ status: 'invalid', message: 'Convite não encontrado.' });
         return;
       }

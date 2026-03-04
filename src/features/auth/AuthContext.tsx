@@ -66,12 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .eq('id', user.id)
       .single()
       .then(({ data, error }) => {
-        console.log('[AuthContext] user.id:', user.id);
-        console.log('[AuthContext] email:', user.email);
-        console.log('[AuthContext] role from DB:', data?.role ?? null, '| is_active:', data?.is_active ?? null, '| company_id:', data?.company_id ?? null, '| error:', error?.message ?? null);
-
         if (data?.is_active === false) {
-          console.warn('[AuthContext] user is blocked — signing out');
           setBlockedError('Usuário bloqueado. Contate o administrador.');
           supabase.auth.signOut();
           // isRoleReady will be set true when user becomes null (branch above)
@@ -79,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         const role = (data?.role as AppRole) ?? 'user';
-        console.log('[AuthContext] currentUserRole final:', role);
         setCurrentUserRole(role);
         setCompanyId((data?.company_id as string) ?? null);
         setIsRoleReady(true);

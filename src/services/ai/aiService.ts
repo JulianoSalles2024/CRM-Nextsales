@@ -84,7 +84,7 @@ const response = await fetch('/api/ai/generate', {
       const data = await response.json();
       return data.text || "";
     } catch (error) {
-      console.error("AI Generation Error:", error);
+      safeError("AI Generation Error:", error);
       throw error;
     }
   }
@@ -126,7 +126,7 @@ const response = await fetch('/api/ai/generate', {
     try {
       return JSON.parse(responseText || "{}");
     } catch (e) {
-      console.error("Failed to parse deal analysis JSON", e);
+      safeError("Failed to parse deal analysis JSON", e);
       throw new Error("Invalid AI response format");
     }
   }

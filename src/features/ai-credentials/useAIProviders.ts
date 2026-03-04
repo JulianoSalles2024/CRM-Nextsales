@@ -29,7 +29,7 @@ export const useAIProviders = () => {
         ...data
       }));
     } catch (error) {
-      console.error('Error loading credentials:', error);
+      safeError('Error loading credentials:', error);
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +53,7 @@ export const useAIProviders = () => {
       await aiProvidersService.saveCredential(credential, companyId);
       alert('Configurações salvas com sucesso!');
     } catch (error) {
-      console.error('Error saving credential:', error);
+      safeError('Error saving credential:', error);
       alert('Erro ao salvar configurações.');
       throw error;
     }
@@ -99,7 +99,7 @@ export const useAIProviders = () => {
       await aiProvidersService.disconnectCredential(provider, companyId);
       updateCredential(provider, { apiKey: '', status: 'not_configured' });
     } catch (error) {
-      console.error('Error disconnecting credential:', error);
+      safeError('Error disconnecting credential:', error);
       alert('Erro ao desconectar.');
       throw error;
     }

@@ -11,7 +11,7 @@ export const useAIState = () => {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Failed to parse AI state', e);
+        safeError('Failed to parse AI state', e);
       }
     }
     return {

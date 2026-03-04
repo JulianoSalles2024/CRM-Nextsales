@@ -1,3 +1,4 @@
+import { safeError } from '@/src/utils/logger';
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Loader2, Copy, Save, X, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -89,7 +90,7 @@ const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveD
             const jsonResponse = await generateEmailSuggestion(objective, tones, includeLeadInfo, lead);
             setGeneratedEmail(jsonResponse);
         } catch (error) {
-            console.error("Error generating email:", error);
+            safeError("Error generating email:", error);
             showNotification('Falha ao gerar o e-mail. Verifique a configuração da sua chave de API ou tente novamente.', 'error');
         } finally {
             setIsLoading(false);

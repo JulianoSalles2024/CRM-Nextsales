@@ -312,13 +312,13 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             onUpdatePipeline={(newColumns: any[]) => {
                 setColumns(newColumns);
                 if (activeBoardId) {
-                    saveBoardStages(activeBoardId, newColumns).catch(console.error);
+                    saveBoardStages(activeBoardId, newColumns).catch(safeError);
                 }
                 const updates = leads.map((lead: any) => ({
                     id: lead.id,
                     data: { probability: calculateProbabilityForStage(lead.columnId, newColumns) },
                 }));
-                bulkUpdateLeads(updates).catch(console.error);
+                bulkUpdateLeads(updates).catch(safeError);
                 showNotification("Pipeline salvo!", 'success');
             }}
             onUpdateUsers={onUpdateUsers}

@@ -21,7 +21,7 @@ export function useGoals(companyId: string | null) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('useGoals fetch error:', error);
+      safeError('useGoals fetch error:', error);
     } else {
       setGoals(
         (data ?? []).map(row => ({

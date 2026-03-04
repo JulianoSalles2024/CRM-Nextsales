@@ -21,7 +21,7 @@ export const aiGenerator = {
                     throw new Error('Unsupported provider');
             }
         } catch (error: any) {
-            console.error('AI Generation Error:', error);
+            safeError('AI Generation Error:', error);
             throw new Error(error.message || 'Failed to generate response');
         }
     }

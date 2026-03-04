@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { safeError } from '@/src/utils/logger';
 
 // Env vars injected by Vite (VITE_ prefix) at build / dev time.
 // Fallback URL is the active project — safe to hardcode (it's public).
@@ -13,14 +14,11 @@ const supabaseAnonKey =
   'NOT_CONFIGURED';
 
 if (supabaseAnonKey === 'NOT_CONFIGURED') {
-  console.error(
+  safeError(
     '[Supabase] ⚠️  VITE_SUPABASE_ANON_KEY não configurada!\n' +
     '  Adicione ao .env.local:\n' +
     '  VITE_SUPABASE_ANON_KEY=<anon key do projeto fhkhamwrfwtacwydukvb>',
   );
 }
-
-// Diagnostic — confirma qual projeto está ativo; remover após validação
-console.log('[Supabase] URL ativa:', supabaseUrl);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

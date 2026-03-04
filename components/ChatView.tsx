@@ -1,3 +1,4 @@
+import { safeError } from '@/src/utils/logger';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Bot, Send, User, Building, DollarSign, Sparkles, FileText, Loader2, MessageSquare, Inbox, FileClock, CheckCircle2, XCircle, MessageCircle as OpenIcon, ChevronDown, Phone, CheckCheck, ChevronRight, ChevronLeft, Mail, Instagram, MessageSquare as WhatsAppIcon } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
@@ -172,7 +173,7 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
             });
             setAiSuggestion(response.text);
         } catch(e) {
-            console.error(e);
+            safeError(e);
             setAiSuggestion("Ocorreu um erro ao contatar a IA. Verifique sua chave de API.");
         } finally {
             setIsLoadingAi(false);

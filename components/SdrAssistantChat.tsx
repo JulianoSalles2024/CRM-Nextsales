@@ -1,3 +1,4 @@
+import { safeError } from '@/src/utils/logger';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Send, Bot, User, Loader2 } from 'lucide-react';
@@ -124,7 +125,7 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: responseText }]);
 
         } catch (error: any) {
-            console.error(error);
+            safeError(error);
             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: `Desculpe, tive um problema ao processar sua solicitação. Erro: ${error.message || 'Desconhecido'}` }]);
         } finally {
             setIsLoading(false);

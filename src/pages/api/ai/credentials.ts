@@ -7,7 +7,6 @@ const CREDENTIALS_DIR = path.resolve(process.cwd(), "credentials");
 export default async function handler(req: any, res: any) {
   if (req.method === 'GET') {
     const { organizationId } = req.query;
-    console.log('[AI CREDENTIALS][GET] organizationId:', organizationId);
     if (!organizationId) return res.status(400).json({ error: "organizationId is required" });
 
     const orgDir = path.join(CREDENTIALS_DIR, organizationId as string);
@@ -36,7 +35,6 @@ export default async function handler(req: any, res: any) {
 
   if (req.method === 'POST') {
     const { organizationId, provider, apiKey, model } = req.body;
-    console.log('[AI CREDENTIALS][POST] organizationId:', organizationId);
     if (!organizationId || !provider || !apiKey || !model) {
       return res.status(400).json({ error: "Missing required fields" });
     }

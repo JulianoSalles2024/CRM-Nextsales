@@ -1,3 +1,4 @@
+import { safeError } from '@/src/utils/logger';
 import React, { useMemo, useState, useEffect } from 'react';
 import { ChevronLeft, Download, Users, UserCheck, UserX, Goal, Sparkles, Loader2, Save, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -153,7 +154,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
             setCurrentAnalysis({ content: analysisText, status: 'new' });
             setIsAnalysisMinimized(false);
         } catch(e) {
-            console.error(e);
+            safeError(e);
             setCurrentAnalysis({ content: "Ocorreu um erro ao gerar a análise. Verifique se a chave de API do Gemini está configurada corretamente.", status: 'new' });
             showNotification('Falha ao gerar análise. Verifique a configuração da sua chave de API.', 'error');
         } finally {

@@ -63,7 +63,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
             const item = window.localStorage.getItem(key);
             return item ? JSON.parse(item) : initialValue;
         } catch (error) {
-            console.error(error);
+            safeError(error);
             return initialValue;
         }
     });
@@ -76,7 +76,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
             try {
                 window.localStorage.setItem(key, JSON.stringify(valueRef.current));
             } catch (error) {
-                console.error('Error saving to localStorage:', error);
+                safeError('Error saving to localStorage:', error);
             }
         }, 500);
 
@@ -251,7 +251,7 @@ const App: React.FC = () => {
                     createdAt: new Date().toISOString(),
                 }]);
                 showNotification(`Você tem leads para reativar hoje.`, 'info');
-            }).catch(console.error);
+            }).catch(safeError);
         });
     }, [leads, tasks, createTask, setNotifications, showNotification]);
 
@@ -348,7 +348,7 @@ const App: React.FC = () => {
                 timestamp: new Date().toISOString(),
             });
         } catch (err) {
-            console.error('Failed to log activity:', err);
+            safeError('Failed to log activity:', err);
         }
     }, [createActivity, localUser.name]);
 
@@ -399,7 +399,7 @@ const App: React.FC = () => {
                 showNotification(`Lead "${created.name}" criado.`, 'success');
             }
         } catch (err) {
-            console.error('Failed to save lead:', err);
+            safeError('Failed to save lead:', err);
             showNotification('Erro ao salvar lead.', 'error');
         }
         setCreateLeadModalOpen(false);
@@ -412,7 +412,7 @@ const App: React.FC = () => {
             setSelectedLead(null);
             showNotification('Lead deletado.', 'success');
         } catch (err) {
-            console.error('Failed to delete lead:', err);
+            safeError('Failed to delete lead:', err);
             showNotification('Erro ao deletar lead.', 'error');
         }
     };
@@ -484,7 +484,7 @@ const App: React.FC = () => {
         try {
             await updateLead(leadId, updates);
         } catch (err) {
-            console.error('Failed to move lead:', err);
+            safeError('Failed to move lead:', err);
             showNotification('Erro ao mover lead.', 'error');
             return;
         }
@@ -500,7 +500,7 @@ const App: React.FC = () => {
                 dueDate: new Date().toISOString(),
                 status: 'pending',
             };
-            createTask(newTask).catch(console.error);
+            createTask(newTask).catch(safeError);
             showNotification(`Tarefa de agendamento criada para ${leadToMove.name}.`, 'info');
         }
 
@@ -525,7 +525,7 @@ const App: React.FC = () => {
             await updateLead(lead.id, updates);
             createActivityLog(lead.id, 'status_change', `Lead movido para "${columns.find(c => c.id === columnId)?.title}" (Motivo: ${reason}).`);
         } catch (err) {
-            console.error('Failed to process lost lead:', err);
+            safeError('Failed to process lost lead:', err);
             showNotification('Erro ao processar lead perdido.', 'error');
         }
         setLostLeadInfo(null);
@@ -550,7 +550,7 @@ const App: React.FC = () => {
             showNotification(`Lead "${lead.name}" foi reativado!`, 'success');
             createActivityLog(leadId, 'status_change', 'Lead reativado da lista de recuperação.');
         } catch (err) {
-            console.error('Failed to reactivate lead:', err);
+            safeError('Failed to reactivate lead:', err);
             showNotification('Erro ao reativar lead.', 'error');
         }
     };
@@ -570,7 +570,7 @@ const App: React.FC = () => {
                 showNotification(`Tarefa "${created.title}" criada.`, 'success');
             }
         } catch (err) {
-            console.error('Failed to save task:', err);
+            safeError('Failed to save task:', err);
             showNotification('Erro ao salvar tarefa.', 'error');
         }
         setCreateTaskModalOpen(false);
@@ -583,7 +583,7 @@ const App: React.FC = () => {
             await deleteTaskInDb(taskId);
             showNotification('Tarefa deletada.', 'success');
         } catch (err) {
-            console.error('Failed to delete task:', err);
+            safeError('Failed to delete task:', err);
             showNotification('Erro ao deletar tarefa.', 'error');
         }
     };
@@ -592,7 +592,7 @@ const App: React.FC = () => {
         try {
             await updateTaskInDb(taskId, { status });
         } catch (err) {
-            console.error('Failed to update task status:', err);
+            safeError('Failed to update task status:', err);
             showNotification('Erro ao atualizar tarefa.', 'error');
             return;
         }
@@ -657,7 +657,7 @@ const App: React.FC = () => {
             });
             showNotification(`Playbook "${playbook.name}" aplicado a ${selectedLeadForPlaybook.name}.`, 'success');
         } catch (err) {
-            console.error('Failed to apply playbook:', err);
+            safeError('Failed to apply playbook:', err);
             showNotification('Erro ao aplicar playbook.', 'error');
         }
         setPlaybookModalOpen(false);
@@ -680,7 +680,7 @@ const App: React.FC = () => {
             setSelectedLead(prev => prev?.id === leadId ? { ...prev, activePlaybook: undefined } : prev);
             showNotification(`Cadência desativada para ${lead.name}.`, 'info');
         } catch (err) {
-            console.error('Failed to deactivate playbook:', err);
+            safeError('Failed to deactivate playbook:', err);
             showNotification('Erro ao desativar cadência.', 'error');
         }
     };

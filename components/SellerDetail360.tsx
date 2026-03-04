@@ -385,9 +385,6 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
         setTeamGoal(rawTeamGoal ? { targetValue: rawTeamGoal.goal_value ?? 0 } : null);
         setTeamGoalLoading(false);
 
-        console.log('[SellerDetail360] indWonLeads:', indWonRes.data, '| erro:', indWonRes.error);
-        console.log('[SellerDetail360] teamWonLeads:', teamWonRes.data, '| erro:', teamWonRes.error);
-        console.log('[SellerDetail360] teamGoal:', rawTeamGoal, '| erro:', teamGoalRes.error);
         setPage(1);
         setLoading(false);
     }, [seller.id, period, companyId, customStart, customEnd]);

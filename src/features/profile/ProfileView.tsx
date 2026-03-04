@@ -50,7 +50,7 @@ export const ProfileView: React.FC = () => {
         .single();
 
       if (error) {
-        console.error('[ProfileView] failed to load profile:', error);
+        safeError('[ProfileView] failed to load profile:', error);
         const fallback: ProfileForm = {
           ...defaultProfile,
           role: currentUserRole ? String(currentUserRole).toUpperCase() : defaultProfile.role,
@@ -133,7 +133,7 @@ export const ProfileView: React.FC = () => {
       .single();
 
     if (error) {
-      console.error('[ProfileView] failed to save profile:', error);
+      safeError('[ProfileView] failed to save profile:', error);
       return; // não fecha edição
     }
 

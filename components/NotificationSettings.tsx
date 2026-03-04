@@ -1,3 +1,4 @@
+import { safeError } from '@/src/utils/logger';
 import React, { useState, useEffect } from 'react';
 import { Bell, Loader2, Send } from 'lucide-react';
 
@@ -34,7 +35,7 @@ const NotificationSettings: React.FC = () => {
                     const subscription = await registration.pushManager.getSubscription();
                     setIsSubscribed(!!subscription);
                 } catch (e) {
-                    console.error("Error checking for SW registration:", e);
+                    safeError("Error checking for SW registration:", e);
                 } finally {
                     setIsLoading(false);
                 }
@@ -72,14 +73,13 @@ const NotificationSettings: React.FC = () => {
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                 });
                 
-                console.log('Push Subscription:', JSON.stringify(subscription));
                 // In a real app, send this to your backend server to store.
                 // For demo purposes, we'll just confirm it worked.
                 setIsSubscribed(true);
                 alert('Notificações push ativadas com sucesso!');
 
             } catch (error) {
-                console.error('Failed to subscribe to push notifications:', error);
+                safeError('Failed to subscribe to push notifications:', error);
                 alert('Falha ao ativar notificações push.');
                 setIsSubscribed(false);
             } finally {

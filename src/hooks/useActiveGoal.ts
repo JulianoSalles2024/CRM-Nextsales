@@ -13,10 +13,7 @@ export function useActiveGoal(companyId: string | null, sellerId: string | null)
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('[useActiveGoal] effect disparado | companyId:', companyId, '| sellerId:', sellerId);
-
     if (!companyId || !sellerId) {
-      console.log('[useActiveGoal] early return — aguardando companyId/sellerId');
       setActiveGoal(null);
       setLoading(false);
       return;
@@ -28,8 +25,6 @@ export function useActiveGoal(companyId: string | null, sellerId: string | null)
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
     (async () => {
-      console.log('[useActiveGoal] iniciando busca | companyId:', companyId, '| sellerId:', sellerId, '| today:', today);
-
       // Query 1: meta individual ativa do vendedor válida para hoje
       const { data: individualRows, error: errIndividual } = await supabase
         .from('goals')
@@ -42,14 +37,11 @@ export function useActiveGoal(companyId: string | null, sellerId: string | null)
         .order('created_at', { ascending: false })
         .limit(1);
 
-      console.log('[useActiveGoal] individual →', individualRows, '| erro:', errIndividual);
-
       const individual = individualRows?.[0] ?? null;
 
       if (cancelled) return;
 
       if (individual) {
-        console.log('[useActiveGoal] usando meta individual | goal_value:', individual.goal_value);
         setActiveGoal({ id: individual.id, targetValue: individual.goal_value ?? 0, goalType: individual.goal_type, userId: individual.user_id });
         setLoading(false);
         return;
@@ -67,13 +59,9 @@ export function useActiveGoal(companyId: string | null, sellerId: string | null)
         .order('created_at', { ascending: false })
         .limit(1);
 
-      console.log('[useActiveGoal] global →', globalRows, '| erro:', errGlobal);
-
       const global = globalRows?.[0] ?? null;
 
       if (cancelled) return;
-
-      console.log('[useActiveGoal] resultado final | activeGoal:', global ?? null);
       setActiveGoal(global ? { id: global.id, targetValue: global.goal_value ?? 0, goalType: global.goal_type, userId: null } : null);
       setLoading(false);
     })();

@@ -1,3 +1,4 @@
+import { safeError } from '@/src/utils/logger';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, User, Trophy, Plus, ArrowRight } from 'lucide-react';
@@ -543,7 +544,7 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                 }));
                 setSupabaseUsers(mapped);
             } catch (err) {
-                console.error('[Painel360] fetchSellers error:', err);
+                safeError('[Painel360] fetchSellers error:', err);
             } finally {
                 setIsFetchingUsers(false);
             }
