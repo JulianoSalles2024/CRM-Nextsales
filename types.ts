@@ -98,15 +98,15 @@ export interface Lead {
 export interface Board {
   id: Id;
   name: string;
-  slug: string;
+  slug?: string;        // coluna opcional: existe no banco se migration for aplicada
   description?: string;
   type: 'sdr' | 'sales' | 'onboarding' | 'cs' | 'upsell' | 'custom';
   columns: ColumnData[];
   isDefault?: boolean;
-  suggestedProductId?: Id;
-  onWinBoardId?: Id;
-  wonStageId?: Id;
-  lostStageId?: Id;
+  suggestedProductId?: Id; // feature futura — não persiste no banco ainda
+  onWinBoardId?: Id;       // feature futura — não persiste no banco ainda
+  wonStageId?: Id;         // feature futura — não persiste no banco ainda
+  lostStageId?: Id;        // feature futura — não persiste no banco ainda
 }
 
 export interface ColumnData {

@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { Lead, ColumnData, Tag, ListDisplaySettings, User } from '../types';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { Lead, ColumnData, Tag, ListDisplaySettings, User, Board } from '../types';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import LeadListHeader from './LeadListHeader';
 import FlatCard from '@/components/ui/FlatCard';
@@ -21,6 +21,7 @@ interface LeadListViewProps {
     leads: Lead[];
     columns: ColumnData[];
     users: User[];
+    boards: Board[];
     onLeadClick: (lead: Lead) => void;
     viewType: 'Leads' | 'Clientes';
     listDisplaySettings: ListDisplaySettings;
@@ -28,8 +29,8 @@ interface LeadListViewProps {
     allTags: Tag[];
     selectedTags: Tag[];
     onSelectedTagsChange: React.Dispatch<React.SetStateAction<Tag[]>>;
-    statusFilter: 'all' | 'Ativo' | 'Inativo';
-    onStatusFilterChange: (status: 'all' | 'Ativo' | 'Inativo') => void;
+    statusFilter: 'all' | 'Ativo' | 'Perdido';
+    onStatusFilterChange: (status: 'all' | 'Ativo' | 'Perdido') => void;
     onExportPDF: () => void;
     onOpenCreateLeadModal: () => void;
     onOpenCreateTaskModal: () => void;
@@ -39,6 +40,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     leads,
     columns,
     users,
+    boards,
     onLeadClick,
     viewType,
     listDisplaySettings,
@@ -54,6 +56,12 @@ const LeadListView: React.FC<LeadListViewProps> = ({
 }) => {
     const { currentUserRole } = useAuth();
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
+    const [searchQuery, setSearchQuery] = useState('');
+    const PAGE_SIZE = 8;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Reset para página 1 ao mudar busca ou ordenação
+    useEffect(() => { setCurrentPage(1); }, [searchQuery, sortConfig]);
 
     const currencyFormatter = new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -107,8 +115,15 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 return 0;
             });
         }
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            sortableLeads = sortableLeads.filter(l =>
+                l.name?.toLowerCase().includes(q) ||
+                l.email?.toLowerCase().includes(q)
+            );
+        }
         return sortableLeads;
-    }, [leads, sortConfig, columnMap]);
+    }, [leads, sortConfig, columnMap, searchQuery]);
 
     const requestSort = (key: SortableKeys) => {
         let direction: 'ascending' | 'descending' = 'ascending';
@@ -167,6 +182,11 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         document.body.removeChild(link);
     };
 
+    const totalPages = useMemo(() => Math.ceil(sortedLeads.length / PAGE_SIZE), [sortedLeads.length]);
+    const paginatedLeads = useMemo(() =>
+        sortedLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [sortedLeads, currentPage]);
+
     // --- VIRTUALIZATION LOGIC ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [virtualRange, setVirtualRange] = useState({ start: 0, end: 30 });
@@ -177,25 +197,28 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         const { scrollTop, clientHeight } = event.currentTarget;
         const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
         const endIndex = Math.min(
-            sortedLeads.length - 1,
+            paginatedLeads.length - 1,
             Math.ceil((scrollTop + clientHeight) / ROW_HEIGHT) + OVERSCAN
         );
 
         if (startIndex !== virtualRange.start || endIndex !== virtualRange.end) {
             setVirtualRange({ start: startIndex, end: endIndex });
         }
-    }, [sortedLeads.length, virtualRange.start, virtualRange.end]);
+    }, [paginatedLeads.length, virtualRange.start, virtualRange.end]);
 
     const virtualLeads = useMemo(() => {
-        return sortedLeads.slice(virtualRange.start, virtualRange.end + 1);
-    }, [sortedLeads, virtualRange.start, virtualRange.end]);
+        return paginatedLeads.slice(virtualRange.start, virtualRange.end + 1);
+    }, [paginatedLeads, virtualRange.start, virtualRange.end]);
 
     const topPaddingHeight = virtualRange.start * ROW_HEIGHT;
-    const bottomPaddingHeight = Math.max(0, (sortedLeads.length - (virtualRange.end + 1)) * ROW_HEIGHT);
+    const bottomPaddingHeight = Math.max(0, (paginatedLeads.length - (virtualRange.end + 1)) * ROW_HEIGHT);
 
     const numberOfColumns = useMemo(() => {
-        return 1 + Object.values(listDisplaySettings).filter(Boolean).length
-                 + (currentUserRole === 'admin' ? 1 : 0);
+        const isAdmin = currentUserRole === 'admin';
+        return 1
+            + Object.values(listDisplaySettings).filter(Boolean).length
+            + (isAdmin ? 2 - (listDisplaySettings.showTags ? 1 : 0) : 0);
+            // admin: +2 (Pipeline + Criado por), -1 se showTags estava ligado (Tags fica oculta)
     }, [listDisplaySettings, currentUserRole]);
     // --- END VIRTUALIZATION LOGIC ---
     
@@ -220,7 +243,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
 
     return (
         <div className="flex flex-col gap-4 h-full">
-            <LeadListHeader 
+            <LeadListHeader
                 viewType={viewType}
                 listDisplaySettings={listDisplaySettings}
                 onUpdateListSettings={onUpdateListSettings}
@@ -233,6 +256,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onExportPDF={onExportPDF}
                 onOpenCreateLeadModal={onOpenCreateLeadModal}
                 onOpenCreateTaskModal={onOpenCreateTaskModal}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
             />
             <FlatCard className="overflow-hidden flex-1 flex flex-col p-0">
                 {sortedLeads.length === 0 ? (
@@ -250,11 +275,14 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                     {listDisplaySettings.showValue && <TableHeader sortKey="value" label="Valor" />}
                                     {listDisplaySettings.showEmail && <TableHeader sortKey="email" label="Email" />}
                                     {listDisplaySettings.showPhone && <TableHeader sortKey="phone" label="Telefone" />}
-                                    {listDisplaySettings.showTags && <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Tags</th>}
+                                    {currentUserRole === 'admin'
+                                        ? <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wider whitespace-nowrap">Pipeline</th>
+                                        : listDisplaySettings.showTags && <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Tags</th>
+                                    }
                                     {listDisplaySettings.showCreatedAt && <TableHeader sortKey="createdAt" label="Criação" />}
                                     {listDisplaySettings.showLastActivity && <TableHeader sortKey="lastActivity" label="Última Atividade" />}
                                     {currentUserRole === 'admin' && (
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wider whitespace-nowrap">
                                             Criado por
                                         </th>
                                     )}
@@ -297,13 +325,18 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         {listDisplaySettings.showPhone && (
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.phone || '—'}</td>
                                         )}
-                                        {listDisplaySettings.showTags && (
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
-                                                </div>
-                                            </td>
-                                        )}
+                                        {currentUserRole === 'admin'
+                                            ? <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
+                                                {boards.find(b => b.id === lead.boardId)?.name ?? '—'}
+                                              </td>
+                                            : listDisplaySettings.showTags && (
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
+                                                    </div>
+                                                </td>
+                                              )
+                                        }
                                         {listDisplaySettings.showCreatedAt && (
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{formatDate(lead.createdAt)}</td>
                                         )}
@@ -325,7 +358,25 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                             </tbody>
                         </table>
                     </div>
-                 )}
+                )}
+                {totalPages > 1 && (
+                    <div className="px-4 py-3 border-t border-slate-800 flex items-center justify-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                disabled={page === currentPage}
+                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                    page === currentPage
+                                        ? 'bg-slate-700 text-white cursor-default'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </FlatCard>
         </div>
     );

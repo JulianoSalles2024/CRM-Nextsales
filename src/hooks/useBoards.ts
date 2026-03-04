@@ -17,6 +17,9 @@ function mapStagesForBoard(
     }));
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUUID = (id: string) => UUID_RE.test(id);
+
 export function useBoards(companyId: string | null) {
   const [boards, setBoards] = useState<Board[]>([]);
   const [activeBoardId, setActiveBoardId] = useState<Id>('');
@@ -44,7 +47,7 @@ export function useBoards(companyId: string | null) {
       const mapped: Board[] = ((boardsRes.data ?? []) as Record<string, unknown>[]).map((b) => ({
         id: b.id as string,
         name: (b.name as string) ?? '',
-        slug: (b.slug as string) ?? '',
+        slug: (b.slug as string | undefined) ?? undefined,
         description: (b.description as string) ?? undefined,
         type: (b.type as Board['type']) ?? 'sales',
         isDefault: Boolean(b.is_default),
@@ -68,5 +71,129 @@ export function useBoards(companyId: string | null) {
     fetchBoards();
   }, [fetchBoards]);
 
-  return { boards, setBoards, activeBoardId, setActiveBoardId, loading, refetch: fetchBoards };
+  /** Cria board + estágios no Supabase. Retorna o novo board ID ou null em erro. */
+  const createBoard = useCallback(async (boardData: Omit<Board, 'id'>): Promise<string | null> => {
+    if (!companyId) return null;
+
+    const boardId = crypto.randomUUID();
+    const insertPayload: Record<string, unknown> = {
+      id: boardId,
+      name: boardData.name,
+      description: boardData.description ?? null,
+      type: boardData.type,
+      company_id: companyId,
+      is_default: false,
+    };
+    if (boardData.slug) insertPayload.slug = boardData.slug;
+
+    const { error: boardError } = await supabase
+      .from('boards')
+      .insert(insertPayload);
+
+    if (boardError) {
+      console.error('createBoard error:', boardError);
+      return null;
+    }
+
+    if (boardData.columns.length > 0) {
+      const stages = boardData.columns.map((col, idx) => ({
+        id: crypto.randomUUID(),
+        board_id: boardId,
+        company_id: companyId,
+        name: col.title,
+        color: col.color,
+        linked_lifecycle_stage: col.type,
+        order: idx,
+      }));
+      const { error: stagesError } = await supabase.from('board_stages').insert(stages);
+      if (stagesError) console.error('createBoard stages error:', stagesError);
+    }
+
+    await fetchBoards();
+    return boardId;
+  }, [companyId, fetchBoards]);
+
+  /**
+   * Persiste as colunas do board no Supabase.
+   * - Stages existentes (UUID válido) → upsert
+   * - Stages novos (ID temporário) → insert com novo UUID
+   * - Stages removidos → delete (se não houver leads vinculados)
+   */
+  const saveBoardStages = useCallback(async (boardId: string, columns: ColumnData[]): Promise<boolean> => {
+    if (!companyId) return false;
+
+    // Busca IDs existentes no DB para este board
+    const { data: existing, error: fetchErr } = await supabase
+      .from('board_stages')
+      .select('id')
+      .eq('board_id', boardId);
+
+    if (fetchErr) {
+      console.error('saveBoardStages fetch error:', fetchErr);
+      return false;
+    }
+
+    const existingIds = new Set((existing ?? []).map((r: any) => r.id as string));
+    const keptIds = new Set(columns.filter(c => isUUID(String(c.id))).map(c => String(c.id)));
+
+    // Deleta stages removidos (Supabase vai rejeitar via FK se tiver leads vinculados)
+    const toDelete = [...existingIds].filter(id => !keptIds.has(id));
+    if (toDelete.length > 0) {
+      const { error: delErr } = await supabase
+        .from('board_stages')
+        .delete()
+        .in('id', toDelete);
+      if (delErr) console.error('saveBoardStages delete error:', delErr);
+    }
+
+    // Upsert todos os stages atuais
+    const stagesToUpsert = columns.map((col, idx) => ({
+      id: isUUID(String(col.id)) ? String(col.id) : crypto.randomUUID(),
+      board_id: boardId,
+      company_id: companyId,
+      name: col.title,
+      color: col.color,
+      linked_lifecycle_stage: col.type,
+      order: idx,
+    }));
+
+    const { error: upsertErr } = await supabase
+      .from('board_stages')
+      .upsert(stagesToUpsert, { onConflict: 'id' });
+
+    if (upsertErr) {
+      console.error('saveBoardStages upsert error:', upsertErr);
+      return false;
+    }
+
+    await fetchBoards();
+    return true;
+  }, [companyId, fetchBoards]);
+
+  /** Deleta board e seus stages. Retorna true em sucesso. */
+  const deleteBoard = useCallback(async (boardId: string): Promise<boolean> => {
+    // Deleta stages primeiro (caso não haja CASCADE configurado)
+    await supabase.from('board_stages').delete().eq('board_id', boardId);
+
+    const { error } = await supabase.from('boards').delete().eq('id', boardId);
+    if (error) {
+      console.error('deleteBoard error:', error);
+      return false;
+    }
+
+    await fetchBoards();
+    return true;
+  }, [fetchBoards]);
+
+  return {
+    boards,
+    setBoards,
+    activeBoardId,
+    setActiveBoardId,
+    loading,
+    refetch: fetchBoards,
+    createBoard,
+    saveBoardStages,
+    deleteBoard,
+  };
 }

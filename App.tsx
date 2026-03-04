@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { safeLog } from '@/src/utils/logger';
+import { getLeadComputedStatus } from '@/src/lib/leadStatus';
 import { AnimatePresence } from 'framer-motion';
 
 // Components
@@ -86,7 +88,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
 
 
 const App: React.FC = () => {
-    const { user: authUser, logout, companyId } = useAuth();
+    const { user: authUser, logout, companyId, currentUserRole } = useAuth();
 
     const localUser: User = {
         id: authUser?.id ?? 'local-user',
@@ -113,7 +115,7 @@ const App: React.FC = () => {
     const { users, refetch: refetchUsers } = useUsers(companyId);
 
     // Boards + stages from Supabase (replaces localStorage crm-boards)
-    const { boards, setBoards, activeBoardId, setActiveBoardId } = useBoards(companyId);
+    const { boards, setBoards, activeBoardId, setActiveBoardId, createBoard, saveBoardStages, deleteBoard } = useBoards(companyId);
 
     const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId) ?? boards[0], [boards, activeBoardId]);
     const columns = activeBoard?.columns ?? [];
@@ -182,7 +184,7 @@ const App: React.FC = () => {
     const [minimizedLeads, setMinimizedLeads] = useLocalStorage<Id[]>('crm-minimizedLeads', []);
     const [minimizedColumns, setMinimizedColumns] = useLocalStorage<Id[]>('crm-minimizedColumns', []);
     const [listSelectedTags, setListSelectedTags] = useState<Tag[]>([]);
-    const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Inativo'>('all');
+    const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Perdido'>('all');
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => setNotification({ message, type }), []);
@@ -293,17 +295,42 @@ const App: React.FC = () => {
     }, []);
 
     const searchedLeads = useMemo(() => {
-        const boardLeads = leads.filter(l => l.boardId === activeBoardId);
+        const isAdmin = currentUserRole === 'admin';
+        const isListView = activeView === 'Leads' || activeView === 'Clientes';
 
-        if (activeView === 'Leads' || activeView === 'Clientes') {
-            return boardLeads.filter(lead => {
-                const statusMatch = listStatusFilter === 'all' || lead.status === listStatusFilter;
+        // — DIAGNÓSTICO TEMPORÁRIO — remover após validação
+        safeLog('DEBUG activeView:', activeView);
+        safeLog('DEBUG currentUserRole:', currentUserRole);
+        safeLog('DEBUG isListView:', isListView);
+
+        // Regras de visibilidade por role e view:
+        //   Admin + lista    → todos os leads da empresa (sem filtro de board)
+        //   Admin + kanban   → todos os leads da pipeline ativa (para encaixar nas colunas)
+        //   Seller           → apenas seus leads (ownerId) na pipeline ativa, em qualquer view
+        let baseLeads: Lead[];
+        if (isAdmin && isListView) {
+            baseLeads = leads;
+        } else if (isAdmin) {
+            baseLeads = leads.filter(l => l.boardId === activeBoardId);
+        } else {
+            baseLeads = leads.filter(l =>
+                l.boardId === activeBoardId &&
+                l.ownerId === authUser?.id
+            );
+        }
+
+        if (isListView) {
+            return baseLeads.filter(lead => {
+                const statusMatch = listStatusFilter === 'all' ||
+                    (listStatusFilter === 'Perdido'
+                        ? getLeadComputedStatus(lead, columns.find(c => c.id === lead.columnId)?.type) === 'perdido'
+                        : lead.status === listStatusFilter);
                 const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
                 return statusMatch && tagMatch;
             });
         }
-        return boardLeads;
-    }, [leads, activeView, listStatusFilter, listSelectedTags, activeBoardId]);
+        return baseLeads;
+    }, [leads, columns, activeView, listStatusFilter, listSelectedTags, activeBoardId, currentUserRole, authUser?.id]);
 
     const analysisForGroup = useMemo(() => (selectedGroupForView ? groupAnalyses.find(a => a.groupId === selectedGroupForView) || null : null), [groupAnalyses, selectedGroupForView]);
 
@@ -703,28 +730,32 @@ const App: React.FC = () => {
         setLeadsToPrint(leadsToExport);
     };
 
-    const handleCreateBoard = (newBoardData: Omit<Board, 'id'>) => {
-        const newBoard: Board = {
-            id: crypto.randomUUID(),
-            ...newBoardData,
-            isDefault: false,
-        };
-        setBoards(prev => [...prev, newBoard]);
-        setActiveBoardId(newBoard.id);
-        showNotification(`Board "${newBoard.name}" criado com sucesso!`, 'success');
+    const handleCreateBoard = async (newBoardData: Omit<Board, 'id'>) => {
+        const newBoardId = await createBoard(newBoardData);
+        if (newBoardId) {
+            setActiveBoardId(newBoardId);
+            showNotification(`Board "${newBoardData.name}" criado com sucesso!`, 'success');
+        } else {
+            showNotification('Erro ao criar board. Verifique as permissões e tente novamente.', 'error');
+        }
     };
 
-    const handleDeleteBoard = (boardId: Id) => {
+    const handleDeleteBoard = async (boardId: Id) => {
         if (boards.length <= 1) {
             showNotification('Não é possível excluir o único board existente.', 'warning');
             return;
         }
-        setBoards(prev => prev.filter(b => b.id !== boardId));
-        if (activeBoardId === boardId) {
-            const remainingBoards = boards.filter(b => b.id !== boardId);
-            setActiveBoardId(remainingBoards[0].id);
+        const remainingBoards = boards.filter(b => b.id !== boardId);
+        const needsSwitch = activeBoardId === boardId;
+        const success = await deleteBoard(boardId);
+        if (success) {
+            if (needsSwitch && remainingBoards.length > 0) {
+                setActiveBoardId(remainingBoards[0].id);
+            }
+            showNotification('Board excluído com sucesso.', 'success');
+        } else {
+            showNotification('Erro ao excluir board.', 'error');
         }
-        showNotification('Board excluído com sucesso.', 'success');
     };
 
     const handleUpdateBoard = (boardId: Id, updates: Partial<Board>) => {
@@ -825,6 +856,7 @@ const App: React.FC = () => {
         setPreselectedDataForTask,
         settingsTab,
         setColumns,
+        saveBoardStages,
         calculateProbabilityForStage,
         handleUpdateBoard,
         handleImportBoards,

@@ -222,14 +222,12 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     value={currencyFormatter.format(kpiData.pipelineValue)}
                     icon={DollarSign}
                     iconColor="text-blue-500"
-                    onClick={() => onNavigate('Pipeline')}
                 />
                 <KpiCard
                     title="Negócios Ativos"
                     value={kpiData.activeCount.toString()}
                     icon={Users}
                     iconColor="text-purple-500"
-                    onClick={() => onNavigate('Pipeline')}
                 />
                 <KpiCard
                     title="Conversão"
@@ -243,7 +241,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     value={currencyFormatter.format(kpiData.revenue)}
                     icon={TrendingUp}
                     iconColor="text-orange-500"
-                    onClick={() => onNavigate('Pipeline')}
+                    onClick={() => onNavigate('Relatórios')}
                 />
             </div>
 
@@ -321,14 +319,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             </div>
 
             {/* Bottom Section: Top Sellers & Activities */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
-                    <TopSellers leads={activeLeadPool} users={users} selectedPeriod={selectedPeriod} />
-                </div>
-                <div className="lg:col-span-2">
-                    <RecentActivities activities={activities} leads={leads} onNavigate={onNavigate} />
-                </div>
-            </div>
+            {null}
+          {/* Bottom Section removida temporariamente */}
         </div>
     );
 };

@@ -99,6 +99,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
     setPreselectedDataForTask,
     settingsTab,
     setColumns,
+    saveBoardStages,
     calculateProbabilityForStage,
     onUpdateUsers
   } = props;
@@ -172,6 +173,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   leads={listViewFilteredLeads}
                   columns={columns}
                   users={users}
+                  boards={boards}
                   onLeadClick={setSelectedLead}
                   viewType="Leads"
                   listDisplaySettings={listDisplaySettings}
@@ -192,6 +194,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   leads={listViewFilteredLeads}
                   columns={columns}
                   users={users}
+                  boards={boards}
                   onLeadClick={setSelectedLead}
                   viewType="Clientes"
                   listDisplaySettings={listDisplaySettings}
@@ -308,6 +311,9 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             onUpdateProfile={() => showNotification("Perfil atualizado!", 'success')}
             onUpdatePipeline={(newColumns: any[]) => {
                 setColumns(newColumns);
+                if (activeBoardId) {
+                    saveBoardStages(activeBoardId, newColumns).catch(console.error);
+                }
                 const updates = leads.map((lead: any) => ({
                     id: lead.id,
                     data: { probability: calculateProbabilityForStage(lead.columnId, newColumns) },

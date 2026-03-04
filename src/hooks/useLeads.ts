@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import type { Lead, Id } from '@/types';
 import { mapLeadFromDb, mapLeadToDb } from '@/src/lib/mappers';
+import { safeLog } from '@/src/utils/logger';
 
 export function useLeads(companyId: string | null) {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -21,6 +22,8 @@ export function useLeads(companyId: string | null) {
       .eq('is_archived', false)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
+    // — DIAGNÓSTICO TEMPORÁRIO — remover após validação
+    safeLog('DEBUG useLeads rows returned from DB:', data?.length ?? 0);
     if (!error) setLeads((data ?? []).map(mapLeadFromDb));
     setLoading(false);
   }, [companyId]);
