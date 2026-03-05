@@ -18,6 +18,11 @@ function getMessage(elapsed: number): string {
   return msg;
 }
 
+function advance() {
+  sessionStorage.setItem('crm_from_deploy', '1');
+  window.location.href = '/install/start';
+}
+
 export default function DeployPreparationPage() {
   const [elapsed, setElapsed] = useState(0);
 
@@ -29,10 +34,7 @@ export default function DeployPreparationPage() {
       setElapsed(e);
       if (e >= DURATION_MS) {
         clearInterval(id);
-        // Persist the flag so InstallRunPage skips the not-on-vercel gate
-        // even after the user navigates through the wizard steps.
-        sessionStorage.setItem('crm_from_deploy', '1');
-        window.location.href = '/install/start';
+        advance();
       }
     }, 100);
 
@@ -46,8 +48,8 @@ export default function DeployPreparationPage() {
     <div className="flex flex-col items-center iz-fade-in w-full">
 
       {/* Glow icon */}
-      <div className="w-20 h-20 rounded-full bg-blue-600/20 border border-blue-400/40 iz-glow flex items-center justify-center mb-8 text-4xl">
-        🚀
+      <div className="w-20 h-20 rounded-full bg-blue-600/20 border border-blue-400/40 iz-glow flex items-center justify-center mb-8">
+        <div className="w-11 h-11 rounded-full border-[3px] border-blue-400/15 border-t-blue-400 border-r-blue-300/40 animate-spin" />
       </div>
 
       {/* Title */}
@@ -86,6 +88,15 @@ export default function DeployPreparationPage() {
         <span className="w-2 h-2 rounded-full bg-blue-400 iz-dot-2" />
         <span className="w-2 h-2 rounded-full bg-blue-400 iz-dot-3" />
       </div>
+
+      {/* Botão de avanço manual */}
+      <button
+        type="button"
+        onClick={advance}
+        className="mt-8 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all duration-200"
+      >
+        Já fiz o deploy
+      </button>
 
     </div>
   );

@@ -6,6 +6,7 @@ import path from "path";
 import credentialsHandler from "./api/ai/credentials";
 import testConnectionHandler from "./api/ai/test-connection";
 import generateHandler from "./src/pages/api/ai/generate";
+import migrateHandler from "./api/install/migrate";
 
 const app = express();
 const PORT = 3000;
@@ -31,6 +32,7 @@ if (!fs.existsSync(CREDENTIALS_DIR)) {
 app.all("/api/ai/credentials", (req, res) => credentialsHandler(req as any, res as any));
 app.all("/api/ai/test-connection", (req, res) => testConnectionHandler(req, res));
 app.all("/api/ai/generate", (req, res) => generateHandler(req, res));
+app.all("/api/install/migrate", (req, res) => migrateHandler(req as any, res as any));
 
 // Health check
 app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));

@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { useInstall } from '../context/InstallContext';
 import { clearInstallState } from '../utils/installStorage';
-import ForkInstructionsPage from './ForkInstructionsPage';
-import DeployInstructionsPage from './DeployInstructionsPage';
+import InstallForkIntro from './InstallForkIntro';
+import InstallForkWaiting from './InstallForkWaiting';
+import InstallDeployStep from './InstallDeployStep';
 import DeployPreparationPage from './DeployPreparationPage';
 import {
   verificarInfraestrutura,
   criarEnvVars,
   rodarMigrations,
   criarAdmin,
-  upsertAdminProfile,
+  verificarPerfil,
   triggerRedeploy,
 } from '../services/installService';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type InstallStep =
   | 'not-on-vercel'
-  | 'fork-instructions'
+  | 'fork-waiting'
   | 'deploy-instructions'
   | 'deploy-preparation'
   | 'intro'
@@ -64,7 +66,7 @@ const PROGRESS_STEPS: ProgressStep[] = [
   { pct: 28,  title: 'Criando variáveis de ambiente',  subtitle: 'Configurando ambiente de produção...',         tech: 'env vars → Vercel project' },
   { pct: 45,  title: 'Rodando migrations',             subtitle: 'Preparando banco de dados...',                 tech: 'Management API → Supabase' },
   { pct: 63,  title: 'Criando administrador',          subtitle: 'Registrando sua conta de acesso...',           tech: 'POST /auth/v1/admin/users' },
-  { pct: 80,  title: 'Configurando perfil admin',      subtitle: 'Salvando permissões no banco...',              tech: 'upsert profiles → Supabase' },
+  { pct: 80,  title: 'Verificando perfil admin',        subtitle: 'Confirmando permissões no banco...',           tech: 'GET profiles → Supabase' },
   { pct: 90,  title: 'Redeploy',                       subtitle: 'Publicando nova versão na Vercel...',          tech: 'POST /v13/deployments' },
   { pct: 100, title: 'Instalação concluída!',          subtitle: '',                                             tech: '' },
 ];
@@ -215,11 +217,24 @@ function InstallProgressBar({ pct }: { pct: number }) {
   );
 }
 
-function InstallComplete({ adminName }: { adminName: string }) {
+function InstallComplete({ adminName, supabaseUrl, supabaseAnonKey }: {
+  adminName: string;
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+}) {
+  function handleEnter() {
+    localStorage.setItem('crm_supabase_config', JSON.stringify({
+      url:     supabaseUrl.trim().replace(/\/$/, ''),
+      anonKey: supabaseAnonKey,
+    }));
+    clearInstallState();
+    window.location.href = '/';
+  }
+
   return (
     <div className="flex flex-col items-center iz-fade-in">
-      <div className="w-20 h-20 rounded-full bg-blue-600/20 border border-blue-400/40 iz-glow flex items-center justify-center mb-8 text-4xl">
-        🚀
+      <div className="w-20 h-20 rounded-full bg-blue-600/20 border border-blue-400/40 iz-glow flex items-center justify-center mb-8">
+        <CheckCircle2 className="w-9 h-9 text-blue-400" strokeWidth={1.5} />
       </div>
       <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
         Missão cumprida, {adminName}!
@@ -230,10 +245,11 @@ function InstallComplete({ adminName }: { adminName: string }) {
         Tudo está configurado — você já pode entrar.
       </p>
       <button
-        onClick={() => { clearInstallState(); window.location.href = '/'; }}
-        className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-[0_0_24px_rgba(0,140,255,0.5)]"
+        onClick={handleEnter}
+        className="px-8 py-3 rounded-xl text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 shadow-[0_0_20px_rgba(0,140,255,0.35)] hover:shadow-[0_0_32px_rgba(0,140,255,0.6)] animate-pulse"
+        style={{ animationDuration: '2.5s' }}
       >
-        🚀 Entrar no CRM
+        Entrar no CRM
       </button>
     </div>
   );
@@ -296,6 +312,7 @@ export default function InstallRunPage() {
     }
 
     let active = true;
+    const controller = new AbortController();
 
     (async () => {
       try {
@@ -308,12 +325,12 @@ export default function InstallRunPage() {
         } else if (progressIdx === 2) {
           await criarEnvVars(state, vercelProjectIdRef.current);
         } else if (progressIdx === 3) {
-          await rodarMigrations(state);                          // schema first
+          await rodarMigrations(state, controller.signal);      // schema first
         } else if (progressIdx === 4) {
           const userId = await criarAdmin(state);               // auth user after schema
           adminUserIdRef.current = userId;
         } else if (progressIdx === 5) {
-          await upsertAdminProfile(state, adminUserIdRef.current); // profile after user
+          await verificarPerfil(state, adminUserIdRef.current); // assert triggers ran correctly
         } else if (progressIdx === 6) {
           await triggerRedeploy(state.vercelToken, vercelProjectIdRef.current);
         }
@@ -327,7 +344,7 @@ export default function InstallRunPage() {
       }
     })();
 
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
   }, [step, progressIdx, retryKey]); // retryKey forces re-run on retry
 
   const progress = PROGRESS_STEPS[progressIdx];
@@ -339,41 +356,15 @@ export default function InstallRunPage() {
         <div key={step} className="iz-fade-in flex flex-col items-center w-full max-w-sm">
 
           {step === 'not-on-vercel' && (
-            <div className="flex flex-col items-center iz-fade-in">
-              <div className="w-20 h-20 rounded-full bg-blue-600/20 border border-blue-400/40 iz-glow flex items-center justify-center mb-8 text-4xl">
-                🚀
-              </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight mb-3">
-                Deploy do Projeto
-              </h1>
-              <p className="text-sm text-slate-400 mb-8 max-w-xs leading-relaxed text-center">
-                Para continuar a instalação, primeiro faça o fork e o deploy do projeto.
-              </p>
-              <div className="flex flex-col w-full gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStep('fork-instructions')}
-                  className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-[0_0_24px_rgba(0,140,255,0.5)]"
-                >
-                  1️⃣ Fork no GitHub
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep('deploy-instructions')}
-                  className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold text-white bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all duration-200"
-                >
-                  2️⃣ Deploy na Vercel
-                </button>
-              </div>
-            </div>
+            <InstallForkIntro onContinue={() => setStep('fork-waiting')} />
           )}
 
-          {step === 'fork-instructions' && (
-            <ForkInstructionsPage onContinue={() => setStep('deploy-instructions')} />
+          {step === 'fork-waiting' && (
+            <InstallForkWaiting onContinue={() => setStep('deploy-instructions')} />
           )}
 
           {step === 'deploy-instructions' && (
-            <DeployInstructionsPage onContinue={() => setStep('deploy-preparation')} />
+            <InstallDeployStep onContinue={() => setStep('deploy-preparation')} />
           )}
 
           {step === 'deploy-preparation' && (
@@ -448,7 +439,13 @@ export default function InstallRunPage() {
             </div>
           )}
 
-          {step === 'welcome' && <InstallComplete adminName={adminName} />}
+          {step === 'welcome' && (
+            <InstallComplete
+              adminName={adminName}
+              supabaseUrl={state.supabaseUrl}
+              supabaseAnonKey={state.supabaseAnonKey}
+            />
+          )}
 
         </div>
       </SpaceBg>

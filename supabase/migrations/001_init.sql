@@ -1,8 +1,38 @@
 -- ============================================================
--- CRM Zenius — Schema inicial
--- Migration: 001_init.sql
--- Executar via: Install Wizard (runMigrations)
+-- CRM Zenius — Schema inicial completo
+-- Migration: 001_init
+-- Fonte canônica para novas instalações.
+-- Cada objeto usa IF NOT EXISTS / CREATE OR REPLACE para ser
+-- seguro em re-execução (idempotente).
+-- O registro em schema_migrations é feito pelo TypeScript após
+-- execução bem-sucedida — não por este arquivo.
 -- ============================================================
+
+-- ── Reset: garante estado limpo para nova instalação ─────────
+-- Tabelas em ordem reversa de dependência; CASCADE remove FK deps.
+drop table if exists public.organization_ai_credentials cascade;
+drop table if exists public.seller_scores  cascade;
+drop table if exists public.invites        cascade;
+drop table if exists public.sales          cascade;
+drop table if exists public.activities     cascade;
+drop table if exists public.tasks          cascade;
+drop table if exists public.goals          cascade;
+drop table if exists public.leads          cascade;
+drop table if exists public.board_stages   cascade;
+drop table if exists public.boards         cascade;
+drop table if exists public.contacts       cascade;
+drop table if exists public.profiles       cascade;
+drop table if exists public.companies      cascade;
+drop table if exists public.schema_migrations cascade;
+
+drop function if exists public.handle_new_user()                  cascade;
+drop function if exists public.bootstrap_company_for_new_user()   cascade;
+drop function if exists public.set_updated_at()                   cascade;
+drop function if exists public.my_company_id()                    cascade;
+drop function if exists public.enforce_company_id()               cascade;
+drop function if exists public.fill_sale_company_id()             cascade;
+drop function if exists public.validate_invite(text)              cascade;
+drop function if exists public.activate_goal(uuid, uuid)          cascade;
 
 -- ── Extensions ───────────────────────────────────────────────
 create extension if not exists "uuid-ossp";
@@ -39,21 +69,7 @@ create trigger set_companies_updated_at
 
 alter table companies enable row level security;
 
-do $$ begin
-  if not exists (
-    select 1 from pg_policies
-    where tablename = 'companies' and policyname = 'Companies: members can read own'
-  ) then
-    create policy "Companies: members can read own"
-      on companies for select
-      using (
-        id in (
-          select company_id from profiles
-          where id = auth.uid()
-        )
-      );
-  end if;
-end $$;
+-- NOTE: policy "Companies: members can read own" is created after profiles table below.
 
 -- ── 2. profiles (users) ──────────────────────────────────────
 create table if not exists profiles (
@@ -128,7 +144,79 @@ do $$ begin
   end if;
 end $$;
 
--- ── 3. contacts ──────────────────────────────────────────────
+-- Policy companies depende de profiles — criada aqui após profiles existir.
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'companies' and policyname = 'Companies: members can read own'
+  ) then
+    create policy "Companies: members can read own"
+      on companies for select
+      using (
+        id in (
+          select company_id from profiles
+          where id = auth.uid()
+        )
+      );
+  end if;
+end $$;
+
+-- ── 3. my_company_id() helper ────────────────────────────────
+-- Returns the company_id of the currently authenticated user.
+-- SECURITY DEFINER avoids recursive RLS self-joins.
+-- Used by RLS policies and the enforce_company_id trigger.
+create or replace function public.my_company_id()
+returns uuid
+language sql
+security definer
+stable
+as $$
+  select company_id from public.profiles where id = auth.uid()
+$$;
+
+-- ── 4. invites ───────────────────────────────────────────────
+create table if not exists invites (
+  id          uuid        primary key default uuid_generate_v4(),
+  company_id  uuid        not null references companies(id) on delete cascade,
+  token       text        not null unique,
+  role        text        not null default 'seller' check (role in ('admin','seller')),
+  expires_at  timestamptz,
+  used_at     timestamptz,
+  created_at  timestamptz not null default now()
+);
+
+alter table invites enable row level security;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'invites' and policyname = 'Invites: admin manages own company'
+  ) then
+    create policy "Invites: admin manages own company"
+      on invites for all
+      using (
+        company_id = public.my_company_id()
+        and exists (
+          select 1 from profiles
+          where id = auth.uid() and role = 'admin'
+        )
+      );
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'invites' and policyname = 'Invites: anon can read by token'
+  ) then
+    create policy "Invites: anon can read by token"
+      on invites for select
+      to anon
+      using (true);
+  end if;
+end $$;
+
+-- ── 5. contacts ──────────────────────────────────────────────
 create table if not exists contacts (
   id          uuid        primary key default uuid_generate_v4(),
   company_id  uuid        not null references companies(id) on delete cascade,
@@ -164,7 +252,7 @@ do $$ begin
   end if;
 end $$;
 
--- ── 4. boards (pipelines) ─────────────────────────────────────
+-- ── 6. boards (pipelines) ────────────────────────────────────
 create table if not exists boards (
   id          uuid        primary key default uuid_generate_v4(),
   company_id  uuid        not null references companies(id) on delete cascade,
@@ -196,7 +284,7 @@ do $$ begin
   end if;
 end $$;
 
--- ── 5. board_stages (pipeline stages) ───────────────────────
+-- ── 7. board_stages (pipeline stages) ───────────────────────
 create table if not exists board_stages (
   id                     uuid    primary key default uuid_generate_v4(),
   board_id               uuid    not null references boards(id) on delete cascade,
@@ -232,7 +320,7 @@ do $$ begin
   end if;
 end $$;
 
--- ── 6. leads (deals) ─────────────────────────────────────────
+-- ── 8. leads (deals) ─────────────────────────────────────────
 create table if not exists leads (
   id            uuid        primary key default uuid_generate_v4(),
   company_id    uuid        not null references companies(id) on delete cascade,
@@ -274,7 +362,7 @@ do $$ begin
   end if;
 end $$;
 
--- ── 7. activities ─────────────────────────────────────────────
+-- ── 9. activities ─────────────────────────────────────────────
 create table if not exists activities (
   id          uuid        primary key default uuid_generate_v4(),
   company_id  uuid        not null references companies(id) on delete cascade,
@@ -310,7 +398,7 @@ do $$ begin
   end if;
 end $$;
 
--- ── 8. tasks ─────────────────────────────────────────────────
+-- ── 10. tasks ─────────────────────────────────────────────────
 create table if not exists tasks (
   id          uuid        primary key default uuid_generate_v4(),
   company_id  uuid        not null references companies(id) on delete cascade,
@@ -348,17 +436,20 @@ do $$ begin
   end if;
 end $$;
 
--- ── 9. goals ──────────────────────────────────────────────────
+-- ── 11. goals ─────────────────────────────────────────────────
 create table if not exists goals (
-  id          uuid        primary key default uuid_generate_v4(),
-  company_id  uuid        not null references companies(id) on delete cascade,
-  user_id     uuid        references profiles(id) on delete cascade,
-  target      numeric(14,2) not null,
-  start_date  date        not null,
-  end_date    date        not null,
-  is_active   boolean     not null default true,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  id          uuid          primary key default uuid_generate_v4(),
+  company_id  uuid          not null references companies(id) on delete cascade,
+  user_id     uuid          references profiles(id) on delete cascade,
+  name        text,
+  goal_type   text,
+  period_type text,
+  goal_value  numeric(14,2) not null default 0,
+  start_date  date          not null,
+  end_date    date          not null,
+  is_active   boolean       not null default false,
+  created_at  timestamptz   not null default now(),
+  updated_at  timestamptz   not null default now()
 );
 
 drop trigger if exists set_goals_updated_at on goals;
@@ -384,7 +475,7 @@ do $$ begin
   end if;
 end $$;
 
--- ── 10. sales ─────────────────────────────────────────────────
+-- ── 12. sales ─────────────────────────────────────────────────
 create table if not exists sales (
   id               uuid        primary key default uuid_generate_v4(),
   company_id       uuid        not null references companies(id) on delete cascade,
@@ -392,6 +483,7 @@ create table if not exists sales (
   seller_id        uuid        references profiles(id) on delete set null,
   amount           numeric(14,2) not null,
   data_fechamento  date        not null,
+  client_name      text        not null default '',
   product_type     text,
   bank             text,
   created_at       timestamptz not null default now(),
@@ -421,12 +513,91 @@ do $$ begin
   end if;
 end $$;
 
--- ── Trigger: handle_new_user ──────────────────────────────────
--- Cria perfil automaticamente ao registrar usuário no Supabase Auth
-create or replace function handle_new_user()
-returns trigger language plpgsql security definer as $$
+-- Trigger: auto-fill company_id on sales insert from seller profile
+create or replace function public.fill_sale_company_id()
+returns trigger language plpgsql security definer
+set search_path = public as $$
 begin
-  insert into profiles (id, full_name, role)
+  if new.company_id is null then
+    select company_id into new.company_id
+    from public.profiles
+    where id = new.seller_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists fill_sale_company_id_trigger on public.sales;
+create trigger fill_sale_company_id_trigger
+  before insert on public.sales
+  for each row execute function public.fill_sale_company_id();
+
+-- ── 13. seller_scores ─────────────────────────────────────────
+create table if not exists public.seller_scores (
+  id             uuid primary key default gen_random_uuid(),
+  seller_id      uuid not null references public.profiles(id) on delete cascade,
+  company_id     uuid references public.companies(id) on delete cascade,
+  score          numeric(5,2) not null default 0 check (score >= 0 and score <= 100),
+  period         text not null,
+  breakdown_json jsonb not null default '{}',
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  unique(seller_id, period)
+);
+
+drop trigger if exists set_seller_scores_updated_at on public.seller_scores;
+create trigger set_seller_scores_updated_at
+  before update on public.seller_scores
+  for each row execute function set_updated_at();
+
+alter table public.seller_scores enable row level security;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'seller_scores' and policyname = 'SellerScores: own or same company'
+  ) then
+    create policy "SellerScores: own or same company"
+      on public.seller_scores for select
+      using (
+        seller_id = auth.uid()
+        or company_id = public.my_company_id()
+      );
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'seller_scores' and policyname = 'SellerScores: insert own'
+  ) then
+    create policy "SellerScores: insert own"
+      on public.seller_scores for insert
+      with check (seller_id = auth.uid());
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'seller_scores' and policyname = 'SellerScores: update own'
+  ) then
+    create policy "SellerScores: update own"
+      on public.seller_scores for update
+      using (seller_id = auth.uid());
+  end if;
+end $$;
+
+-- ── 14. Trigger: handle_new_user ─────────────────────────────
+-- Cria perfil automaticamente ao registrar usuário no Supabase Auth.
+-- Lê role de raw_user_meta_data (passado pelo installer ou pelo signUp).
+-- Fallback: 'user' quando role não é informado.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, full_name, role)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', new.email),
@@ -442,23 +613,24 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute function handle_new_user();
+  for each row execute function public.handle_new_user();
 
--- ── Trigger: bootstrap_company_for_new_user ──────────────────
+-- ── 15. Trigger: bootstrap_company_for_new_user ──────────────
 -- Quando o primeiro admin é criado sem company_id,
 -- cria uma empresa padrão e associa o perfil.
-create or replace function bootstrap_company_for_new_user()
-returns trigger language plpgsql security definer as $$
+create or replace function public.bootstrap_company_for_new_user()
+returns trigger language plpgsql security definer
+set search_path = public
+as $$
 declare
   v_company_id uuid;
 begin
-  -- Only bootstrap for admin without a company
   if new.role = 'admin' and new.company_id is null then
-    insert into companies (name)
+    insert into public.companies (name)
     values ('Minha Empresa')
     returning id into v_company_id;
 
-    update profiles
+    update public.profiles
     set company_id = v_company_id
     where id = new.id;
   end if;
@@ -466,23 +638,150 @@ begin
 end;
 $$;
 
-drop trigger if exists on_profile_bootstrap_company on profiles;
+drop trigger if exists on_profile_bootstrap_company on public.profiles;
 create trigger on_profile_bootstrap_company
-  after insert on profiles
-  for each row execute function bootstrap_company_for_new_user();
+  after insert on public.profiles
+  for each row execute function public.bootstrap_company_for_new_user();
 
--- ── Performance indexes ───────────────────────────────────────
-create index if not exists idx_profiles_company  on profiles(company_id);
-create index if not exists idx_contacts_company  on contacts(company_id);
-create index if not exists idx_leads_company     on leads(company_id);
-create index if not exists idx_tasks_company     on tasks(company_id);
-create index if not exists idx_activities_company on activities(company_id);
-create index if not exists idx_sales_company     on sales(company_id);
+-- ── 16. enforce_company_id trigger ───────────────────────────
+-- Stamps company_id server-side on INSERT for leads, tasks, activities.
+-- Prevents mismatch between frontend state and DB isolation.
+create or replace function public.enforce_company_id()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_company_id uuid;
+begin
+  v_company_id := public.my_company_id();
 
-create index if not exists idx_leads_stage       on leads(stage_id);
-create index if not exists idx_leads_owner       on leads(owner_id);
+  if v_company_id is null then
+    raise exception
+      'Usuário % não possui company_id. Contate o administrador.',
+      auth.uid()
+      using errcode = 'P0001';
+  end if;
 
--- ── Record this migration ─────────────────────────────────────
-insert into schema_migrations (version)
-values ('001_init')
-on conflict (version) do nothing;
+  new.company_id := v_company_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_enforce_company_id on public.leads;
+create trigger trg_enforce_company_id
+  before insert on public.leads
+  for each row execute function public.enforce_company_id();
+
+drop trigger if exists trg_enforce_company_id on public.tasks;
+create trigger trg_enforce_company_id
+  before insert on public.tasks
+  for each row execute function public.enforce_company_id();
+
+drop trigger if exists trg_enforce_company_id on public.activities;
+create trigger trg_enforce_company_id
+  before insert on public.activities
+  for each row execute function public.enforce_company_id();
+
+-- ── 17. validate_invite RPC ───────────────────────────────────
+-- Allows anon/authenticated to verify an invite token.
+drop function if exists public.validate_invite(text) cascade;
+
+create or replace function public.validate_invite(p_token text)
+returns table (role text, company_id uuid, expires_at timestamptz, used_at timestamptz)
+language sql
+security definer
+set search_path = public
+as $$
+  select role, company_id, expires_at, used_at
+  from public.invites
+  where token = p_token
+  limit 1;
+$$;
+
+grant execute on function public.validate_invite(text) to anon;
+grant execute on function public.validate_invite(text) to authenticated;
+
+-- ── 18. organization_ai_credentials ──────────────────────────
+create table if not exists public.organization_ai_credentials (
+  id              uuid        primary key default uuid_generate_v4(),
+  organization_id uuid        not null references public.companies(id) on delete cascade,
+  ai_provider     text        not null,
+  ai_api_key      text        not null,
+  model           text        not null,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now(),
+  unique(organization_id, ai_provider)
+);
+
+alter table public.organization_ai_credentials enable row level security;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'organization_ai_credentials' and policyname = 'AI Credentials: admin manages own company'
+  ) then
+    create policy "AI Credentials: admin manages own company"
+      on public.organization_ai_credentials for all
+      using (
+        organization_id = public.my_company_id()
+        and exists (
+          select 1 from public.profiles
+          where id = auth.uid() and role = 'admin'
+        )
+      );
+  end if;
+end $$;
+
+-- ── 19. activate_goal RPC ─────────────────────────────────────
+-- Ativa uma meta e desativa as demais do mesmo usuário/empresa.
+create or replace function public.activate_goal(p_goal_id uuid, p_company_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+begin
+  select user_id into v_user_id from public.goals where id = p_goal_id;
+
+  -- Desativa todas as outras metas do mesmo escopo (usuário ou global)
+  update public.goals
+  set is_active = false
+  where company_id = p_company_id
+    and id != p_goal_id
+    and (
+      (v_user_id is null and user_id is null) or
+      (v_user_id is not null and user_id = v_user_id)
+    );
+
+  -- Ativa a meta selecionada
+  update public.goals
+  set is_active = true
+  where id = p_goal_id
+    and company_id = p_company_id;
+end;
+$$;
+
+grant execute on function public.activate_goal(uuid, uuid) to authenticated;
+
+-- ── 21. Performance indexes ───────────────────────────────────
+create index if not exists idx_profiles_company    on profiles(company_id);
+create index if not exists idx_contacts_company    on contacts(company_id);
+create index if not exists idx_leads_company       on leads(company_id);
+create index if not exists idx_tasks_company       on tasks(company_id);
+create index if not exists idx_activities_company  on activities(company_id);
+create index if not exists idx_sales_company       on sales(company_id);
+create index if not exists idx_goals_company       on goals(company_id);
+create index if not exists idx_invites_company     on invites(company_id);
+create index if not exists idx_invites_token       on invites(token);
+create index if not exists idx_seller_scores_seller  on public.seller_scores(seller_id);
+create index if not exists idx_seller_scores_period  on public.seller_scores(period);
+create index if not exists idx_seller_scores_company on public.seller_scores(company_id);
+
+create index if not exists idx_leads_stage   on leads(stage_id);
+create index if not exists idx_leads_owner   on leads(owner_id);
+create index if not exists idx_sales_seller  on sales(seller_id);
+create index if not exists idx_sales_date    on sales(data_fechamento);

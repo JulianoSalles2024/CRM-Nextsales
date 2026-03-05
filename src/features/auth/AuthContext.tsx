@@ -66,16 +66,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .eq('id', user.id)
       .single()
       .then(({ data, error }) => {
-        if (data?.is_active === false) {
-          setBlockedError('Usuário bloqueado. Contate o administrador.');
-          supabase.auth.signOut();
-          // isRoleReady will be set true when user becomes null (branch above)
+        if (error) {
+          console.error('[AuthContext] profile query error:', error.message, '| code:', error.code);
+          // Keep safe default — do NOT silently show wrong role
+          setCurrentUserRole('user');
+          setIsRoleReady(true);
           return;
         }
 
-        const role = (data?.role as AppRole) ?? 'user';
+        if (!data) {
+          console.warn('[AuthContext] no profile found for user:', user.id);
+          setCurrentUserRole('user');
+          setIsRoleReady(true);
+          return;
+        }
+
+        if (data.is_active === false) {
+          setBlockedError('Usuário bloqueado. Contate o administrador.');
+          supabase.auth.signOut();
+          return;
+        }
+
+        const role = (data.role as AppRole) ?? 'user';
+        console.log('[AuthContext] role loaded:', role, '| company_id:', data.company_id);
         setCurrentUserRole(role);
-        setCompanyId((data?.company_id as string) ?? null);
+        setCompanyId((data.company_id as string) ?? null);
         setIsRoleReady(true);
       });
   }, [user]);
