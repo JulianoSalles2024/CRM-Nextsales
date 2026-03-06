@@ -43,40 +43,24 @@ export function mapLeadFromDb(row: Record<string, unknown>): Lead {
   };
 }
 
-// company_id is intentionally NOT included here.
-// It is stamped server-side by the enforce_company_id() trigger (BEFORE INSERT)
-// and must never change on UPDATE, so the RLS USING clause protects it.
+// Only confirmed columns of the leads table.
+// company_id is added directly in createLead (INSERT only) — never sent on UPDATE.
+// is_archived is also added directly in createLead to guarantee false on new leads.
 export function mapLeadToDb(lead: Partial<Lead>): Record<string, unknown> {
   return omitUndefined({
+    name: lead.name,
     column_id: lead.columnId || undefined,
     board_id: lead.boardId || undefined,
-    name: lead.name,
+    owner_id: lead.ownerId || undefined,
     company_name: lead.company,
-    segment: lead.segment,
-    value: lead.value,
-    avatar_url: lead.avatarUrl,
-    tags: lead.tags,
-    last_activity: lead.lastActivity,
-    last_activity_timestamp: lead.lastActivityTimestamp,
-    due_date: lead.dueDate !== undefined ? lead.dueDate : undefined,
-    assigned_to: lead.assignedTo,
-    description: lead.description,
     email: lead.email,
     phone: lead.phone,
-    probability: lead.probability,
-    status: lead.status,
-    client_id: lead.clientId,
+    value: lead.value,
     source: lead.source,
-    created_at: lead.createdAt,
-    group_info: lead.groupInfo,
-    // null clears the field in Supabase when explicitly removed
-    active_playbook: 'activePlaybook' in lead ? (lead.activePlaybook ?? null) : undefined,
-    playbook_history: lead.playbookHistory,
-    lost_reason: lead.lostReason,
-    reactivation_date: 'reactivationDate' in lead ? (lead.reactivationDate ?? null) : undefined,
-    qualification_status: lead.qualificationStatus,
-    disqualification_reason: lead.disqualificationReason,
-    owner_id: lead.ownerId || undefined,
+    status: lead.status,
+    last_activity: lead.lastActivity,
+    last_activity_timestamp: lead.lastActivityTimestamp,
+    is_archived: lead.isArchived !== undefined ? lead.isArchived : undefined,
     won_at: 'wonAt' in lead ? (lead.wonAt ?? null) : undefined,
   });
 }

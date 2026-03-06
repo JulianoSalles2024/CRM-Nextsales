@@ -176,7 +176,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                  <div className="relative">
                     <button
                         onClick={() => setCustomizeOpen(prev => !prev)}
-                        className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700 px-3 py-1.5 rounded-md"
+                        className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-md transition-colors"
                     >
                         <SlidersHorizontal className="w-4 h-4" />
                         <span>Personalizar Cards</span>

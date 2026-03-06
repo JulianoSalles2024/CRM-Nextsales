@@ -1,0 +1,26 @@
+:root {
+  /* Backgrounds */
+  --color-bg-page:    theme('colors.slate.950');
+  --color-bg-surface: theme('colors.slate.900');
+  --color-bg-input:   theme('colors.slate.950');
+
+  /* Borders */
+  --color-border:     theme('colors.slate.700');
+  --color-divider:    theme('colors.slate.800');
+
+  /* Text */
+  --color-text-primary:   theme('colors.slate.100');
+  --color-text-secondary: theme('colors.slate.400');
+  --color-text-muted:     theme('colors.slate.500');
+
+  /* Primary action — blue only, never violet */
+  --color-primary:       theme('colors.blue.600');
+  --color-primary-hover: theme('colors.blue.500');
+  --color-primary-text:  theme('colors.blue.400');
+
+  /* Radius */
+  --radius-sm: 0.375rem;  /* rounded-md  */
+  --radius-md: 0.5rem;    /* rounded-lg  */
+  --radius-lg: 0.75rem;   /* rounded-xl  */
+  --radius-xl: 1rem;      /* rounded-2xl */
+}

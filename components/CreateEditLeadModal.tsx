@@ -31,17 +31,15 @@ type FormData = {
 }
 
 const leadSources = [
+  "Ligação",
+  "Prospecção B2B",
+  "Prospecção B2C",
   "Indicação",
-  "Google Ads",
-  "Facebook Ads",
-  "Instagram Ads",
-  "LinkedIn",
-  "Website",
-  "Busca Orgânica",
-  "Email Marketing",
+  "WhatsApp",
+  "E-mail",
+  "Formulário do site",
   "Evento",
-  "Página de Conversão",
-  "Tráfego Pago",
+  "Redes sociais",
 ];
 
 const InputField: React.FC<{ label: string; name: keyof FormData; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; required?: boolean; placeholder?: string; type?: string; className?: string; maxLength?: number; }> = 
@@ -52,10 +50,10 @@ const InputField: React.FC<{ label: string; name: keyof FormData; value: string;
         </label>
         {type === 'textarea' ? (
              <textarea id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} rows={3}
-             className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         ) : (
             <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} placeholder={placeholder} maxLength={maxLength}
-            className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         )}
        
     </div>
@@ -70,7 +68,7 @@ const SelectField: React.FC<{ label: string; name: keyof FormData; value: Id; on
         <div className="relative">
             {customElement}
             <select id={name} name={name} value={value} onChange={onChange} required={required}
-            className={`w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none ${customElement ? 'pl-8' : ''}`}>
+            className={`w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${customElement ? 'pl-8' : ''}`}>
                 {children}
             </select>
         </div>
@@ -264,7 +262,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl border border-slate-800 flex flex-col max-h-[90vh]"
+          className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-800 flex flex-col max-h-[90vh]"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex-shrink-0 p-6 border-b border-slate-800">
@@ -273,16 +271,15 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                   <h2 className="text-xl font-bold text-white">{isEditMode ? 'Editar Lead' : 'Novo Lead'}</h2>
                   <p className="text-sm text-slate-400 mt-1">Preencha os dados para {isEditMode ? 'editar o lead' : 'criar um novo lead'}</p>
               </div>
-              <button onClick={handleClose} className="p-1 rounded-full text-slate-400 hover:bg-slate-800 transition-colors">
-                <X className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
+              <button onClick={handleClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
               <div className="p-6 grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-5">
                   <InputField label="Título" name="name" value={formData.name} onChange={handleChange} required placeholder="Nome do lead..." className="md:col-span-6" />
-                  <InputField label="Descrição" name="description" value={formData.description} onChange={handleChange} placeholder="Detalhes sobre o lead..." type="textarea" className="md:col-span-6" />
-                  
+
                   <div className="md:col-span-6">
                       <label className="block text-sm font-medium text-slate-300 mb-2">Tags</label>
                       <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-950 border border-slate-800 rounded-md min-h-[42px]">
@@ -321,77 +318,43 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
 
                   <InputField label="E-mail" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemplo.com" type="email" className="md:col-span-3" />
                   <InputField label="Telefone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" className="md:col-span-3" maxLength={15} />
-                  <InputField label="Empresa" name="company" value={formData.company} onChange={handleChange} placeholder="Nome da empresa" className="md:col-span-3" />
-                   <SelectField label="Grupo" name="groupId" value={formData.groupId} onChange={handleChange} className="md:col-span-3">
-                        <option value="">Nenhum</option>
-                        {groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
-                   </SelectField>
 
-                  <div className="md:col-span-6">
-                      <label htmlFor="segment" className="block text-sm font-medium text-slate-300 mb-2">
-                          Segmento
-                      </label>
-                      <input
-                          type="text"
-                          id="segment"
-                          name="segment"
-                          list="segment-options"
-                          value={formData.segment}
+                  <div className="md:col-span-3">
+                      <label htmlFor="source" className="block text-sm font-medium text-slate-300 mb-2">Origem</label>
+                      <select
+                          id="source"
+                          name="source"
+                          value={formData.source}
                           onChange={handleChange}
-                          placeholder="Ex: Personal Trainer, Coach..."
-                          className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      />
-                      <datalist id="segment-options">
-                          <option value="Personal Trainer" />
-                          <option value="Nutricionista" />
-                          <option value="Coach" />
-                          <option value="Influencer" />
-                      </datalist>
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                      >
+                          <option value="">Selecione a origem do lead</option>
+                          {leadSources.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
                   </div>
 
-                  <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="text" className="md:col-span-6" />
+                  <SelectField label="Grupo" name="groupId" value={formData.groupId} onChange={handleChange} className="md:col-span-3">
+                      <option value="">Nenhum</option>
+                      {groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
+                  </SelectField>
+
+                  <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="text" className="md:col-span-3" />
 
                   <SelectField label="Estágio" name="columnId" value={formData.columnId} onChange={handleChange} required className="md:col-span-3"
-                      customElement={<div className={`absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full`} style={{ backgroundColor: selectedColumnColor }} />}>
+                      customElement={<div className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: selectedColumnColor }} />}>
                       {columns.map(col => <option key={col.id} value={col.id}>{col.title}</option>)}
                   </SelectField>
 
-                   <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} className="md:col-span-3">
+                  <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} className="md:col-span-3">
                       <option value="Ativo">Ativo</option>
                       <option value="Inativo">Inativo</option>
                   </SelectField>
-                  
-                  <SelectField label="Cliente" name="clientId" value={formData.clientId} onChange={handleChange} className="md:col-span-6">
-                      <option value="">Nenhum cliente</option>
-                      {/* Placeholder for client list */}
-                  </SelectField>
-
-                  <div className="md:col-span-6">
-                      <label htmlFor="source" className="block text-sm font-medium text-slate-300 mb-2">
-                          Origem
-                      </label>
-                      <input
-                          type="text"
-                          id="source"
-                          name="source"
-                          list="source-options"
-                          value={formData.source}
-                          onChange={handleChange}
-                          placeholder="Ex: LinkedIn, Website, Indicação..."
-                          className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      />
-                      <datalist id="source-options">
-                          {leadSources.map(source => (
-                              <option key={source} value={source} />
-                          ))}
-                      </datalist>
-                  </div>
               </div>
-              <div className="flex-shrink-0 p-4 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-3">
-                   <button type="button" onClick={handleClose} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition-colors">
+              <div className="flex-shrink-0 px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
+                  <button type="button" onClick={handleClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
                       Cancelar
                   </button>
-                  <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                  <button type="submit" className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                       {isEditMode ? 'Salvar Alterações' : 'Criar Lead'}
                   </button>
               </div>

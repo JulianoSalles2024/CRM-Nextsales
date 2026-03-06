@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, LogOut, Sun, Moon, Bot } from 'lucide-react';
+import { LogOut, Sun, Moon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User } from '../types';
 import { useAuth } from '@/src/features/auth/AuthContext';
+import { NotificationsBell } from '@/src/features/notifications/NotificationsBell';
 
 interface HeaderProps {
   currentUser: User;
   onLogout: () => void;
   theme: 'dark' | 'light';
   onThemeToggle: () => void;
-  unreadCount: number;
+  unreadCount?: number;
   onOpenSdrBot: () => void;
   activeView: string;
 }
@@ -71,15 +72,8 @@ const Header: React.FC<HeaderProps> = ({
           </AnimatePresence>
         </button>
 
-        {/* Notifications Button (ADMIN ONLY) */}
-        {isAdmin && (
-          <button className="relative p-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors border border-transparent hover:border-slate-700">
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-2 right-2 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-blue-500 ring-2 ring-slate-950"></span>
-            )}
-          </button>
-        )}
+        {/* Notifications Bell (ADMIN ONLY) */}
+        {isAdmin && <NotificationsBell />}
 
         {/* User Menu */}
         <div className="relative" ref={userMenuRef}>

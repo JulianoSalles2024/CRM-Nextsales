@@ -173,7 +173,7 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
                     ))}
                 </div>
              ) : (
-                <div className="flex flex-col items-center justify-center flex-1 text-center bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-700 py-16">
+                <div className="flex flex-col items-center justify-center flex-1 text-center border border-dashed border-slate-700 rounded-xl py-16">
                      <h3 className="text-lg font-semibold text-white">Nenhum grupo encontrado</h3>
                     <p className="text-slate-500 mt-1 mb-4">Comece criando seu primeiro grupo para gerenciar seus membros.</p>
                     <button onClick={onAddGroup} className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-slate-600 transition-colors">

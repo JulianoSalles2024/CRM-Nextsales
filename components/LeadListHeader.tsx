@@ -143,16 +143,16 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute top-full right-0 mt-2 w-56 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20 py-1"
+                                    className="absolute top-full right-0 mt-2 w-56 bg-slate-900 rounded-lg border border-slate-700 shadow-lg z-20 py-1"
                                 >
                                     {createMenuItems.map(item => (
                                         <button
                                             key={item.label}
                                             onClick={() => { item.action(); setCreateMenuOpen(false); }}
-                                            className="w-full flex items-center justify-between px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50"
+                                            className="w-full flex items-center justify-between px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <item.icon className="w-4 h-4 text-zinc-400" />
+                                                <item.icon className="w-4 h-4 text-slate-400" />
                                                 <span>{item.label}</span>
                                             </div>
                                         </button>

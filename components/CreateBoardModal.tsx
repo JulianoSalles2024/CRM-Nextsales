@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, LayoutTemplate, Settings, Plus, ArrowLeft, BookOpen, Rocket, Heart, Target, GraduationCap, Briefcase } from 'lucide-react';
+import { X, Sparkles, LayoutTemplate, Settings, Plus, ArrowLeft, BookOpen, Rocket, Heart, Target, GraduationCap, Briefcase, CheckCircle2, Loader2 } from 'lucide-react';
 import { Playbook, Board, ColumnData, Id } from '../types';
 import { initialPlaybooks } from '../data';
 
@@ -10,7 +10,7 @@ interface CreateBoardModalProps {
     onCreateBoard: (board: Omit<Board, 'id'>) => void;
 }
 
-type Step = 'selection' | 'configuration';
+type Step = 'selection' | 'ai-prompt' | 'ai-processing' | 'configuration';
 type CreationMethod = 'ai' | 'playbook' | 'template' | 'scratch';
 
 const templates = [
@@ -81,6 +81,11 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
     const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
     const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
     
+    // AI prompt state
+    const [aiDescription, setAiDescription] = useState('');
+    const [processingStep, setProcessingStep] = useState(-1); // -1 = not started, 0/1/2 = active
+    const processingRef = useRef(false);
+
     // Form State
     const [boardName, setBoardName] = useState('');
     const [boardSlug, setBoardSlug] = useState('');
@@ -147,15 +152,14 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
     };
 
     const handleBack = () => {
-        if (step === 'configuration') {
-            if (method === 'scratch' || method === 'ai') {
-                setStep('selection');
-                setMethod(null);
+        if (step === 'ai-prompt') {
+            setStep('selection');
+            setMethod(null);
+            setAiDescription('');
+        } else if (step === 'configuration') {
+            if (method === 'ai') {
+                setStep('ai-prompt');
             } else {
-                // If came from template/playbook selection, go back to selection but keep method? 
-                // Actually the UI shows tabs for Playbooks/Templates/Community. 
-                // For simplicity, let's go back to method selection or we could implement the tabbed view.
-                // The screenshot shows "Voltar" goes back to the selection grid.
                 setStep('selection');
                 setMethod(null);
                 setSelectedTemplate(null);
@@ -163,6 +167,37 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
             }
         }
     };
+
+    // Runs the processing animation when step === 'ai-processing'
+    useEffect(() => {
+        if (step !== 'ai-processing' || processingRef.current) return;
+        processingRef.current = true;
+        setProcessingStep(0);
+        const t1 = setTimeout(() => setProcessingStep(1), 1400);
+        const t2 = setTimeout(() => setProcessingStep(2), 2800);
+        const t3 = setTimeout(() => {
+            // All steps done — create the board and close
+            onCreateBoard({
+                name: boardName,
+                slug: boardSlug,
+                description: boardDescription,
+                type: 'ai',
+                columns,
+            });
+            onClose();
+            // Reset everything
+            setStep('selection');
+            setMethod(null);
+            setAiDescription('');
+            setBoardName('');
+            setBoardSlug('');
+            setBoardDescription('');
+            setColumns([]);
+            setProcessingStep(-1);
+            processingRef.current = false;
+        }, 4200);
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!isOpen) return null;
 
@@ -172,7 +207,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+                className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col"
             >
                 {/* Header */}
                 <div className="p-6 border-b border-slate-800 flex items-center justify-between">
@@ -183,7 +218,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-5">
                     <AnimatePresence mode="wait">
                         {step === 'selection' && !method && (
                             <motion.div 
@@ -193,15 +228,15 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                 exit={{ opacity: 0, x: 20 }}
                                 className="space-y-6"
                             >
-                                <div className="text-center mb-8">
-                                    <h3 className="text-lg font-semibold text-white mb-2">Como você quer começar?</h3>
-                                    <p className="text-slate-400">Escolha um caminho. O resto aparece depois.</p>
+                                <div className="text-center mb-4">
+                                    <h3 className="text-lg font-semibold text-white mb-1">Como você quer começar?</h3>
+                                    <p className="text-slate-400 text-sm">Escolha um caminho. O resto aparece depois.</p>
                                 </div>
 
-                                <div className="grid gap-4 max-w-2xl mx-auto">
+                                <div className="grid gap-3">
                                     {/* AI Option */}
-                                    <button 
-                                        onClick={() => handleMethodSelect('ai')}
+                                    <button
+                                        onClick={() => { setMethod('ai'); setStep('ai-prompt'); }}
                                         className="group relative p-1 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:opacity-90 transition-opacity"
                                     >
                                         <div className="bg-slate-900 rounded-[10px] p-6 flex items-center gap-4 h-full">
@@ -257,6 +292,60 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                             <h4 className="text-lg font-semibold text-white">Começar do zero</h4>
                                             <p className="text-slate-400 text-sm">Um board em branco.</p>
                                         </div>
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {step === 'ai-prompt' && (
+                            <motion.div
+                                key="ai-prompt"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="space-y-5"
+                            >
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white mb-1">Descreva seu negócio em 1 frase</h3>
+                                    <p className="text-sm text-slate-400">A IA irá gerar automaticamente uma pipeline de vendas para você.</p>
+                                </div>
+
+                                <textarea
+                                    autoFocus
+                                    rows={4}
+                                    value={aiDescription}
+                                    onChange={e => setAiDescription(e.target.value)}
+                                    placeholder={'Exemplo: "Sou tatuador e quero organizar meus leads de orçamento."'}
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm leading-relaxed"
+                                />
+
+                                <div className="flex justify-between items-center pt-2">
+                                    <button
+                                        onClick={handleBack}
+                                        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
+                                    >
+                                        <ArrowLeft className="w-4 h-4" /> Voltar
+                                    </button>
+                                    <button
+                                        disabled={!aiDescription.trim()}
+                                        onClick={() => {
+                                            const ts = Date.now();
+                                            setBoardName('Pipeline gerada pela IA');
+                                            setBoardSlug('pipeline-ia');
+                                            setBoardDescription(aiDescription.trim());
+                                            setColumns([
+                                                { id: `col-${ts}-1`, title: 'Novo Lead', color: '#3b82f6', type: 'open' },
+                                                { id: `col-${ts}-2`, title: 'Em Contato', color: '#eab308', type: 'follow-up' },
+                                                { id: `col-${ts}-3`, title: 'Proposta Enviada', color: '#8b5cf6', type: 'follow-up' },
+                                                { id: `col-${ts}-4`, title: 'Fechado', color: '#10b981', type: 'won' },
+                                                { id: `col-${ts}-5`, title: 'Perdido', color: '#ef4444', type: 'lost' },
+                                            ]);
+                                            setStep('ai-processing');
+                                        }}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        Gerar Board
                                     </button>
                                 </div>
                             </motion.div>
@@ -337,6 +426,72 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                             </div>
                                         </button>
                                     ))}
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {step === 'ai-processing' && (
+                            <motion.div
+                                key="ai-processing"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="space-y-4"
+                            >
+                                {/* Header inline — mesmo padrão de títulos de seção da plataforma */}
+                                <div className="flex items-center gap-3 pb-1">
+                                    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                                        <Sparkles className="w-5 h-5 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-base font-semibold text-white">Criando seu CRM</p>
+                                        <p className="text-xs text-slate-400">A IA está desenhando seu processo...</p>
+                                    </div>
+                                </div>
+
+                                {/* Steps — lista com divide-y, padrão da tela de Estágios */}
+                                <div className="rounded-xl border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+                                    {[
+                                        { label: 'Analisando seu negócio', sub: 'Entendendo o contexto e necessidades.' },
+                                        { label: 'Desenhando processo', sub: 'Criando fases do funil de vendas.' },
+                                        { label: 'Preparando preview', sub: 'Gerando visualização do pipeline.' },
+                                    ].map((s, i) => {
+                                        const done = processingStep > i;
+                                        const active = processingStep === i;
+                                        return (
+                                            <div
+                                                key={i}
+                                                className={`flex items-center gap-3 px-4 py-3 transition-colors duration-300 ${active ? 'bg-slate-800/60' : 'bg-slate-900'}`}
+                                            >
+                                                <div className="shrink-0 w-5 flex justify-center">
+                                                    {done
+                                                        ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                                        : active
+                                                        ? <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                                                        : <div className="w-4 h-4 rounded-full border border-slate-700" />
+                                                    }
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-sm font-medium transition-colors duration-300 ${done ? 'text-emerald-400' : active ? 'text-white' : 'text-slate-600'}`}>
+                                                        {s.label}
+                                                    </p>
+                                                    <p className={`text-xs transition-colors duration-300 ${done ? 'text-slate-500' : active ? 'text-slate-400' : 'text-slate-700'}`}>
+                                                        {s.sub}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Barra de progresso fina — padrão da plataforma */}
+                                <div className="h-0.5 bg-slate-800 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                        initial={{ width: '0%' }}
+                                        animate={{ width: processingStep === 0 ? '33%' : processingStep === 1 ? '66%' : '100%' }}
+                                        transition={{ duration: 1.2, ease: 'easeInOut' }}
+                                    />
                                 </div>
                             </motion.div>
                         )}

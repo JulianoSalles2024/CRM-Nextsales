@@ -246,7 +246,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
             <FlatCard className="p-0">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
-                        <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
+                        <h2 className="text-lg font-semibold text-white">Estágios do Pipeline</h2>
                         <p className="text-sm text-slate-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
                     </div>
                     <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">

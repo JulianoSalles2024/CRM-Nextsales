@@ -53,6 +53,10 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     const [unarchiveTarget, setUnarchiveTarget] = useState<TeamMember | null>(null);
     const [isUnarchiving, setIsUnarchiving] = useState(false);
 
+    // Delete state
+    const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     // Tab state
     const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'goals'>('active');
     const [currentPage, setCurrentPage] = useState(1);
@@ -163,6 +167,24 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         }
     };
 
+    const handleDeleteUser = async () => {
+        if (!deleteTarget) return;
+        setIsDeleting(true);
+        const [blockResult, archiveResult] = await Promise.all([
+            supabase.rpc('admin_block_user', { p_user_id: deleteTarget.id }),
+            supabase.rpc('admin_archive_user', { p_user_id: deleteTarget.id }),
+        ]);
+        setIsDeleting(false);
+        setDeleteTarget(null);
+        const error = blockResult.error ?? archiveResult.error;
+        if (error) {
+            showToast(`Erro ao excluir: ${error.message}`, 'error');
+        } else {
+            await fetchMembers();
+            showToast('Usuário removido com sucesso', 'success');
+        }
+    };
+
     // Invite Modal State
     const [inviteRole, setInviteRole] = useState<UserRole>('Vendedor');
     const [inviteExpiration, setInviteExpiration] = useState<'7 days' | '30 days' | 'never'>('7 days');
@@ -219,12 +241,12 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
             <AnimatePresence>
                 {toast && (
                     <motion.div
-                        initial={{ opacity: 0, y: -12 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -12 }}
-                        className={`fixed top-5 right-5 z-[100] px-5 py-3 rounded-xl text-sm font-medium shadow-lg border ${
+                        exit={{ opacity: 0, y: 12 }}
+                        className={`fixed bottom-5 right-5 z-[100] px-5 py-3 rounded-xl text-sm font-medium shadow-lg border ${
                             toast.type === 'success'
-                                ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
+                                ? 'bg-blue-950 border-blue-700 text-blue-300'
                                 : 'bg-red-950 border-red-700 text-red-300'
                         }`}
                     >
@@ -354,6 +376,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                             {isAdmin && member.id !== currentUser.id && (
                                 <div className="flex items-center gap-2">
                                     {activeTab === 'archived' ? (
+                                        <>
                                         <button
                                             onClick={() => setUnarchiveTarget(member)}
                                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-400 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 hover:border-amber-500/50 transition-all"
@@ -362,6 +385,15 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                             <Archive className="w-3.5 h-3.5" />
                                             Desarquivar
                                         </button>
+                                        <button
+                                            onClick={() => setDeleteTarget(member)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 hover:border-red-500/50 transition-all"
+                                            title="Excluir usuário"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            Excluir
+                                        </button>
+                                        </>
                                     ) : (
                                         <>
                                             {member.isActive ? (
@@ -390,6 +422,14 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                             >
                                                 <Archive className="w-3.5 h-3.5" />
                                                 Arquivar
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteTarget(member)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 hover:border-red-500/50 transition-all"
+                                                title="Excluir usuário"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                Excluir
                                             </button>
                                         </>
                                     )}
@@ -591,6 +631,52 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         : <Archive className="w-4 h-4" />
                                     }
                                     {isUnarchiving ? 'Desarquivando...' : 'Desarquivar'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {deleteTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+                        >
+                            <div className="p-6">
+                                <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
+                                    <Trash2 className="w-6 h-6 text-red-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white text-center">Excluir usuário?</h3>
+                                <p className="text-sm text-slate-400 text-center mt-2">
+                                    Realmente gostaria de excluir o usuário{' '}
+                                    <span className="text-white font-medium">{deleteTarget.name}</span>?
+                                    Os leads cadastrados por ele serão mantidos.
+                                </p>
+                            </div>
+                            <div className="px-6 pb-6 flex gap-3">
+                                <button
+                                    onClick={() => setDeleteTarget(null)}
+                                    disabled={isDeleting}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300 border border-slate-700 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleDeleteUser}
+                                    disabled={isDeleting}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-500 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting
+                                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                                        : <Trash2 className="w-4 h-4" />
+                                    }
+                                    {isDeleting ? 'Excluindo...' : 'Excluir'}
                                 </button>
                             </div>
                         </motion.div>

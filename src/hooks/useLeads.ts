@@ -31,18 +31,20 @@ export function useLeads(companyId: string | null) {
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
   // company_id is NOT sent — the enforce_company_id() trigger stamps it server-side.
+  // .select() is intentionally omitted: the SELECT policy (tenant_isolation) blocks
+  // reading back the row immediately after INSERT because company_id is set by trigger,
+  // not in the payload. The lead is returned from input data; fetchLeads() syncs state.
   const createLead = useCallback(async (lead: Omit<Lead, 'id'>): Promise<Lead> => {
     if (!companyId) throw new Error('CompanyId missing');
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    const ownerId = session?.user?.id;
+    if (!ownerId) throw new Error('User not authenticated');
+    const { error } = await supabase
       .from('leads')
-      .insert(mapLeadToDb({ ...lead, ownerId: user?.id }))
-      .select()
-      .single();
+      .insert({ ...mapLeadToDb({ ...lead, ownerId }), company_id: companyId, is_archived: false });
     if (error) throw error;
-    const created = mapLeadFromDb(data);
     await fetchLeads();
-    return created;
+    return { ...lead, id: '' } as Lead;
   }, [companyId, fetchLeads]);
 
   const updateLead = useCallback(async (id: Id, updates: Partial<Lead>): Promise<void> => {

@@ -32,6 +32,7 @@ import RecoveryView from './components/RecoveryView';
 import InboxView from './components/InboxView';
 import SdrBotModal from './components/SdrBotModal';
 import SdrAssistantChat from './components/SdrAssistantChat';
+import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 
 // Router
 import { AppRouter } from '@/src/app/AppRouter';
@@ -42,18 +43,22 @@ import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
 // Auth
 import { useAuth } from '@/src/features/auth/AuthContext';
 
+// Notifications
+import { useNotificationActions } from '@/src/features/notifications/useNotificationActions';
+
 // Supabase hooks
 import { useLeads } from '@/src/hooks/useLeads';
 import { useTasks } from '@/src/hooks/useTasks';
 import { useActivities } from '@/src/hooks/useActivities';
 import { useBoards } from '@/src/hooks/useBoards';
 import { useUsers } from '@/src/hooks/useUsers';
+import { useGroups } from '@/src/hooks/useGroups';
 
 // Types
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board } from './types';
 
 // Data (UI-only initial values — no leads/tasks/activities)
-import { initialTags, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
+import { initialTags, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
 
 
 // --- Local Storage Hook (for UI preferences only) ---
@@ -138,7 +143,7 @@ const App: React.FC = () => {
     const [emailDrafts, setEmailDrafts] = useLocalStorage<EmailDraft[]>('crm-emailDrafts', []);
     const [conversations, setConversations] = useLocalStorage<ChatConversation[]>('crm-conversations', initialConversations);
     const [messages, setMessages] = useLocalStorage<ChatMessage[]>('crm-messages', initialMessages);
-    const [groups, setGroups] = useLocalStorage<Group[]>('crm-groups', initialGroups);
+    const { groups, createGroup, updateGroup: updateGroupInDb, deleteGroup: deleteGroupInDb } = useGroups(companyId);
     const [groupAnalyses, setGroupAnalyses] = useLocalStorage<GroupAnalysis[]>('crm-groupAnalyses', []);
     const [notifications, setNotifications] = useLocalStorage<NotificationType[]>('crm-notifications', initialNotifications);
     const [playbooks, setPlaybooks] = useLocalStorage<Playbook[]>('crm-playbooks', initialPlaybooks);
@@ -206,6 +211,10 @@ const App: React.FC = () => {
             setInboxMode('standard');
         }
     }, [activeView]);
+
+    const isSeller = currentUserRole === 'seller';
+    const { notifyLeadCreated, notifyLeadWon, notifyLeadLost } =
+        useNotificationActions(isSeller ? companyId : null, isSeller ? authUser?.id ?? null : null);
 
     const { credentials } = useAIProviders();
     const isAiConfigured =
@@ -397,6 +406,7 @@ const App: React.FC = () => {
                 };
                 const created = await createLead(newLead);
                 showNotification(`Lead "${created.name}" criado.`, 'success');
+                notifyLeadCreated(localUser.name, created.name).catch(() => {});
             }
         } catch (err) {
             safeError('Failed to save lead:', err);
@@ -483,6 +493,9 @@ const App: React.FC = () => {
 
         try {
             await updateLead(leadId, updates);
+            if (isWon) {
+                notifyLeadWon(localUser.name, leadToMove.name, leadToMove.value ?? 0).catch(() => {});
+            }
         } catch (err) {
             safeError('Failed to move lead:', err);
             showNotification('Erro ao mover lead.', 'error');
@@ -524,6 +537,7 @@ const App: React.FC = () => {
         try {
             await updateLead(lead.id, updates);
             createActivityLog(lead.id, 'status_change', `Lead movido para "${columns.find(c => c.id === columnId)?.title}" (Motivo: ${reason}).`);
+            notifyLeadLost(localUser.name, lead.name, lead.value ?? 0).catch(() => {});
         } catch (err) {
             safeError('Failed to process lost lead:', err);
             showNotification('Erro ao processar lead perdido.', 'error');
@@ -686,23 +700,29 @@ const App: React.FC = () => {
     };
 
     // Groups
-    const handleCreateOrUpdateGroup = (data: CreateGroupData | UpdateGroupData) => {
-        if (editingGroup && editingGroup.id) {
-            const updatedGroup: Group = { ...editingGroup, ...data };
-            setGroups(current => current.map(g => g.id === editingGroup.id ? updatedGroup : g));
-            showNotification(`Grupo "${updatedGroup.name}" atualizado.`, 'success');
-        } else {
-            const newGroup: Group = { id: `group-${Date.now()}`, ...data as CreateGroupData };
-            setGroups(current => [newGroup, ...current]);
-            showNotification(`Grupo "${newGroup.name}" criado.`, 'success');
+    const handleCreateOrUpdateGroup = async (data: CreateGroupData | UpdateGroupData) => {
+        try {
+            if (editingGroup && editingGroup.id) {
+                await updateGroupInDb(editingGroup.id, { ...editingGroup, ...data });
+                showNotification(`Grupo "${data.name}" atualizado.`, 'success');
+            } else {
+                const created = await createGroup(data as CreateGroupData);
+                showNotification(`Grupo "${created.name}" criado.`, 'success');
+            }
+            setGroupModalOpen(false);
+            setEditingGroup(null);
+        } catch (err: any) {
+            showNotification(err.message ?? 'Erro ao salvar grupo.', 'error');
         }
-        setGroupModalOpen(false);
-        setEditingGroup(null);
     };
 
-    const handleDeleteGroup = (groupId: Id) => {
-        setGroups(current => current.filter(g => g.id !== groupId));
-        showNotification('Grupo deletado.', 'success');
+    const handleDeleteGroup = async (groupId: Id) => {
+        try {
+            await deleteGroupInDb(groupId);
+            showNotification('Grupo deletado.', 'success');
+        } catch {
+            showNotification('Erro ao deletar grupo.', 'error');
+        }
     };
 
     // Group Analysis
@@ -734,6 +754,7 @@ const App: React.FC = () => {
         const newBoardId = await createBoard(newBoardData);
         if (newBoardId) {
             setActiveBoardId(newBoardId);
+            setActiveView('Pipeline');
             showNotification(`Board "${newBoardData.name}" criado com sucesso!`, 'success');
         } else {
             showNotification('Erro ao criar board. Verifique as permissões e tente novamente.', 'error');
@@ -997,6 +1018,8 @@ const App: React.FC = () => {
                 )
             )}
         </AnimatePresence>
+
+        <OnboardingModal onOpenCreateBoard={() => setCreateBoardModalOpen(true)} />
 
         <CreateBoardModal
             isOpen={isCreateBoardModalOpen}

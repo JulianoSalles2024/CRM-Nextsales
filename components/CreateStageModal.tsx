@@ -48,16 +48,19 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="bg-slate-900 rounded-lg shadow-xl w-full max-w-md border border-slate-800 flex flex-col"
+                className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-800 flex flex-col"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-6 border-b border-slate-800">
-                    <div className="flex items-start justify-between">
-                        <h2 className="text-xl font-bold text-white">{isEditMode ? 'Editar Estágio' : 'Criar Novo Estágio'}</h2>
-                        <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
-                            <X className="w-5 h-5" />
-                        </button>
+                <div className="px-6 py-5 border-b border-slate-800 flex items-start justify-between gap-4">
+                    <div>
+                        <h2 className="text-lg font-bold text-white">{isEditMode ? 'Editar Estágio' : 'Criar Novo Estágio'}</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            {isEditMode ? 'Atualize as informações do estágio.' : 'Adicione uma nova etapa ao seu funil de vendas.'}
+                        </p>
                     </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors shrink-0">
+                        <X className="w-4 h-4" />
+                    </button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 space-y-5">
@@ -72,7 +75,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Ex: Qualificação"
                                 required
-                                className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
                             />
                         </div>
                         <div>
@@ -80,7 +83,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                                 Cor
                             </label>
                             <div className="flex items-center gap-3">
-                                <div className="relative w-10 h-10">
+                                <div className="relative w-11 h-[38px] shrink-0">
                                     <input
                                         type="color"
                                         id="stage-color"
@@ -89,16 +92,16 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                     />
                                     <div
-                                        className="w-full h-full rounded-md border border-slate-600"
+                                        className="w-full h-full rounded-lg border-2 border-slate-700 shadow-inner"
                                         style={{ backgroundColor: color }}
                                         aria-hidden="true"
-                                    ></div>
+                                    />
                                 </div>
                                 <input
                                     type="text"
                                     value={color}
                                     onChange={(e) => setColor(e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 font-mono"
                                 />
                             </div>
                         </div>
@@ -106,13 +109,17 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                              <label className="block text-sm font-medium text-slate-300 mb-2">
                                 Tipo de Estágio
                             </label>
-                             <div className="flex gap-1 rounded-md bg-slate-950 p-1 border border-slate-800 flex-wrap">
+                            <div className="flex gap-1 rounded-xl bg-slate-950 p-1 border border-slate-800">
                                 {typeOptions.map(option => (
                                     <button
                                         type="button"
                                         key={option.value}
                                         onClick={() => setType(option.value)}
-                                        className={`flex-1 min-w-[80px] py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors ${type === option.value ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-700/50'}`}
+                                        className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 ${
+                                            type === option.value
+                                                ? 'bg-slate-700 text-white shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-300'
+                                        }`}
                                     >
                                         {option.label}
                                     </button>
@@ -120,11 +127,11 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                             </div>
                         </div>
                     </div>
-                    <div className="p-4 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition-colors">
+                    <div className="px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                        <button type="submit" className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                             {isEditMode ? 'Salvar Alterações' : 'Criar Estágio'}
                         </button>
                     </div>

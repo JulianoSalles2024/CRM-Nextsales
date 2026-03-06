@@ -1,0 +1,41 @@
+@import './variables.css';
+
+/* Page background — all authenticated views inherit this */
+.crm-page {
+  @apply min-h-screen bg-gradient-to-b from-slate-950 to-slate-900;
+}
+
+/* Scrollbar — dark theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.slate.700') transparent;
+}
+*::-webkit-scrollbar        { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track  { background: transparent; }
+*::-webkit-scrollbar-thumb  { background: theme('colors.slate.700'); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: theme('colors.slate.600'); }
+
+/* Focus ring — always blue */
+.crm-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+/* Divider */
+.crm-divider {
+  @apply border-t border-slate-800;
+}
+
+/* Form field spacing */
+.crm-form {
+  @apply space-y-4;
+}
+
+/* Card surface */
+.crm-card {
+  @apply bg-slate-900 border border-slate-700 rounded-xl shadow-sm;
+}
+
+/* Modal overlay */
+.crm-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4;
+}

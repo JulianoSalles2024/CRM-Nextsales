@@ -36,6 +36,7 @@ export interface Group {
   accessLink?: string;
   status: GroupStatus;
   memberGoal?: number;
+  createdBy?: string;
 }
 
 export interface GroupInfo {
