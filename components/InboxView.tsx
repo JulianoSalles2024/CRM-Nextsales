@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FlatCard from '@/components/ui/FlatCard';
+import { useOpportunityScores } from '@/src/hooks/useOpportunityScores';
+import PredictiveOpportunitiesModal from '@/src/components/opportunities/PredictiveOpportunitiesModal';
 
 interface InboxViewProps {
     tasks: Task[];
@@ -39,6 +41,7 @@ interface InboxViewProps {
 
 const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNavigate, onMarkNotificationRead, onOpenLead, mode = 'standard' }) => {
     const [viewMode, setViewMode] = useState<'overview' | 'list' | 'focus'>('overview');
+    const [showOpportunities, setShowOpportunities] = useState(false);
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -71,9 +74,13 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
         }).slice(0, 2);
     }, [leads]);
 
-    const upsellOpportunities = useMemo(() => {
-        return leads.filter(l => l.value > 10000 && l.columnId === 'closed').slice(0, 1);
-    }, [leads]);
+    const { opportunities } = useOpportunityScores();
+    const bandCounts = useMemo(() => ({
+        hot:    opportunities.filter(o => o.priority_band === 'hot').length,
+        upsell: opportunities.filter(o => o.priority_band === 'upsell').length,
+        warm:   opportunities.filter(o => o.priority_band === 'warm').length,
+        risk:   opportunities.filter(o => o.priority_band === 'risk').length,
+    }), [opportunities]);
 
     const stats = [
         { label: 'ATRASADOS', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Tudo em dia' : `${overdueTasks.length} pendentes`, color: overdueTasks.length > 0 ? 'text-red-400' : 'text-emerald-500', bgColor: overdueTasks.length > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
@@ -107,6 +114,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
     }, [viewMode, priorityLead, onOpenLead]);
 
     return (
+        <>
         <div className="flex flex-col gap-8 h-full max-w-7xl mx-auto w-full p-6">
             {/* Header */}
             <div className="flex items-start justify-between">
@@ -231,44 +239,60 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                             </div>
                         </FlatCard>
 
-                        {/* Oportunidades Section */}
-                        <FlatCard className="p-6">
-                            <div className="flex items-center justify-between mb-6">
+                        {/* Oportunidades Inteligentes */}
+                        <FlatCard
+                            className="p-6 cursor-pointer hover:border-blue-900/40 transition-colors"
+                            onClick={() => setShowOpportunities(true)}
+                        >
+                            <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-emerald-500" />
-                                    <h3 className="font-bold text-white">Oportunidades (upsell)</h3>
+                                    <Zap className="w-5 h-5 text-blue-400" />
+                                    <h3 className="font-bold text-white">Oportunidades Inteligentes</h3>
                                 </div>
-                                <button className="text-sky-400 hover:text-sky-300 text-sm font-medium">Ver tudo</button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowOpportunities(true); }}
+                                    className="text-sky-400 hover:text-sky-300 text-sm font-medium"
+                                >
+                                    Ver tudo
+                                </button>
                             </div>
-                            <div className="space-y-4">
-                                {upsellOpportunities.map(lead => (
-                                    <div key={lead.id} className="flex items-center justify-between group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-2 bg-emerald-500/10 rounded-lg">
-                                                <TrendingUp className="w-5 h-5 text-emerald-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-white font-medium">Oportunidade de Upsell</p>
-                                                <p className="text-xs text-slate-500">Sem empresa fechou há 40 dias • R$ 12.000</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition-colors">
-                                                Aplicar
-                                            </button>
-                                            <button
-                                                onClick={() => onOpenLead?.(lead)}
-                                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-colors"
-                                            >
-                                                Abrir
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {upsellOpportunities.length === 0 && (
-                                    <p className="text-slate-500 text-sm text-center py-4">Nenhuma oportunidade identificada</p>
-                                )}
-                            </div>
+                            {opportunities.length > 0 ? (
+                                <div className="flex items-center gap-5 flex-wrap">
+                                    {bandCounts.hot > 0 && (
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-xl">🔥</span>
+                                            <span className="text-lg font-bold text-orange-400">{bandCounts.hot}</span>
+                                            <span className="text-xs text-slate-500">Hot</span>
+                                        </span>
+                                    )}
+                                    {bandCounts.upsell > 0 && (
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-xl">📈</span>
+                                            <span className="text-lg font-bold text-emerald-400">{bandCounts.upsell}</span>
+                                            <span className="text-xs text-slate-500">Upsell</span>
+                                        </span>
+                                    )}
+                                    {bandCounts.warm > 0 && (
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-xl">🙂</span>
+                                            <span className="text-lg font-bold text-blue-400">{bandCounts.warm}</span>
+                                            <span className="text-xs text-slate-500">Warm</span>
+                                        </span>
+                                    )}
+                                    {bandCounts.risk > 0 && (
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-xl">⚠️</span>
+                                            <span className="text-lg font-bold text-red-400">{bandCounts.risk}</span>
+                                            <span className="text-xs text-slate-500">Risco</span>
+                                        </span>
+                                    )}
+                                    <p className="w-full text-xs text-slate-600 mt-1">
+                                        {opportunities.length} lead{opportunities.length !== 1 ? 's' : ''} classificado{opportunities.length !== 1 ? 's' : ''} · clique para ver tudo
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-slate-500 text-sm text-center py-4">Nenhuma oportunidade identificada</p>
+                            )}
                         </FlatCard>
                     </div>
                 </div>
@@ -404,6 +428,17 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                 </div>
             )}
         </div>
+
+        <PredictiveOpportunitiesModal
+            isOpen={showOpportunities}
+            onClose={() => setShowOpportunities(false)}
+            onSelectLead={(leadId) => {
+                const lead = leads.find(l => String(l.id) === leadId);
+                if (lead) onOpenLead?.(lead);
+                setShowOpportunities(false);
+            }}
+        />
+        </>
     );
 };
 

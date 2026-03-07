@@ -82,6 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const mainNavItems = [
     { icon: Inbox, label: 'Inbox' },
     { icon: LayoutDashboard, label: 'Dashboard' },
+    { icon: ScanLine, label: 'Painel 360' },
     { icon: Columns, label: 'Pipeline' },
     { icon: BookOpen, label: 'Playbooks' },
     { icon: Users, label: 'Leads' },
@@ -91,7 +92,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: ArchiveRestore, label: 'Recuperação' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
-    { icon: ScanLine, label: 'Painel 360' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter((item) => {
     if (!isChatEnabled && item.label === 'Chat') return false;

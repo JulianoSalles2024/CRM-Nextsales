@@ -97,7 +97,7 @@ const App: React.FC = () => {
 
     const localUser: User = {
         id: authUser?.id ?? 'local-user',
-        name: authUser?.user_metadata?.full_name ?? authUser?.email ?? 'Usuário',
+        name: authUser?.user_metadata?.full_name ?? authUser?.user_metadata?.name ?? (authUser?.email ? authUser.email.split('@')[0] : 'Usuário'),
         email: authUser?.email ?? '',
         role: 'Admin',
         joinedAt: authUser?.created_at ?? new Date().toISOString(),
@@ -376,7 +376,7 @@ const App: React.FC = () => {
                     lastActivityTimestamp: now,
                 };
                 await updateLead(editingLead.id, updates);
-                showNotification(`Lead "${data.name || oldLead.name}" atualizado.`, 'success');
+                showNotification(`Lead "${data.name || oldLead.name}" atualizado.`, 'info');
                 await createActivityLog(editingLead.id, 'note', 'Lead atualizado.');
             } else { // CREATE
                 if (!activeBoardId) {
@@ -405,7 +405,7 @@ const App: React.FC = () => {
                     probability: calculateProbabilityForStage(newColumnId, columns),
                 };
                 const created = await createLead(newLead);
-                showNotification(`Lead "${created.name}" criado.`, 'success');
+                showNotification(`Lead "${created.name}" criado.`, 'info');
                 notifyLeadCreated(localUser.name, created.name).catch(() => {});
             }
         } catch (err) {
@@ -533,7 +533,7 @@ const App: React.FC = () => {
             probability: calculateProbabilityForStage(columnId, columns),
             lostReason: reason,
             reactivationDate: reactivationDate ? new Date(reactivationDate).toISOString() : undefined,
-            ...(reactivationDate === null ? { status: 'ENCERRADO' } : {}),
+            status: 'ENCERRADO',
         };
         try {
             await updateLead(lead.id, updates);
@@ -916,7 +916,8 @@ const App: React.FC = () => {
         <AnimatePresence>
             {selectedLead && (
                 <LeadDetailSlideover
-                    lead={selectedLead}
+                    lead={leads.find(l => l.id === selectedLead.id) ?? selectedLead}
+                    boards={boards}
                     activities={activities.filter(a => a.leadId === selectedLead.id)}
                     emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
                     tasks={tasks}
@@ -924,6 +925,8 @@ const App: React.FC = () => {
                     onClose={() => setSelectedLead(null)}
                     onEdit={() => { setEditingLead(selectedLead); setCreateLeadModalOpen(true); }}
                     onDelete={() => handleDeleteLead(selectedLead.id)}
+                    onMoveStage={(columnId) => handleUpdateLeadColumn(selectedLead.id, columnId)}
+                    onReopen={() => handleReactivateLead(selectedLead.id)}
                     onAddNote={(text) => createActivityLog(selectedLead.id, 'note', text)}
                     onSendEmailActivity={(subject) => createActivityLog(selectedLead.id, 'email_sent', `Email enviado: "${subject}"`)}
                     onAddTask={() => { setPreselectedDataForTask({ leadId: selectedLead.id }); setCreateTaskModalOpen(true); }}

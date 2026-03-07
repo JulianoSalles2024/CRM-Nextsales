@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx --env-file=.env.local server.ts",
+    "dev": "concurrently \"tsx --env-file=.env.local server.ts\" \"vite\"",
+    "dev:api": "tsx --env-file=.env.local server.ts",
+    "dev:ui": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
@@ -29,6 +31,7 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "express": "^5.2.1",
+    "concurrently": "^9.0.0",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

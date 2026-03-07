@@ -474,7 +474,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                     <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-300">
                                         <div className="flex items-center gap-2">
                                             <div className="w-20 bg-slate-700 rounded-full h-1.5">
-                                                <div className="h-1.5 rounded-full" style={{ width: `${lead.probability || 0}%`, backgroundColor: '#8b5cf6' }}></div>
+                                                <div className="h-1.5 rounded-full" style={{ width: `${lead.probability || 0}%`, backgroundColor: '#2563EB' }}></div>
                                             </div>
                                             <span>{lead.probability || 0}%</span>
                                         </div>

@@ -3,19 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, 
     User, 
-    Building, 
-    DollarSign, 
+    DollarSign,
     Tag as TagIcon, 
-    Clock, 
-    Trash2, 
-    MessageSquare, 
-    ArrowRight, 
-    TrendingUp, 
-    Sparkles, 
-    FileText, 
-    Mail, 
-    BookOpen, 
-    Circle, 
+    Clock,
+    Trash2,
+    MessageSquare,
+    ArrowRight,
+    TrendingUp,
+    Sparkles,
+    FileText,
+    Mail,
+    BookOpen,
+    Circle,
     CheckCircle2,
     RotateCcw,
     Plus,
@@ -24,10 +23,11 @@ import {
     Check,
     Edit3
 } from 'lucide-react';
-import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task, PlaybookHistoryEntry } from '../types';
+import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task, PlaybookHistoryEntry, Board } from '../types';
 
 interface LeadDetailSlideoverProps {
   lead: Lead;
+  boards: Board[];
   activities: Activity[];
   emailDrafts: EmailDraft[];
   tasks: Task[];
@@ -35,6 +35,8 @@ interface LeadDetailSlideoverProps {
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onMoveStage: (columnId: Id) => void;
+  onReopen: () => void;
   onAddNote: (noteText: string) => void;
   onSendEmailActivity: (subject: string) => void;
   onAddTask: () => void;
@@ -46,28 +48,33 @@ interface LeadDetailSlideoverProps {
   onApplyPlaybook: (playbookId: Id) => void;
 }
 
-const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ 
-    lead, 
-    activities, 
-    emailDrafts, 
-    tasks, 
-    playbooks, 
-    onClose, 
-    onEdit, 
-    onDelete, 
-    onAddNote, 
-    onSendEmailActivity, 
-    onAddTask, 
-    onSaveDraft, 
-    onDeleteDraft, 
-    showNotification, 
-    onUpdateTaskStatus, 
+const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
+    lead,
+    boards,
+    activities,
+    emailDrafts,
+    tasks,
+    playbooks,
+    onClose,
+    onEdit,
+    onDelete,
+    onMoveStage,
+    onReopen,
+    onAddNote,
+    onSendEmailActivity,
+    onAddTask,
+    onSaveDraft,
+    onDeleteDraft,
+    showNotification,
+    onUpdateTaskStatus,
     onDeactivatePlaybook,
     onApplyPlaybook
 }) => {
   const [activeTab, setActiveTab] = useState('Timeline');
   const tabs = ['Timeline', 'Playbook', 'Produtos', 'IA Insights'];
   const [newNote, setNewNote] = useState('');
+  const [timelinePage, setTimelinePage] = useState(1);
+  const TIMELINE_PER_PAGE = 3;
   
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -81,20 +88,28 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
     setNewNote('');
   };
 
-  const stages = ['Novos Leads', 'Contatado', 'Qualificando', 'Qualificado (MQL)'];
-  const currentStageIndex = useMemo(() => {
-    // This is a simplified mapping. In a real app, you'd map columnId to these indices.
-    // For now, we'll try to find a match or default to 0.
-    const stageMap: Record<string, number> = {
-      'prospect': 0,
-      'qualify': 2,
-      'proposal': 3,
-      'negotiation': 3,
-      'scheduling': 3,
-      'closed': 3
-    };
-    return stageMap[lead.columnId as string] ?? 0;
-  }, [lead.columnId]);
+  // Pipeline dinâmico: encontra o board ao qual este lead pertence
+  const leadBoard = useMemo(
+    () => boards.find(b => b.columns.some(c => c.id === lead.columnId)),
+    [boards, lead.columnId]
+  );
+  const pipelineStages = leadBoard?.columns ?? [];
+  const activeStageIdx = pipelineStages.findIndex(c => c.id === lead.columnId);
+
+  // Status badge derivado do tipo da coluna atual — atualiza junto com o Kanban
+  const statusBadge = useMemo(() => {
+    const currentCol = pipelineStages.find(c => c.id === lead.columnId);
+    if (currentCol) {
+      if (currentCol.type === 'won')  return { label: 'GANHO',   cls: 'bg-emerald-500/20 text-emerald-400' };
+      if (currentCol.type === 'lost') return { label: 'PERDIDO', cls: 'bg-red-500/20 text-red-400' };
+      return { label: 'ATIVO', cls: 'bg-sky-500/20 text-sky-400' };
+    }
+    // Fallback apenas se o board não foi encontrado
+    const s = (lead.status ?? '').toLowerCase();
+    if (s === 'ganho')                        return { label: 'GANHO',   cls: 'bg-emerald-500/20 text-emerald-400' };
+    if (s === 'encerrado' || s === 'perdido') return { label: 'PERDIDO', cls: 'bg-red-500/20 text-red-400' };
+    return { label: 'ATIVO', cls: 'bg-sky-500/20 text-sky-400' };
+  }, [lead.columnId, lead.status, pipelineStages]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -114,8 +129,8 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
               <p className="text-sky-400 text-xl font-bold mt-1">{currencyFormatter.format(lead.value)}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="bg-emerald-500/20 text-emerald-500 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                <Check className="w-3 h-3" /> {lead.columnId === 'closed' ? 'GANHO' : 'ABERTO'}
+              <span className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 ${statusBadge.cls}`}>
+                <Check className="w-3 h-3" /> {statusBadge.label}
               </span>
               <button 
                 onClick={onEdit}
@@ -123,7 +138,10 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
               >
                 <Edit3 className="w-3.5 h-3.5" /> Editar
               </button>
-              <button className="bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-700/50 flex items-center gap-2 transition-colors">
+              <button
+                onClick={onReopen}
+                className="bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-700/50 flex items-center gap-2 transition-colors"
+              >
                 <RotateCcw className="w-3.5 h-3.5" /> Reabrir
               </button>
               <button onClick={onDelete} className="p-2 text-slate-500 hover:text-red-400 transition-colors">
@@ -135,30 +153,33 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
             </div>
           </div>
 
-          {/* Pipeline Progress */}
-          <div className="mt-8 flex items-center gap-4">
-            {stages.map((stage, i) => (
-                <React.Fragment key={stage}>
-                    <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${i <= currentStageIndex ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]' : 'bg-slate-700'}`} />
-                        <span className={`text-xs font-bold tracking-tight ${i <= currentStageIndex ? 'text-white' : 'text-slate-500'}`}>{stage}</span>
-                    </div>
-                    {i < stages.length - 1 && <div className="h-[1px] w-8 bg-slate-800" />}
+          {/* Pipeline Progress — dinâmico via board_stages */}
+          <div className="mt-8 flex items-center gap-4 flex-wrap">
+            {pipelineStages.map((stage, i) => {
+              const isActive = i === activeStageIdx;
+              const isPast   = i < activeStageIdx;
+              return (
+                <React.Fragment key={stage.id}>
+                  <button
+                    onClick={() => onMoveStage(stage.id)}
+                    className="flex items-center gap-2 group"
+                    title={`Mover para ${stage.title}`}
+                  >
+                    <div className={`w-3 h-3 rounded-full transition-colors ${isActive ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]' : isPast ? 'bg-sky-800' : 'bg-slate-700 group-hover:bg-slate-500'}`} />
+                    <span className={`text-xs font-bold tracking-tight transition-colors ${isActive ? 'text-white' : isPast ? 'text-sky-700' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                      {stage.title}
+                    </span>
+                  </button>
+                  {i < pipelineStages.length - 1 && <div className="h-[1px] w-8 bg-slate-800" />}
                 </React.Fragment>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         <div className="flex-1 flex overflow-hidden border-t border-slate-800/50">
           {/* Sidebar */}
           <div className="w-72 border-r border-slate-800/50 p-8 space-y-8 overflow-y-auto custom-scrollbar">
-            <section>
-              <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4 flex items-center gap-2">
-                <Building className="w-3 h-3" /> EMPRESA (CONTA)
-              </h3>
-              <p className="text-sm font-bold text-white">{lead.company || 'Sem empresa'}</p>
-            </section>
-
             <section>
               <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4 flex items-center gap-2">
                 <User className="w-3 h-3" /> CONTATO PRINCIPAL
@@ -247,7 +268,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
                       placeholder="Escreva uma nota..."
-                      className="w-full bg-transparent text-sm text-white placeholder-slate-600 focus:outline-none resize-none min-h-[100px]"
+                      className="w-full bg-transparent text-sm text-white placeholder-slate-600 focus:outline-none resize-none min-h-[24px]"
                     />
                     <div className="flex justify-end mt-4 pt-4 border-t border-slate-800/50">
                       <button 
@@ -259,32 +280,56 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    {activities.length > 0 ? (
-                      activities.map(activity => (
-                        <div key={activity.id} className="flex gap-4">
-                          <div className="mt-1">
-                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
-                              {activity.type === 'note' && <FileText className="w-4 h-4 text-sky-400" />}
-                              {activity.type === 'status_change' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
-                              {activity.type === 'email_sent' && <Mail className="w-4 h-4 text-amber-400" />}
+                  {(() => {
+                    const totalPages = Math.max(1, Math.ceil(activities.length / TIMELINE_PER_PAGE));
+                    const page = Math.min(timelinePage, totalPages);
+                    const paged = activities.slice((page - 1) * TIMELINE_PER_PAGE, page * TIMELINE_PER_PAGE);
+                    return (
+                      <div className="space-y-4">
+                        {activities.length > 0 ? (
+                          <>
+                            <div className="space-y-4">
+                              {paged.map(activity => (
+                                <div key={activity.id} className="flex gap-4">
+                                  <div className="mt-1">
+                                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
+                                      {activity.type === 'note' && <FileText className="w-4 h-4 text-sky-400" />}
+                                      {activity.type === 'status_change' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
+                                      {activity.type === 'email_sent' && <Mail className="w-4 h-4 text-amber-400" />}
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-bold text-white">{activity.authorName}</span>
+                                      <span className="text-[10px] text-slate-500">{new Date(activity.timestamp).toLocaleString('pt-BR')}</span>
+                                    </div>
+                                    <p className="text-sm text-slate-400">{activity.text}</p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
+                            {totalPages > 1 && (
+                              <div className="flex items-center justify-center gap-1 pt-4">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                                  <button
+                                    key={p}
+                                    onClick={() => setTimelinePage(p)}
+                                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${p === page ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
+                                  >
+                                    {p}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-center py-12">
+                            <p className="text-slate-500 text-sm italic">Nenhuma atividade registrada.</p>
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-bold text-white">{activity.authorName}</span>
-                              <span className="text-[10px] text-slate-500">{new Date(activity.timestamp).toLocaleString('pt-BR')}</span>
-                            </div>
-                            <p className="text-sm text-slate-400">{activity.text}</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-12">
-                        <p className="text-slate-500 text-sm italic">Nenhuma atividade registrada.</p>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
                 </div>
               )}
 

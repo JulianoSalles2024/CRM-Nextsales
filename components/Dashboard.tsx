@@ -179,7 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         if (riskLeads.length > 0) {
             showNotification(`${riskLeads.length} alertas de risco gerados na lista de atividades!`, 'warning');
         } else {
-            showNotification('Nenhum novo risco detectado. Carteira saudável!', 'success');
+            showNotification('Nenhum novo risco detectado. Carteira saudável!', 'info');
         }
     }, [leads, showNotification]);
 
@@ -263,32 +263,32 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             <p className="text-sm font-medium text-slate-400 mb-2">Distribuição da Carteira</p>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-3xl font-bold text-white">{walletHealth.activePct}%</span>
-                                <span className="text-emerald-500 text-sm font-bold uppercase">Ativos</span>
+                                <span className="text-blue-400 text-sm font-bold uppercase">Ativos</span>
                             </div>
                         </div>
-                        
+
                         <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex mb-5">
-                            <div className="h-full bg-emerald-500"  style={{ width: `${walletHealth.activePct}%` }}></div>
-                            <div className="h-full bg-amber-500"    style={{ width: `${walletHealth.perdidoPct}%` }}></div>
-                            <div className="h-full bg-red-500"      style={{ width: `${walletHealth.encerradoPct}%` }}></div>
-                            <div className="h-full bg-blue-500"     style={{ width: `${walletHealth.ganhoPct}%` }}></div>
+                            <div className="h-full" style={{ width: `${walletHealth.activePct}%`,    backgroundColor: '#3B82F6' }}></div>
+                            <div className="h-full" style={{ width: `${walletHealth.perdidoPct}%`,   backgroundColor: '#93C5FD' }}></div>
+                            <div className="h-full" style={{ width: `${walletHealth.encerradoPct}%`, backgroundColor: '#60A5FA' }}></div>
+                            <div className="h-full" style={{ width: `${walletHealth.ganhoPct}%`,     backgroundColor: '#1D4ED8' }}></div>
                         </div>
 
                         <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-medium text-slate-400">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#3B82F6' }}></div>
                                 <span>Ativos ({walletHealth.activeCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#93C5FD' }}></div>
                                 <span>Perdidos ({walletHealth.perdidoCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#60A5FA' }}></div>
                                 <span>Encerrados ({walletHealth.encerradoCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1D4ED8' }}></div>
                                 <span>Ganhos ({walletHealth.ganhoCount})</span>
                             </div>
                         </div>
