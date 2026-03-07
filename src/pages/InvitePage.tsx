@@ -100,7 +100,7 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
       userId = signInData.user.id;
       await supabase
         .from('profiles')
-        .update({ role: invite.role })
+        .update({ role: invite.role, company_id: invite.company_id })
         .eq('id', signInData.user.id);
     } else if (signInError && signInError.message === 'Invalid login credentials') {
       // Account does not exist — create it
