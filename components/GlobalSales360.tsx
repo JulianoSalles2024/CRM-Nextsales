@@ -41,17 +41,17 @@ function getDateRange(period: Period): { start: string; end: string } {
     const mo = now.getMonth();
     const d = now.getDate();
 
-    const end = new Date(y, mo, d);
-    let start: Date;
+    const endDate = new Date(y, mo, d, 23, 59, 59, 999);
+    let startDate: Date;
 
     switch (period) {
-        case 'hoje':   start = new Date(y, mo, d); break;
-        case 'semana': start = new Date(y, mo, d - 6); break;
-        case 'ano':    start = new Date(y, 0, 1); break;
+        case 'hoje':   startDate = new Date(y, mo, d, 0, 0, 0, 0); break;
+        case 'semana': startDate = new Date(y, mo, d - 6, 0, 0, 0, 0); break;
+        case 'ano':    startDate = new Date(y, 0, 1, 0, 0, 0, 0); break;
         case 'mes':
-        default:       start = new Date(y, mo, 1);
+        default:       startDate = new Date(y, mo, 1, 0, 0, 0, 0);
     }
-    return { start: toLocalDateStr(start), end: toLocalDateStr(end) };
+    return { start: startDate.toISOString(), end: endDate.toISOString() };
 }
 
 function getPrevDateRange(period: Period): { start: string; end: string } {
@@ -61,25 +61,26 @@ function getPrevDateRange(period: Period): { start: string; end: string } {
     const d = now.getDate();
 
     switch (period) {
-        case 'hoje': {
-            const s = toLocalDateStr(new Date(y, mo, d - 1));
-            return { start: s, end: s };
-        }
+        case 'hoje':
+            return {
+                start: new Date(y, mo, d - 1, 0, 0, 0, 0).toISOString(),
+                end:   new Date(y, mo, d - 1, 23, 59, 59, 999).toISOString(),
+            };
         case 'semana':
             return {
-                start: toLocalDateStr(new Date(y, mo, d - 13)),
-                end:   toLocalDateStr(new Date(y, mo, d - 7)),
+                start: new Date(y, mo, d - 13, 0, 0, 0, 0).toISOString(),
+                end:   new Date(y, mo, d - 7, 23, 59, 59, 999).toISOString(),
             };
         case 'ano':
             return {
-                start: toLocalDateStr(new Date(y - 1, 0, 1)),
-                end:   toLocalDateStr(new Date(y - 1, 11, 31)),
+                start: new Date(y - 1, 0, 1, 0, 0, 0, 0).toISOString(),
+                end:   new Date(y - 1, 11, 31, 23, 59, 59, 999).toISOString(),
             };
         case 'mes':
         default:
             return {
-                start: toLocalDateStr(new Date(y, mo - 1, 1)),
-                end:   toLocalDateStr(new Date(y, mo, 0)),
+                start: new Date(y, mo - 1, 1, 0, 0, 0, 0).toISOString(),
+                end:   new Date(y, mo, 0, 23, 59, 59, 999).toISOString(),
             };
     }
 }
@@ -216,7 +217,7 @@ const GlobalSales360: React.FC = () => {
         setLoading(true);
 
         const { start, end } = period === 'custom'
-            ? { start: customStart, end: customEnd }
+            ? { start: new Date(customStart + 'T00:00:00').toISOString(), end: new Date(customEnd + 'T23:59:59.999').toISOString() }
             : getDateRange(period);
         const { start: prevStart, end: prevEnd } = period === 'custom'
             ? { start: customStart, end: customEnd }
@@ -244,8 +245,8 @@ const GlobalSales360: React.FC = () => {
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', start + 'T00:00:00')
-                .lte('won_at', end + 'T23:59:59.999'),
+                .gte('won_at', start)
+                .lte('won_at', end),
 
             // Won leads previous period — all company
             supabase
@@ -255,8 +256,8 @@ const GlobalSales360: React.FC = () => {
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', prevStart + 'T00:00:00')
-                .lte('won_at', prevEnd + 'T23:59:59.999'),
+                .gte('won_at', prevStart)
+                .lte('won_at', prevEnd),
 
             // Sales current period — filtered by company sellers
             sellerIds.length > 0

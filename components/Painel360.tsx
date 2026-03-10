@@ -55,17 +55,17 @@ function getScoreRange(
     const y = n.getFullYear(), mo = n.getMonth(), d = n.getDate();
     switch (period) {
         case 'mes_atual':
-            return { start: toScoreLocal(new Date(y, mo, 1)), end: toScoreLocal(new Date(y, mo, d)) };
+            return { start: new Date(y, mo, 1, 0, 0, 0, 0).toISOString(), end: new Date(y, mo, d, 23, 59, 59, 999).toISOString() };
         case 'mes_especifico':
-            return { start: toScoreLocal(new Date(selYear, selMonth - 1, 1)), end: toScoreLocal(new Date(selYear, selMonth, 0)) };
+            return { start: new Date(selYear, selMonth - 1, 1, 0, 0, 0, 0).toISOString(), end: new Date(selYear, selMonth, 0, 23, 59, 59, 999).toISOString() };
         case 'trimestre': {
             const q = Math.floor(mo / 3);
-            return { start: toScoreLocal(new Date(y, q * 3, 1)), end: toScoreLocal(new Date(y, mo, d)) };
+            return { start: new Date(y, q * 3, 1, 0, 0, 0, 0).toISOString(), end: new Date(y, mo, d, 23, 59, 59, 999).toISOString() };
         }
         case 'ano':
-            return { start: toScoreLocal(new Date(y, 0, 1)), end: toScoreLocal(new Date(y, mo, d)) };
+            return { start: new Date(y, 0, 1, 0, 0, 0, 0).toISOString(), end: new Date(y, mo, d, 23, 59, 59, 999).toISOString() };
         case 'custom':
-            return { start: cStart, end: cEnd };
+            return { start: new Date(cStart + 'T00:00:00').toISOString(), end: new Date(cEnd + 'T23:59:59.999').toISOString() };
     }
 }
 
@@ -77,17 +77,17 @@ function getPrevScoreRange(
     const y = n.getFullYear(), mo = n.getMonth();
     switch (period) {
         case 'mes_atual':
-            return { start: toScoreLocal(new Date(y, mo - 1, 1)), end: toScoreLocal(new Date(y, mo, 0)) };
+            return { start: new Date(y, mo - 1, 1, 0, 0, 0, 0).toISOString(), end: new Date(y, mo, 0, 23, 59, 59, 999).toISOString() };
         case 'mes_especifico':
-            return { start: toScoreLocal(new Date(selYear, selMonth - 2, 1)), end: toScoreLocal(new Date(selYear, selMonth - 1, 0)) };
+            return { start: new Date(selYear, selMonth - 2, 1, 0, 0, 0, 0).toISOString(), end: new Date(selYear, selMonth - 1, 0, 23, 59, 59, 999).toISOString() };
         case 'trimestre': {
             const q = Math.floor(mo / 3);
-            return { start: toScoreLocal(new Date(y, (q - 1) * 3, 1)), end: toScoreLocal(new Date(y, q * 3, 0)) };
+            return { start: new Date(y, (q - 1) * 3, 1, 0, 0, 0, 0).toISOString(), end: new Date(y, q * 3, 0, 23, 59, 59, 999).toISOString() };
         }
         case 'ano':
-            return { start: toScoreLocal(new Date(y - 1, 0, 1)), end: toScoreLocal(new Date(y - 1, 11, 31)) };
+            return { start: new Date(y - 1, 0, 1, 0, 0, 0, 0).toISOString(), end: new Date(y - 1, 11, 31, 23, 59, 59, 999).toISOString() };
         case 'custom':
-            return { start: cStart, end: cEnd };
+            return { start: new Date(cStart + 'T00:00:00').toISOString(), end: new Date(cEnd + 'T23:59:59.999').toISOString() };
     }
 }
 
@@ -140,19 +140,19 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
         const { start, end } = getScoreRange(period, selMonth, selYear, customStart, customEnd);
         const { start: prevStart, end: prevEnd } = getPrevScoreRange(period, selMonth, selYear, customStart, customEnd);
         const today = toScoreLocal(n);
-        const consEnd = toScoreLocal(new Date(n.getFullYear(), n.getMonth(), 0));
-        const consStart = toScoreLocal(new Date(n.getFullYear(), n.getMonth() - 3, 1));
+        const consEnd = new Date(n.getFullYear(), n.getMonth(), 0, 23, 59, 59, 999).toISOString();
+        const consStart = new Date(n.getFullYear(), n.getMonth() - 3, 1, 0, 0, 0, 0).toISOString();
 
         const [curRes, prevRes, goalsRes, consRes] = await Promise.all([
             supabase.from('leads').select('owner_id, value')
                 .eq('company_id', companyId).eq('status', 'GANHO')
                 .eq('is_archived', false).is('deleted_at', null)
-                .gte('won_at', start + 'T00:00:00').lte('won_at', end + 'T23:59:59.999'),
+                .gte('won_at', start).lte('won_at', end),
 
             supabase.from('leads').select('owner_id, value')
                 .eq('company_id', companyId).eq('status', 'GANHO')
                 .eq('is_archived', false).is('deleted_at', null)
-                .gte('won_at', prevStart + 'T00:00:00').lte('won_at', prevEnd + 'T23:59:59.999'),
+                .gte('won_at', prevStart).lte('won_at', prevEnd),
 
             supabase.from('goals').select('user_id, goal_value')
                 .eq('company_id', companyId).eq('is_active', true)
@@ -162,7 +162,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
             supabase.from('leads').select('owner_id, value, won_at')
                 .eq('company_id', companyId).eq('status', 'GANHO')
                 .eq('is_archived', false).is('deleted_at', null)
-                .gte('won_at', consStart + 'T00:00:00').lte('won_at', consEnd + 'T23:59:59.999'),
+                .gte('won_at', consStart).lte('won_at', consEnd),
         ]);
 
         const curLeads  = (curRes.data  ?? []) as { owner_id: string | null; value: number }[];

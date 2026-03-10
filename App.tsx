@@ -433,7 +433,8 @@ const App: React.FC = () => {
     const handleUpdateLeadColumn = async (leadId: Id, newColumnId: Id, isAutomated: boolean = false) => {
         const leadToMove = leads.find(l => l.id === leadId);
         const newColumn = columns.find(c => c.id === newColumnId);
-        const oldColumn = columns.find(c => c.id === leadToMove?.columnId);
+        const oldColumn = columns.find(c => c.id === leadToMove?.columnId)
+            ?? boards.flatMap(b => b.columns).find(c => c.id === leadToMove?.columnId);
 
         if (!leadToMove || !newColumn) return;
 
@@ -446,14 +447,16 @@ const App: React.FC = () => {
         const now = new Date().toISOString();
         const newProbability = calculateProbabilityForStage(newColumnId, columns);
 
-        const isWon = newColumn.type === 'won' && oldColumn?.type !== 'won';
+        const isWon        = newColumn.type === 'won' && oldColumn?.type !== 'won';
+        const isLeavingWon = oldColumn?.type === 'won' && newColumn.type !== 'won';
 
         let updates: Partial<Lead> = {
             columnId: newColumnId,
             lastActivity: 'agora',
             lastActivityTimestamp: now,
             probability: newProbability,
-            ...(isWon ? { status: 'GANHO', wonAt: now } : {}),
+            ...(isWon        ? { status: 'GANHO', wonAt: now  } : {}),
+            ...(isLeavingWon ? { status: 'ATIVO',  wonAt: null } : {}),
         };
 
         // Playbook logic — check if lead has active playbook leaving its stages
