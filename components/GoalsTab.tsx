@@ -226,9 +226,9 @@ const GoalsTab: React.FC = () => {
                         initial={{ opacity: 0, y: -12 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -12 }}
-                        className={`fixed top-5 right-5 z-[100] px-5 py-3 rounded-xl text-sm font-medium shadow-lg border ${
+                        className={`fixed bottom-5 right-5 z-[100] px-5 py-3 rounded-xl text-sm font-medium shadow-lg border ${
                             toast.type === 'success'
-                                ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
+                                ? 'bg-blue-950 border-blue-700 text-blue-300'
                                 : 'bg-red-950 border-red-700 text-red-300'
                         }`}
                     >

@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { supabase } from '@/src/lib/supabase';
 import { AIToolId, AIToolConfig, DealCoachResult } from "../../features/ai/types";
+import { safeError } from '@/src/utils/logger';
 
 export class AIService {
   private provider: 'gemini' | 'openai' | 'anthropic';
