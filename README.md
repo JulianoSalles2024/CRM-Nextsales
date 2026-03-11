@@ -70,13 +70,18 @@ npm install
 cp .env.example .env.local
 # Edite .env.local com suas chaves (veja seção abaixo)
 
-# 4. Inicie o servidor de desenvolvimento
+# 4. Copie também para frontend/ (o Vite lê .env.local a partir de sua root)
+cp .env.local frontend/.env.local
+
+# 5. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
 Acesse em: `http://localhost:3002` (Vite) — a API Express roda em `http://localhost:3000`.
 
 > O comando `npm run dev` inicia ambos os servidores em paralelo via `concurrently`.
+>
+> **Por que dois `.env.local`?** O Vite está configurado com `root: './frontend'`, por isso lê variáveis `VITE_*` de `frontend/.env.local`. O servidor Express (`server.ts`) lê do `.env.local` na raiz. Em produção (Vercel), as env vars são injetadas diretamente — nenhum arquivo `.env` é necessário.
 
 ---
 
@@ -145,11 +150,64 @@ Copie `.env.example` para `.env.local` e preencha:
 
 ```
 CRM-Fity/
-├── index.html                    # Entry point do Vite
-├── index.tsx                     # Bootstrap React
-├── App.tsx                       # Root — estado global e providers
 ├── server.ts                     # Servidor Express local (porta 3000)
-├── vite.config.ts                # Config Vite (porta 3002, proxy → 3000)
+├── vite.config.ts                # Config Vite (root: frontend/, porta 3002, proxy → 3000)
+├── tsconfig.json                 # Paths @/* → frontend/*
+├── .env.local                    # Env vars para servidor Express local
+│
+├── frontend/                     # Código-fonte React (Vite root)
+│   ├── .env.local                # Env vars para Vite em desenvolvimento local
+│   ├── index.html                # Entry point do Vite
+│   ├── index.tsx                 # Bootstrap React
+│   ├── App.tsx                   # Root — estado global e providers
+│   ├── api.ts                    # Camada de serviço Supabase (auth, leads, tasks...)
+│   ├── data.ts                   # Constantes de dados iniciais
+│   ├── types.ts                  # Tipos compartilhados do frontend
+│   ├── components/               # Componentes UI compartilhados
+│   │   ├── AIComposer.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   └── ui/                   # FlatCard, GlassCard
+│   └── src/
+│       ├── app/
+│       │   ├── AppRouter.tsx     # Roteamento com guards de role
+│       │   └── useAppState.ts    # Estado global da aplicação
+│       ├── features/             # Domínios de negócio isolados
+│       │   ├── ai/               # Zenius copiloto — chat, prompts, histórico
+│       │   ├── ai-credentials/   # Gestão de provedores de IA
+│       │   ├── auth/             # AuthContext, AuthGate, Login, Register
+│       │   ├── chat/             # Chat de conversas (WhatsApp/canal)
+│       │   ├── dashboard/        # KPIs, Painel 360, SellerDetail360
+│       │   ├── install/          # Install Wizard — páginas e serviço
+│       │   ├── leads/            # Kanban, LeadList, modais de lead
+│       │   ├── notifications/    # Notificações real-time
+│       │   ├── playbooks/        # Playbooks de vendas
+│       │   ├── profile/          # Perfil do usuário
+│       │   ├── reports/          # Relatórios e exportação
+│       │   ├── settings/         # Configurações de equipe e estágios
+│       │   └── tasks/            # Tarefas e calendário
+│       ├── services/
+│       │   └── ai/
+│       │       ├── aiService.ts  # AIService — proxy seguro para /api/ai/generate
+│       │       └── config.ts     # Configuração de providers e modelos
+│       ├── lib/
+│       │   ├── supabase.ts       # Client Supabase (anon key, browser-safe)
+│       │   ├── permissions.ts    # RBAC — AppRole e Permissions
+│       │   ├── mappers.ts        # snake_case ↔ camelCase
+│       │   └── uiStyles.ts       # Design system — classes Tailwind reutilizáveis
+│       ├── hooks/                # Hooks de dados (Supabase)
+│       │   ├── useBoards.ts
+│       │   ├── useLeads.ts
+│       │   ├── useTasks.ts
+│       │   ├── useActivities.ts
+│       │   ├── useUsers.ts
+│       │   ├── useGoals.ts
+│       │   ├── useNotifications.ts  # Real-time via Supabase Realtime
+│       │   ├── usePlaybooks.ts
+│       │   ├── useGroupAnalyses.ts
+│       │   └── useOpportunityScores.ts
+│       └── utils/
+│           └── logger.ts         # safeError — logs apenas em dev
 │
 ├── api/                          # Serverless Functions (Vercel) / Express local
 │   ├── _lib/                     # Módulos compartilhados — SOMENTE server-side
@@ -168,40 +226,6 @@ CRM-Fity/
 │   │   ├── analyze.ts            # Scoring determinístico de leads
 │   │   └── list.ts               # Listagem de oportunidades por empresa
 │   └── health.ts                 # Health check
-│
-├── src/
-│   ├── app/
-│   │   ├── AppRouter.tsx         # Roteamento com guards de role
-│   │   └── useAppState.ts        # Estado global da aplicação
-│   ├── features/                 # Domínios de negócio isolados
-│   │   ├── ai/                   # Zenius copiloto — chat, prompts, histórico
-│   │   ├── ai-credentials/       # Gestão de provedores de IA
-│   │   ├── auth/                 # AuthContext, AuthGate, Login, Register
-│   │   ├── chat/                 # Chat de conversas (WhatsApp/canal)
-│   │   ├── install/              # Install Wizard — páginas e serviço
-│   │   └── profile/              # Perfil do usuário
-│   ├── services/
-│   │   └── ai/
-│   │       ├── aiService.ts      # AIService — proxy seguro para /api/ai/generate
-│   │       └── config.ts         # Configuração de providers e modelos
-│   ├── lib/
-│   │   ├── supabase.ts           # Client Supabase (anon key, browser-safe)
-│   │   ├── permissions.ts        # RBAC — AppRole e Permissions
-│   │   ├── mappers.ts            # snake_case ↔ camelCase
-│   │   └── uiStyles.ts           # Design system — classes Tailwind reutilizáveis
-│   ├── hooks/                    # Hooks de dados (Supabase)
-│   │   ├── useBoards.ts
-│   │   ├── useLeads.ts
-│   │   ├── useTasks.ts
-│   │   ├── useActivities.ts
-│   │   ├── useUsers.ts
-│   │   ├── useGoals.ts
-│   │   ├── useNotifications.ts   # Real-time via Supabase Realtime
-│   │   ├── usePlaybooks.ts
-│   │   ├── useGroupAnalyses.ts
-│   │   └── useOpportunityScores.ts
-│   └── utils/
-│       └── logger.ts             # safeError — logs apenas em dev
 │
 └── supabase/
     └── migrations/               # 017 migrations aplicadas em ordem
