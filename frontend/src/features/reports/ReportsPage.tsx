@@ -95,12 +95,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             ? wonLeads.reduce((sum, lead) => sum + lead.value, 0) / wonLeads.length
             : 0;
 
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const churnRiskCount = boardFilteredLeads.filter(l => {
-            const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
-            return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
-        }).length;
         const encerradoCount = boardFilteredLeads.filter(l => l.status === 'ENCERRADO').length;
 
         const funnelData = activeColumns.map(col => {
@@ -119,7 +113,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             totalLeads,
             conversionRate,
             averageValue,
-            churnRiskCount,
             encerradoCount,
             funnelData,
             topLeads,
@@ -395,8 +388,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 <FlatCard className="p-5 flex justify-between items-center transition-all duration-200 ease-in-out hover:bg-slate-800/50 hover:-translate-y-1 hover:shadow-lg">
                     <div>
                         <p className="text-sm text-slate-400">Churn</p>
-                        <p className="text-sm text-slate-300 mt-2">Risco de churn: <span className="font-bold text-white">{reportData.churnRiskCount}</span></p>
-                        <p className="text-sm text-slate-300 mt-1">Perdas: <span className="font-bold text-white">{reportData.encerradoCount}</span></p>
+                        <p className="text-sm text-slate-300 mt-2">Perdas: <span className="font-bold text-white">{reportData.encerradoCount}</span></p>
                     </div>
                     <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444420' }}>
                         <AlertTriangle className="w-6 h-6" style={{ color: '#ef4444' }} />
@@ -470,7 +462,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Valor</th>
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Estágio</th>
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Probabilidade</th>
-                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Fechamento Esperado</th>
+                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Risco de Churn</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
@@ -494,7 +486,26 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                             <span>{lead.probability || 0}%</span>
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-400">{lead.dueDate ? new Date(lead.dueDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}</td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-300">
+                                        {(() => {
+                                            const isInactive = lead.status === 'ENCERRADO' || lead.status === 'PERDIDO' || !!lead.wonAt;
+                                            if (isInactive) return (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-20 bg-slate-700 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: '0%', backgroundColor: '#ef4444' }} /></div>
+                                                    <span>0%</span>
+                                                </div>
+                                            );
+                                            const lastDate = lead.lastActivityTimestamp ? new Date(lead.lastActivityTimestamp) : new Date(lead.createdAt || Date.now());
+                                            const daysSince = (Date.now() - lastDate.getTime()) / 86_400_000;
+                                            const risk = Math.round(Math.min(daysSince / 30, 1) * 100);
+                                            return (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-20 bg-slate-700 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: `${risk}%`, backgroundColor: '#ef4444' }} /></div>
+                                                    <span>{risk}%</span>
+                                                </div>
+                                            );
+                                        })()}
+                                    </td>
                                 </tr>
                             ))}
                              {reportData.topLeads.length === 0 && (
