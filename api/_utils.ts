@@ -3,23 +3,17 @@ import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 
-// ── ENCRYPTION_KEY obrigatória ────────────────────────────────
-// Antes havia um fallback hardcoded ("default-encryption-key-32-chars-!!")
-// que tornava a criptografia ineficaz em ambientes sem a variável —
-// qualquer pessoa com acesso ao código-fonte (repositório público) poderia
-// descriptografar os dados.
-//
-// Agora: falha explicitamente se a variável não estiver configurada.
-// Confirmado no Vercel Dashboard antes de aplicar esta mudança.
-if (!process.env.ENCRYPTION_KEY) {
-  throw new Error('[api/_utils] ENCRYPTION_KEY não configurada. Configure a variável de ambiente.');
-}
-
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-
 // ── Criptografia AES-256-CBC ──────────────────────────────────
 
+function getEncryptionKey(): string {
+  if (!process.env.ENCRYPTION_KEY) {
+    throw new Error('[api/_utils] ENCRYPTION_KEY não configurada. Configure a variável de ambiente.');
+  }
+  return process.env.ENCRYPTION_KEY;
+}
+
 export function encrypt(text: string): string {
+  const ENCRYPTION_KEY = getEncryptionKey();
   try {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(
@@ -37,6 +31,7 @@ export function encrypt(text: string): string {
 }
 
 export function decrypt(text: string): string {
+  const ENCRYPTION_KEY = getEncryptionKey();
   try {
     const textParts = text.split(":");
     const iv = Buffer.from(textParts.shift()!, "hex");
