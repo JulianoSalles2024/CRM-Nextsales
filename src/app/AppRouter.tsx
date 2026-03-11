@@ -10,7 +10,7 @@ import CalendarPage from '@/src/features/tasks/CalendarPage';
 import ReportsPage from '@/src/features/reports/ReportsPage';
 import LeadListView from '@/components/LeadListView';
 import ChatView from '@/components/ChatView';
-import GroupsView from '@/components/GroupsView';
+import GroupsView from '@/src/features/groups/GroupsView';
 import GroupsDashboard from '@/src/features/dashboard/GroupsDashboard';
 import IntegrationsPage from '@/components/IntegrationsPage';
 import NotificationsView from '@/src/features/notifications/NotificationsView';
