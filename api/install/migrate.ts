@@ -119,6 +119,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // ── Proteção por INSTALL_SECRET ───────────────────────────
+  // O endpoint de migrations executa DDL arbitrário no banco.
+  // Se INSTALL_SECRET estiver configurada, exige o header X-Install-Key.
+  // Se não estiver configurada, loga aviso e segue (retrocompatível
+  // com fluxos de instalação anteriores à configuração da variável).
+  const installSecret = process.env.INSTALL_SECRET;
+  if (installSecret) {
+    const providedKey = req.headers['x-install-key'];
+    if (!providedKey || providedKey !== installSecret) {
+      console.warn('[migrate] rejected: X-Install-Key inválida ou ausente');
+      return res.status(401).json({ error: 'Chave de instalação inválida.' });
+    }
+  } else {
+    console.warn('[migrate] AVISO: INSTALL_SECRET não configurada. Configure a variável no Vercel para proteger este endpoint.');
+  }
+
   const { supabaseUrl, supabasePatToken } = (req.body ?? {}) as {
     supabaseUrl?: string;
     supabasePatToken?: string;
