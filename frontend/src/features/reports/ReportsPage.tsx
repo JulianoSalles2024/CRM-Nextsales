@@ -396,61 +396,32 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 </FlatCard>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <FlatCard className="p-5">
-                    <h3 className="font-semibold text-white mb-4">Funil de Conversão</h3>
-                    <div className="space-y-3">
-                        {reportData.funnelData.map((stage) => {
-                            const maxCount = Math.max(...reportData.funnelData.map((s) => s.count), 1);
-                            const percentage = (stage.count / maxCount) * 100;
-                            return (
-                                <div key={stage.id} className="flex items-center gap-3">
-                                    <p className="text-sm text-slate-400 w-28 truncate" title={stage.title}>{stage.title}</p>
-                                    <div className="flex-1 bg-slate-800 rounded-full h-4 relative">
-                                        <motion.div 
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${percentage}%` }}
-                                            transition={{ duration: 0.5, ease: 'easeOut' }}
-                                            className="h-4 rounded-full flex items-center"
-                                            style={{ 
-                                                backgroundColor: stage.color,
-                                            }}
-                                        />
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-xs font-semibold mix-blend-difference">
-                                            {stage.count}
-                                        </span>
-                                    </div>
+            <FlatCard className="p-5">
+                <h3 className="font-semibold text-white mb-3">Funil de Conversão</h3>
+                <div className="space-y-2.5">
+                    {reportData.funnelData.map((stage) => {
+                        const maxCount = Math.max(...reportData.funnelData.map((s) => s.count), 1);
+                        const percentage = (stage.count / maxCount) * 100;
+                        return (
+                            <div key={stage.id} className="flex items-center gap-3">
+                                <p className="text-sm text-slate-400 w-28 truncate" title={stage.title}>{stage.title}</p>
+                                <div className="flex-1 bg-slate-800 rounded-full h-4 relative">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${percentage}%` }}
+                                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                                        className="h-4 rounded-full flex items-center"
+                                        style={{ backgroundColor: stage.color }}
+                                    />
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-xs font-semibold mix-blend-difference">
+                                        {stage.count}
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                </FlatCard>
-                <FlatCard className="p-5 flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-semibold text-white">Desempenho ao Longo do Tempo</h3>
-                        <div className="flex items-center gap-1 p-1 bg-slate-800 border border-slate-700 rounded-lg">
-                            {(['day', 'week', 'month'] as const).map(view => (
-                                <button
-                                    key={view}
-                                    onClick={() => setChartViewMode(view)}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors duration-200 ${chartViewMode === view ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'}`}
-                                >
-                                    {view === 'day' ? 'Dia' : view === 'week' ? 'Semana' : 'Mês'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                     <div className="flex-1 min-h-[300px]">
-                        {timeSeriesData.labels.length > 1 ? (
-                           <PerformanceChart data={timeSeriesData} />
-                        ) : (
-                           <div className="h-full flex items-center justify-center text-slate-500 text-sm">
-                                <p>Não há dados suficientes para o período selecionado.</p>
-                           </div>
-                        )}
-                    </div>
-                </FlatCard>
-            </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </FlatCard>
 
             <FlatCard className="overflow-hidden">
                 <h3 className="font-semibold text-white p-5">Top 10 Leads por Valor</h3>
