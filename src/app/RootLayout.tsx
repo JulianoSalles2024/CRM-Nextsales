@@ -7,8 +7,8 @@ import { VIEW_PATHS } from './viewPaths';
 import { AppRouter } from '@/src/app/AppRouter';
 
 // Layout components
-import Sidebar from '@/components/Sidebar';
-import Header from '@/components/Header';
+import Sidebar from '@/src/app/Sidebar';
+import Header from '@/src/app/Header';
 
 // Modal components
 import LeadDetailSlideover from '@/src/features/activities/LeadDetailSlideover';
@@ -17,8 +17,8 @@ import CreateEditTaskModal from '@/src/features/tasks/CreateEditTaskModal';
 import CreateEditGroupModal from '@/src/features/groups/CreateEditGroupModal';
 import PlaybookModal from '@/src/features/playbooks/PlaybookModal';
 import LostLeadModal from '@/src/features/leads/LostLeadModal';
-import SdrBotModal from '@/components/SdrBotModal';
-import SdrAssistantChat from '@/components/SdrAssistantChat';
+import SdrBotModal from '@/src/features/ai/SdrBotModal';
+import SdrAssistantChat from '@/src/features/ai/SdrAssistantChat';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateBoardModal from '@/src/features/leads/CreateBoardModal';
 import Notification from '@/src/features/notifications/Notification';

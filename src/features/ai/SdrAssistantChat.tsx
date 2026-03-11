@@ -7,7 +7,7 @@ import { useAIState } from '@/src/features/ai/hooks/useAIState';
 import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAIConversations, type AIMessage } from '@/src/hooks/useAIConversations';
-import type { Lead, Task, ColumnData, Activity } from '../types';
+import type { Lead, Task, ColumnData, Activity } from '@/types';
 
 interface SdrAssistantChatProps {
     onClose: () => void;

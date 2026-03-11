@@ -9,7 +9,7 @@ import ActivitiesView from '@/src/features/tasks/ActivitiesView';
 import CalendarPage from '@/src/features/tasks/CalendarPage';
 import ReportsPage from '@/src/features/reports/ReportsPage';
 import LeadListView from '@/src/features/leads/LeadListView';
-import ChatView from '@/components/ChatView';
+import ChatView from '@/src/features/chat/ChatView';
 import GroupsView from '@/src/features/groups/GroupsView';
 import GroupsDashboard from '@/src/features/dashboard/GroupsDashboard';
 import IntegrationsPage from '@/src/features/settings/IntegrationsPage';
@@ -17,7 +17,7 @@ import NotificationsView from '@/src/features/notifications/NotificationsView';
 import PlaybookSettings from '@/src/features/playbooks/PlaybookSettings';
 import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import RecoveryView from '@/src/features/leads/RecoveryView';
-import InboxView from '@/components/InboxView';
+import InboxView from '@/src/features/chat/InboxView';
 
 interface AppRouterProps {
   activeView: string;

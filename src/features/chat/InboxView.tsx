@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Task, Notification, Lead, Id } from '../types';
+import { Task, Notification, Lead, Id } from '@/types';
 import {
     CheckCircle2,
     Bell,

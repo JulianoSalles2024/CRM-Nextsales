@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Bot, Send, User, Building, DollarSign, Sparkles, FileText, Loader2, MessageSquare, Inbox, FileClock, CheckCircle2, XCircle, MessageCircle as OpenIcon, ChevronDown, Phone, CheckCheck, ChevronRight, ChevronLeft, Mail, Instagram, MessageSquare as WhatsAppIcon } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Lead, ChatConversation, ChatMessage, User as UserType, Id, ChatConversationStatus, ChatChannel } from '../types';
+import { Lead, ChatConversation, ChatMessage, User as UserType, Id, ChatConversationStatus, ChatChannel } from '@/types';
 
 interface ChatViewProps {
     conversations: ChatConversation[];

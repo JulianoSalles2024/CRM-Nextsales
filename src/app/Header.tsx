@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LogOut, Sun, Moon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { User } from '../types';
+import type { User } from '@/types';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { NotificationsBell } from '@/src/features/notifications/NotificationsBell';
 
