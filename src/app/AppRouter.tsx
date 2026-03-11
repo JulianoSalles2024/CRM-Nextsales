@@ -7,7 +7,7 @@ import Dashboard from '@/src/features/dashboard/Dashboard';
 import SettingsPage from '@/components/SettingsPage';
 import ActivitiesView from '@/src/features/tasks/ActivitiesView';
 import CalendarPage from '@/src/features/tasks/CalendarPage';
-import ReportsPage from '@/components/ReportsPage';
+import ReportsPage from '@/src/features/reports/ReportsPage';
 import LeadListView from '@/components/LeadListView';
 import ChatView from '@/components/ChatView';
 import GroupsView from '@/components/GroupsView';
@@ -15,7 +15,7 @@ import GroupsDashboard from '@/src/features/dashboard/GroupsDashboard';
 import IntegrationsPage from '@/components/IntegrationsPage';
 import NotificationsView from '@/src/features/notifications/NotificationsView';
 import PlaybookSettings from '@/components/PlaybookSettings';
-import PrintableLeadsReport from '@/components/PrintableLeadsReport';
+import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import RecoveryView from '@/components/RecoveryView';
 import InboxView from '@/components/InboxView';
 
