@@ -14,7 +14,7 @@ import GroupsView from '@/src/features/groups/GroupsView';
 import GroupsDashboard from '@/src/features/dashboard/GroupsDashboard';
 import IntegrationsPage from '@/components/IntegrationsPage';
 import NotificationsView from '@/src/features/notifications/NotificationsView';
-import PlaybookSettings from '@/components/PlaybookSettings';
+import PlaybookSettings from '@/src/features/playbooks/PlaybookSettings';
 import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import RecoveryView from '@/components/RecoveryView';
 import InboxView from '@/components/InboxView';

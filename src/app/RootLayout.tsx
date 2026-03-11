@@ -15,7 +15,7 @@ import LeadDetailSlideover from '@/src/features/activities/LeadDetailSlideover';
 import CreateEditLeadModal from '@/components/CreateEditLeadModal';
 import CreateEditTaskModal from '@/src/features/tasks/CreateEditTaskModal';
 import CreateEditGroupModal from '@/src/features/groups/CreateEditGroupModal';
-import PlaybookModal from '@/components/PlaybookModal';
+import PlaybookModal from '@/src/features/playbooks/PlaybookModal';
 import LostLeadModal from '@/components/LostLeadModal';
 import SdrBotModal from '@/components/SdrBotModal';
 import SdrAssistantChat from '@/components/SdrAssistantChat';
