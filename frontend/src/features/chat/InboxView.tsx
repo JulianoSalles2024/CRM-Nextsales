@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Task, Lead, Id } from '@/types';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Task, Lead, Id, User } from '@/types';
 import {
     CheckCircle2,
     Bell,
@@ -22,24 +22,35 @@ import {
     AlertTriangle,
     TrendingUp,
     UserMinus,
-    ExternalLink
+    ExternalLink,
+    Loader2,
+    RefreshCw,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FlatCard from '@/components/ui/FlatCard';
 import { useOpportunityScores } from '@/src/hooks/useOpportunityScores';
 import PredictiveOpportunitiesModal from '@/src/components/opportunities/PredictiveOpportunitiesModal';
+import { useAuth } from '@/src/features/auth/AuthContext';
+import AdminSalesRadar from '@/src/features/inbox/AdminSalesRadar';
 
 interface InboxViewProps {
     tasks: Task[];
     leads: Lead[];
+    users?: User[];
     onNavigate: (view: string, itemId?: Id) => void;
     onOpenLead?: (lead: Lead) => void;
+    onUpdateTaskStatus?: (taskId: Id, status: 'pending' | 'completed') => void;
     mode?: 'standard' | 'analysis';
+    currentUserRole?: 'admin' | 'seller';
+    userId?: string;
 }
 
-const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenLead, mode = 'standard' }) => {
+const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavigate, onOpenLead, onUpdateTaskStatus, mode = 'standard', currentUserRole = 'seller', userId }) => {
+    const isAdmin = currentUserRole === 'admin';
+    const { session } = useAuth();
     const [viewMode, setViewMode] = useState<'overview' | 'list' | 'focus'>('overview');
     const [showOpportunities, setShowOpportunities] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -67,25 +78,71 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenL
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         return leads.filter(l => {
-            const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
-            return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
+            if (l.wonAt) return false;
+            if (l.status === 'GANHO' || l.status === 'PERDIDO') return false;
+            if (l.isArchived) return false;
+            if (l.columnId === 'closed') return false;
+            const lastDate = l.lastActivityTimestamp
+                ? new Date(l.lastActivityTimestamp)
+                : new Date(l.createdAt || Date.now());
+            return lastDate < thirtyDaysAgo;
         }).slice(0, 2);
     }, [leads]);
 
-    const { opportunities } = useOpportunityScores();
+    const { opportunities, refresh: refreshOpportunities } = useOpportunityScores();
+    const scopedOpportunities = useMemo(
+        () => isAdmin ? opportunities : opportunities.filter(o => o.owner_id === userId),
+        [opportunities, isAdmin, userId]
+    );
     const bandCounts = useMemo(() => ({
-        hot:    opportunities.filter(o => o.priority_band === 'hot').length,
-        upsell: opportunities.filter(o => o.priority_band === 'upsell').length,
-        warm:   opportunities.filter(o => o.priority_band === 'warm').length,
-        risk:   opportunities.filter(o => o.priority_band === 'risk').length,
-    }), [opportunities]);
+        hot:    scopedOpportunities.filter(o => o.priority_band === 'hot').length,
+        upsell: scopedOpportunities.filter(o => o.priority_band === 'upsell').length,
+        warm:   scopedOpportunities.filter(o => o.priority_band === 'warm').length,
+        risk:   scopedOpportunities.filter(o => o.priority_band === 'risk').length,
+    }), [scopedOpportunities]);
 
-    const stats = [
-        { label: 'ATRASADOS', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Tudo em dia' : `${overdueTasks.length} pendentes`, color: overdueTasks.length > 0 ? 'text-red-400' : 'text-emerald-500', bgColor: overdueTasks.length > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
-        { label: 'HOJE', value: todayTasks.length, subtext: todayTasks.length === 0 ? 'Sem tarefas para hoje' : `${todayTasks.length} tarefas`, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
-        { label: 'SUGESTÕES CRÍTICAS', value: 0, subtext: 'Sem urgências', color: 'text-slate-500', bgColor: 'bg-slate-800/50', onClick: undefined },
-        { label: 'PENDÊNCIAS', value: tasks.filter(t => t.status === 'pending').length, subtext: tasks.filter(t => t.status === 'pending').length === 0 ? 'Nenhuma pendência' : `${tasks.filter(t => t.status === 'pending').length} tarefas`, color: tasks.filter(t => t.status === 'pending').length > 0 ? 'text-slate-200' : 'text-slate-500', bgColor: 'bg-slate-800/50', onClick: () => onNavigate('Tarefas') },
-    ];
+    const lastAnalyzedAt = useMemo(() => {
+        const raw = opportunities[0]?.last_analyzed_at;
+        if (!raw) return null;
+        return new Date(raw).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }, [opportunities]);
+
+    const handleAnalyzeNow = useCallback(async () => {
+        if (!session?.access_token || isAnalyzing) return;
+        setIsAnalyzing(true);
+        try {
+            await fetch('/api/opportunities/analyze', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            refreshOpportunities();
+        } catch {
+            // silently ignore — sem UI de erro para não bloquear o fluxo
+        } finally {
+            setIsAnalyzing(false);
+        }
+    }, [session?.access_token, isAnalyzing, refreshOpportunities]);
+
+    const sellersWithOverdue = useMemo(
+        () => new Set(overdueTasks.map(t => t.userId)).size,
+        [overdueTasks]
+    );
+
+    const hotOpportunities = bandCounts.hot + bandCounts.upsell;
+
+    const stats = isAdmin
+        ? [
+            { label: 'ATRASADAS (EMPRESA)', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Nenhuma atrasada' : `${overdueTasks.length} tarefas`, color: overdueTasks.length > 0 ? 'text-red-400' : 'text-emerald-500', bgColor: overdueTasks.length > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
+            { label: 'VENDEDORES COM ATRASO', value: sellersWithOverdue, subtext: sellersWithOverdue === 0 ? 'Equipe em dia' : `${sellersWithOverdue} vendedor${sellersWithOverdue > 1 ? 'es' : ''} com pendências`, color: sellersWithOverdue > 0 ? 'text-amber-400' : 'text-emerald-500', bgColor: sellersWithOverdue > 0 ? 'bg-amber-500/10' : 'bg-emerald-500/10', onClick: undefined },
+            { label: 'OPORTUNIDADES QUENTES', value: hotOpportunities, subtext: hotOpportunities === 0 ? 'Nenhuma no momento' : `${hotOpportunities} lead${hotOpportunities > 1 ? 's' : ''} priorizados`, color: hotOpportunities > 0 ? 'text-blue-400' : 'text-slate-500', bgColor: hotOpportunities > 0 ? 'bg-blue-500/10' : 'bg-slate-800/50', onClick: () => setShowOpportunities(true) },
+            { label: 'LEADS EM RISCO', value: churnRiskLeads.length, subtext: churnRiskLeads.length === 0 ? 'Nenhum lead em risco' : `${churnRiskLeads.length} sem atividade recente`, color: churnRiskLeads.length > 0 ? 'text-amber-400' : 'text-slate-500', bgColor: churnRiskLeads.length > 0 ? 'bg-amber-500/10' : 'bg-slate-800/50', onClick: undefined },
+        ]
+        : [
+            { label: 'ATRASADOS', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Tudo em dia' : `${overdueTasks.length} pendentes`, color: overdueTasks.length > 0 ? 'text-red-400' : 'text-emerald-500', bgColor: overdueTasks.length > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
+            { label: 'HOJE', value: todayTasks.length, subtext: todayTasks.length === 0 ? 'Sem tarefas para hoje' : `${todayTasks.length} tarefas`, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
+            { label: 'OPORTUNIDADES QUENTES', value: hotOpportunities, subtext: hotOpportunities === 0 ? 'Nenhuma no momento' : `${hotOpportunities} lead${hotOpportunities > 1 ? 's' : ''} priorizados`, color: hotOpportunities > 0 ? 'text-blue-400' : 'text-slate-500', bgColor: hotOpportunities > 0 ? 'bg-blue-500/10' : 'bg-slate-800/50', onClick: () => setShowOpportunities(true) },
+            { label: 'EM RISCO', value: churnRiskLeads.length, subtext: churnRiskLeads.length === 0 ? 'Nenhum lead em risco' : `${churnRiskLeads.length} leads sem atividade`, color: churnRiskLeads.length > 0 ? 'text-amber-400' : 'text-slate-500', bgColor: churnRiskLeads.length > 0 ? 'bg-amber-500/10' : 'bg-slate-800/50', onClick: undefined },
+        ];
 
     // Priority task for focus mode: first overdue, then first today
     const priorityTask = overdueTasks[0] ?? todayTasks[0] ?? null;
@@ -119,10 +176,26 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenL
                 <div>
                     <h1 className="text-4xl font-bold text-white tracking-tight">Inbox</h1>
                     <p className="text-slate-400 mt-1 text-lg">Sua mesa de trabalho.</p>
-                    <button className="mt-4 flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700/50 transition-colors">
-                        <Zap className="w-4 h-4" />
-                        Seed Inbox
-                    </button>
+                    {isAdmin && (
+                        <div className="flex items-center gap-3 mt-3">
+                            <button
+                                onClick={handleAnalyzeNow}
+                                disabled={isAnalyzing}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-all"
+                            >
+                                {isAnalyzing
+                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    : <RefreshCw className="w-3.5 h-3.5" />
+                                }
+                                {isAnalyzing ? 'Analisando...' : 'Analisar agora'}
+                            </button>
+                            {lastAnalyzedAt && (
+                                <span className="text-xs text-slate-500">
+                                    Última análise: {lastAnalyzedAt}
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 shadow-xl">
@@ -194,6 +267,18 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenL
                             </div>
                         ))}
                     </div>
+
+                    {/* Radar Comercial — admin only */}
+                    {isAdmin && (
+                        <AdminSalesRadar
+                            users={users}
+                            tasks={tasks}
+                            leads={leads}
+                            overdueTasks={overdueTasks}
+                            scopedOpportunities={scopedOpportunities}
+                            churnRiskLeads={churnRiskLeads}
+                        />
+                    )}
 
                     {/* Lists Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -319,7 +404,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenL
                             </h3>
                             <div className="space-y-2">
                                 {overdueTasks.map(task => (
-                                    <TaskRow key={task.id} task={task} badge="atrasada" />
+                                    <TaskRow key={task.id} task={task} badge="atrasada" onComplete={onUpdateTaskStatus ? (id) => onUpdateTaskStatus(id, 'completed') : undefined} />
                                 ))}
                             </div>
                         </div>
@@ -332,7 +417,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenL
                             </h3>
                             <div className="space-y-2">
                                 {todayTasks.map(task => (
-                                    <TaskRow key={task.id} task={task} badge="hoje" />
+                                    <TaskRow key={task.id} task={task} badge="hoje" onComplete={onUpdateTaskStatus ? (id) => onUpdateTaskStatus(id, 'completed') : undefined} />
                                 ))}
                             </div>
                         </div>
@@ -429,6 +514,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenL
 
         <PredictiveOpportunitiesModal
             isOpen={showOpportunities}
+            opportunities={scopedOpportunities}
             onClose={() => setShowOpportunities(false)}
             onSelectLead={(leadId) => {
                 const lead = leads.find(l => String(l.id) === leadId);
@@ -441,19 +527,39 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenL
 };
 
 // ── Sub-component ──────────────────────────────────────────
-const TaskRow: React.FC<{ task: Task; badge: 'atrasada' | 'hoje' }> = ({ task, badge }) => (
-    <div className="flex items-center gap-4 p-4 bg-slate-900/40 border border-slate-800/50 rounded-xl hover:border-slate-700 transition-all">
-        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${badge === 'atrasada' ? 'bg-red-400' : 'bg-sky-400'}`} />
-        <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{task.title}</p>
-            {task.description && <p className="text-xs text-slate-500 truncate mt-0.5">{task.description}</p>}
+const TaskRow: React.FC<{ task: Task; badge: 'atrasada' | 'hoje'; onComplete?: (taskId: string) => void }> = ({ task, badge, onComplete }) => {
+    const [completed, setCompleted] = React.useState(false);
+
+    const handleComplete = () => {
+        if (completed) return;
+        setCompleted(true);
+        onComplete?.(String(task.id));
+    };
+
+    return (
+        <div className="flex items-center gap-4 p-4 bg-slate-900/40 border border-slate-800/50 rounded-xl hover:border-slate-700 transition-all">
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${badge === 'atrasada' ? 'bg-red-400' : 'bg-sky-400'}`} />
+            <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${completed ? 'line-through text-slate-500' : 'text-white'}`}>{task.title}</p>
+                {task.description && <p className="text-xs text-slate-500 truncate mt-0.5">{task.description}</p>}
+            </div>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${
+                badge === 'atrasada' ? 'bg-red-500/10 text-red-400' : 'bg-sky-500/10 text-sky-400'
+            }`}>
+                {badge === 'atrasada' ? 'Atrasada' : 'Hoje'}
+            </span>
+            {task.status !== 'completed' && (
+                <button
+                    onClick={handleComplete}
+                    disabled={completed}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                >
+                    <Check className="w-3 h-3" />
+                    Concluir
+                </button>
+            )}
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${
-            badge === 'atrasada' ? 'bg-red-500/10 text-red-400' : 'bg-sky-500/10 text-sky-400'
-        }`}>
-            {badge === 'atrasada' ? 'Atrasada' : 'Hoje'}
-        </span>
-    </div>
-);
+    );
+};
 
 export default InboxView;

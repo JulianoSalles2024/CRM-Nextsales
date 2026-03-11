@@ -119,9 +119,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     >
       <div className={`flex items-center gap-3 mb-10 px-2 h-8 ${isCollapsed ? 'justify-center' : ''}`}>
         {!isCollapsed && (
-          <h1 className="text-xl font-bold text-white whitespace-nowrap flex items-center gap-2 tracking-tight">
+          <h1 className="text-2xl font-bold text-white whitespace-nowrap flex items-center gap-2 tracking-tight">
             <Zap className="w-6 h-6 text-blue-500 fill-blue-500/20" />
-            <span>CRM <span className="text-blue-400">ZENIUS</span></span>
+            <span><span className="text-blue-400">Next</span>Sales</span>
           </h1>
         )}
         <button

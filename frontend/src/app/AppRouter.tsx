@@ -114,14 +114,22 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
   switch (activeView) {
     case 'Meu Perfil':
       return <ProfileView />;
-    case 'Inbox':
+    case 'Inbox': {
+      const isAdmin = currentUserRole === 'admin';
+      const inboxLeads = isAdmin ? leads : leads.filter((l: any) => l.ownerId === localUser.id);
+      const inboxTasks = isAdmin ? tasks : tasks.filter((t: any) => t.userId === localUser.id);
       return <InboxView
           mode={inboxMode}
-          tasks={tasks}
-          leads={leads}
+          tasks={inboxTasks}
+          leads={inboxLeads}
+          users={users}
+          currentUserRole={currentUserRole === 'admin' ? 'admin' : 'seller'}
+          userId={localUser.id}
           onNavigate={(view: string) => setActiveView(view)}
           onOpenLead={setSelectedLead}
+          onUpdateTaskStatus={handleUpdateTaskStatus}
       />;
+    }
     case 'Dashboard':
       return <Dashboard
                   leads={leads}

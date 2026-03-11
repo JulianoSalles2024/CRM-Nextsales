@@ -138,7 +138,7 @@ export default function RootLayout() {
                     <AppRouter {...routerProps} />
                 </main>
                 <footer className="text-center text-xs text-slate-500 py-2">
-                    © 2026 CRM ZENIUS. Todos os direitos reservados.
+                    © 2026 NextSales. Todos os direitos reservados.
                 </footer>
             </div>
 

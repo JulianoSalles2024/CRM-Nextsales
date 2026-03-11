@@ -1,9 +1,7 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Loader2,
-  AlertCircle,
   Flame,
   TrendingUp,
   Thermometer,
@@ -12,13 +10,14 @@ import {
   Zap,
   ExternalLink,
 } from 'lucide-react';
-import { useOpportunityScores, type OpportunityScore } from '@/src/hooks/useOpportunityScores';
+import type { OpportunityScore } from '@/src/hooks/useOpportunityScores';
 
 // ── Props ─────────────────────────────────────────────────────
 interface PredictiveOpportunitiesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectLead: (leadId: string) => void;
+  opportunities: OpportunityScore[];
 }
 
 // ── Band config ───────────────────────────────────────────────
@@ -213,13 +212,8 @@ const PredictiveOpportunitiesModal: React.FC<PredictiveOpportunitiesModalProps> 
   isOpen,
   onClose,
   onSelectLead,
+  opportunities,
 }) => {
-  const { opportunities, loading, error, refresh } = useOpportunityScores();
-
-  useEffect(() => {
-    if (isOpen) refresh();
-  }, [isOpen]);
-
   const sorted = useMemo(
     () => [...opportunities].sort(
       (a, b) => BAND_ORDER[a.priority_band] - BAND_ORDER[b.priority_band]
@@ -265,7 +259,7 @@ const PredictiveOpportunitiesModal: React.FC<PredictiveOpportunitiesModalProps> 
               </div>
 
               {/* Stats — só quando há dados */}
-              {!loading && !error && sorted.length > 0 && (
+              {sorted.length > 0 && (
                 <div className="mt-4">
                   <StatsSummary opportunities={sorted} />
                 </div>
@@ -275,24 +269,8 @@ const PredictiveOpportunitiesModal: React.FC<PredictiveOpportunitiesModalProps> 
             {/* ── Body ───────────────────────────────────────── */}
             <div className="flex-1 overflow-y-auto p-6">
 
-              {/* Loading */}
-              {loading && (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                  <p className="text-sm text-slate-500">Carregando oportunidades...</p>
-                </div>
-              )}
-
-              {/* Error */}
-              {!loading && error && (
-                <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                  <AlertCircle className="w-8 h-8 text-red-400" />
-                  <p className="text-sm text-slate-400">{error}</p>
-                </div>
-              )}
-
               {/* Empty */}
-              {!loading && !error && sorted.length === 0 && (
+              {sorted.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                   <Zap className="w-8 h-8 text-slate-600" />
                   <p className="text-sm text-slate-400">Nenhuma oportunidade detectada ainda.</p>
@@ -303,7 +281,7 @@ const PredictiveOpportunitiesModal: React.FC<PredictiveOpportunitiesModalProps> 
               )}
 
               {/* List */}
-              {!loading && !error && sorted.length > 0 && (
+              {sorted.length > 0 && (
                 <div className="space-y-2">
                   {sorted.map((item) => (
                     <OpportunityRow
@@ -317,7 +295,7 @@ const PredictiveOpportunitiesModal: React.FC<PredictiveOpportunitiesModalProps> 
             </div>
 
             {/* ── Footer ─────────────────────────────────────── */}
-            {!loading && !error && sorted.length > 0 && (
+            {sorted.length > 0 && (
               <div className="px-6 py-3 border-t border-slate-800 flex-shrink-0">
                 <p className="text-xs text-slate-600 text-center">
                   {sorted.length} oportunidade{sorted.length !== 1 ? 's' : ''} · análise determinística

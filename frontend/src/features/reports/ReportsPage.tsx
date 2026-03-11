@@ -39,6 +39,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
     const [timeRange, setTimeRange] = useState<'30d' | '365d'>('30d');
     const [chartViewMode, setChartViewMode] = useState<'day' | 'week' | 'month'>('week');
     const [selectedBoardId, setSelectedBoardId] = useState<'all' | string>('all');
+    const [topLeadsPage, setTopLeadsPage] = useState(1);
+    const TOP_LEADS_PAGE_SIZE = 2;
 
     // Derive columns and leads for the selected pipeline
     const activeColumns = useMemo(() => {
@@ -437,12 +439,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
-                            {reportData.topLeads.map(lead => (
+                            {reportData.topLeads.slice((topLeadsPage - 1) * TOP_LEADS_PAGE_SIZE, topLeadsPage * TOP_LEADS_PAGE_SIZE).map(lead => (
                                 <tr key={lead.id} className="hover:bg-slate-800/50 transition-colors">
                                     <td className="px-5 py-4 whitespace-nowrap text-sm font-medium text-white">{lead.name}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-300">{currencyFormatter.format(lead.value)}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-sm">
-                                        {columnMap[lead.columnId] ? 
+                                        {columnMap[lead.columnId] ?
                                             <span className="px-2 py-0.5 text-xs font-semibold rounded-full" style={{ color: columnMap[lead.columnId].color, backgroundColor: `${columnMap[lead.columnId].color}20`}}>
                                                 {columnMap[lead.columnId].title}
                                             </span>
@@ -489,6 +491,36 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         </tbody>
                     </table>
                  </div>
+                {reportData.topLeads.length > TOP_LEADS_PAGE_SIZE && (() => {
+                    const totalPages = Math.ceil(reportData.topLeads.length / TOP_LEADS_PAGE_SIZE);
+                    return (
+                        <div className="flex items-center justify-center gap-1 px-5 py-3 border-t border-slate-800">
+                            <button
+                                onClick={() => setTopLeadsPage(p => Math.max(1, p - 1))}
+                                disabled={topLeadsPage === 1}
+                                className="px-2 py-1 text-xs text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                &lt;
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => setTopLeadsPage(page)}
+                                    className={`w-7 h-7 text-xs rounded-md transition-colors ${topLeadsPage === page ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setTopLeadsPage(p => Math.min(totalPages, p + 1))}
+                                disabled={topLeadsPage === totalPages}
+                                className="px-2 py-1 text-xs text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                &gt;
+                            </button>
+                        </div>
+                    );
+                })()}
             </FlatCard>
         </div>
     );

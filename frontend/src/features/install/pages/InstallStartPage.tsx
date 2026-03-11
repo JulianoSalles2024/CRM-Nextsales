@@ -118,7 +118,7 @@ export default function InstallStartPage() {
           {/* Title */}
           <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Quem é você?</h1>
           <p className="text-sm text-slate-400 mb-10">
-            Crie a conta do administrador principal do CRM Zenius.
+            Crie a conta do administrador principal do NextSales.
           </p>
 
           {/* Form */}
