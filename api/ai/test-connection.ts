@@ -1,6 +1,6 @@
 import { testProviderConnection } from '../_utils.js';
 import { requireAuth } from '../_lib/auth';
-import { AppError, apiError } from '../_lib/errors';
+import { AppError, AuthError, apiError } from '../_lib/errors';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -29,11 +29,13 @@ export default async function handler(req: any, res: any) {
     return res.json({ success: true, message: 'Conexão estabelecida com sucesso!' });
 
   } catch (err: any) {
-    // Erros de provider (chave inválida, modelo inexistente) → 400
-    // Erros de infra → apiError() → 500 genérico
-    if (err?.status === 401 || err?.status === 403 || err?.status === 400) {
+    // AppError / AuthError (validação interna ou auth) → resposta controlada
+    if (err instanceof AppError || err instanceof AuthError) {
       return apiError(res, err);
     }
+    // Erros de provider (OpenAI, Anthropic, Gemini) → 400 user-facing
+    // Nota: erros do SDK têm .status mas não são AppError/AuthError;
+    // passar por apiError() retornaria 500 genérico — evitado aqui.
     console.error('[api/ai/test-connection]', err);
     return res.status(400).json({
       success: false,
