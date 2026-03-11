@@ -15,7 +15,9 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
 // service_role bypassa RLS completamente.
 // Este módulo deve ser importado APENAS dentro de api/ — nunca no frontend.
 // O frontend usa o cliente com anon key em src/lib/supabase.ts.
+// .trim() previne falhas causadas por newlines acidentais nas env vars
+// (erro comum ao copiar chaves do dashboard Supabase)
 export const supabaseAdmin: SupabaseClient = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  process.env.SUPABASE_URL.trim(),
+  process.env.SUPABASE_SERVICE_ROLE_KEY.trim(),
 );

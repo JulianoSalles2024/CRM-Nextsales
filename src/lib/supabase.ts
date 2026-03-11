@@ -10,7 +10,8 @@ function readInstallConfig(): { url: string; anonKey: string } | null {
     const raw = localStorage.getItem('crm_supabase_config');
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { url?: string; anonKey?: string };
-    if (parsed.url && parsed.anonKey) return { url: parsed.url, anonKey: parsed.anonKey };
+    // .trim() previne JWT malformado caso o installer tenha salvo chaves com newlines
+    if (parsed.url && parsed.anonKey) return { url: parsed.url.trim(), anonKey: parsed.anonKey.trim() };
   } catch { /* ignore parse errors */ }
   return null;
 }
@@ -18,15 +19,18 @@ function readInstallConfig(): { url: string; anonKey: string } | null {
 const installConfig = readInstallConfig();
 
 // Priority: localStorage (post-install) → build-time env var (post-redeploy)
-export const supabaseUrl: string =
+// .trim() em ambas as fontes previne JWT malformado por newlines nas env vars
+export const supabaseUrl: string = (
   installConfig?.url ??
   (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
-  '';
+  ''
+).trim();
 
-const supabaseAnonKey: string =
+const supabaseAnonKey: string = (
   installConfig?.anonKey ??
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
-  'NOT_CONFIGURED';
+  'NOT_CONFIGURED'
+).trim();
 
 if (!supabaseUrl) {
   safeError('[Supabase] ⚠️  Supabase URL não configurada. Execute o instalador primeiro.');

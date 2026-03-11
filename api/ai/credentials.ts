@@ -16,6 +16,7 @@ export default async function handler(req: any, res: any) {
         .eq('organization_id', ctx.companyId);
 
       if (error) {
+        console.error('[api/ai/credentials GET]', error);
         throw new AppError(500, 'Falha ao buscar credenciais.');
       }
 
@@ -53,7 +54,7 @@ export default async function handler(req: any, res: any) {
           .eq('organization_id', ctx.companyId)   // companyId do JWT
           .eq('ai_provider', provider);
 
-        if (error) throw new AppError(500, 'Falha ao desconectar.');
+        if (error) { console.error('[api/ai/credentials disconnect]', error); throw new AppError(500, 'Falha ao desconectar.'); }
         return res.json({ success: true });
       }
 
@@ -89,7 +90,7 @@ export default async function handler(req: any, res: any) {
           { onConflict: 'organization_id,ai_provider' },
         );
 
-      if (error) throw new AppError(500, 'Falha ao salvar credencial.');
+      if (error) { console.error('[api/ai/credentials upsert]', error); throw new AppError(500, 'Falha ao salvar credencial.'); }
       return res.json({ success: true });
     }
 
