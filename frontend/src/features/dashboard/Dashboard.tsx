@@ -207,6 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
         const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
+        const dataKey = data.labels.join(',');
         const svgW = 1000, svgH = 190;
         const pad = { top: 10, right: 42, bottom: 28, left: 52 };
         const cW = svgW - pad.left - pad.right;
@@ -272,17 +273,27 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             {[...Array(6)].map((_, i) => (
                                 <text key={i} x={cW + 10} y={i * cH / 5 + 5} fill="#64748b" textAnchor="start" fontSize="11">{Math.round(maxCount * (1 - i / 5))}</text>
                             ))}
-                            {data.labels.map((label, i) => (
-                                <text key={label} x={pts[i].x} y={cH + 22} fill="#64748b" textAnchor="middle" fontSize="11">{label}</text>
-                            ))}
+                            <AnimatePresence mode="wait">
+                                <motion.g
+                                    key={dataKey}
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    transition={{ duration: 0.22, ease: 'easeInOut' }}
+                                >
+                                    {data.labels.map((label, i) => (
+                                        <text key={label} x={pts[i].x} y={cH + 22} fill="#64748b" textAnchor="middle" fontSize="11">{label}</text>
+                                    ))}
 
-                            <path d={`${revPath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Receita)" />
-                            <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Novos-Leads)" />
-                            <path d={`${chPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Churn)" />
+                                    <path d={`${revPath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Receita)" />
+                                    <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Novos-Leads)" />
+                                    <path d={`${chPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Churn)" />
 
-                            <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="2.5" />
-                            <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="2.5" />
-                            <path d={chPath}  fill="none" stroke="#ef4444" strokeWidth="2.5" />
+                                    <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="2.5" />
+                                    <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="2.5" />
+                                    <path d={chPath}  fill="none" stroke="#ef4444" strokeWidth="2.5" />
+                                </motion.g>
+                            </AnimatePresence>
 
                             <AnimatePresence>
                                 {hoveredIndex !== null && (
