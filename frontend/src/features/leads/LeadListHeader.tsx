@@ -188,8 +188,9 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                         <span>Exportar CSV</span>
                     </button>
                     <button
-                        onClick={onExportPDF}
-                        className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
+                        disabled
+                        title="Em breve"
+                        className="flex items-center gap-2 bg-slate-700/50 text-slate-500 px-3 py-1.5 rounded-md text-sm font-semibold cursor-not-allowed opacity-50"
                     >
                         <Download className="w-4 h-4" />
                         <span>Exportar PDF</span>

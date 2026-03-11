@@ -284,7 +284,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         const isAscending = isActive && sortConfig?.direction === 'ascending';
 
         return (
-            <th className={`px-4 py-3 text-left text-xs font-medium tracking-wide whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-400'}`}>
+            <th className={`px-4 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-400'}`}>
                 <button className="flex items-center gap-1 group" onClick={() => requestSort(sortKey)}>
                     {label}
                     <span className={isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100 transition-opacity'}>
@@ -348,7 +348,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 ) : (
                     <div ref={scrollContainerRef} onScroll={onScroll} className="overflow-auto h-full">
                         <table className="min-w-full divide-y divide-slate-700" style={{ borderSpacing: 0 }}>
-                            <thead className="bg-slate-900/50 sticky top-0 z-10">
+                            <thead className="bg-slate-900 sticky top-0 z-10">
                                 <tr>
                                     <th className="px-4 py-3 w-10">
                                         <input
@@ -361,9 +361,9 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         />
                                     </th>
                                     <TableHeader sortKey="name" label="Lead" />
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wide whitespace-nowrap">Status / Valor</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 tracking-wide whitespace-nowrap">Status / Valor</th>
                                     {currentUserRole === 'admin' && (
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wide whitespace-nowrap">Pipeline</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 tracking-wide whitespace-nowrap">Pipeline</th>
                                     )}
                                     <TableHeader sortKey="createdAt" label="Atividade" />
                                     <th className="px-4 py-3 w-20" />
