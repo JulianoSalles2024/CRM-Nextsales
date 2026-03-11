@@ -91,8 +91,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         const wonLeadsCount = wonLeads.length;
         const conversionRate = totalLeads > 0 ? ((wonLeadsCount / totalLeads) * 100).toFixed(1) : '0.0';
 
-        const totalValue = filteredLeads.reduce((sum, lead) => sum + lead.value, 0);
-        const averageValue = totalLeads > 0 ? totalValue / totalLeads : 0;
+        const averageValue = wonLeads.length > 0
+            ? wonLeads.reduce((sum, lead) => sum + lead.value, 0) / wonLeads.length
+            : 0;
 
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
