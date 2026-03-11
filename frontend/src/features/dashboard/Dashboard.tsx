@@ -251,8 +251,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         };
 
         return (
-            <div className="relative flex flex-col h-full">
-                <div className="flex-1">
+            <div className="relative flex flex-col h-full min-h-0">
+                <div className="flex-1 min-h-0">
                     <svg ref={svgRef} width="100%" height="100%" viewBox={`0 0 ${svgW} ${svgH}`} onMouseMove={onMove} onMouseLeave={() => { setHoveredIndex(null); setTooltipPos(null); }}>
                         <defs>
                             {data.datasets.map(ds => (
@@ -418,7 +418,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                         ))}
                     </div>
                 </div>
-                <div className="h-[340px]">
+                <div className="h-[240px]">
                     <TrendChart data={trendData} />
                 </div>
             </FlatCard>
