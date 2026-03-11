@@ -1,9 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
-import { supabaseAdmin } from '../_lib/supabase';
-import { requireAuth } from '../_lib/auth';
-import { AppError, apiError } from '../_lib/errors';
+import { supabaseAdmin } from '../_lib/supabase.js';
+import { requireAuth } from '../_lib/auth.js';
+import { AppError, apiError } from '../_lib/errors.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {

@@ -1,6 +1,6 @@
 import { testProviderConnection } from '../_utils.js';
-import { requireAuth } from '../_lib/auth';
-import { AppError, AuthError, apiError } from '../_lib/errors';
+import { requireAuth } from '../_lib/auth.js';
+import { AppError, AuthError, apiError } from '../_lib/errors.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {

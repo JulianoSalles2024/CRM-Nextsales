@@ -1,6 +1,6 @@
-import { supabaseAdmin } from '../_lib/supabase';
-import { requireAuth, requireRole } from '../_lib/auth';
-import { AppError, apiError } from '../_lib/errors';
+import { supabaseAdmin } from '../_lib/supabase.js';
+import { requireAuth, requireRole } from '../_lib/auth.js';
+import { AppError, apiError } from '../_lib/errors.js';
 
 export default async function handler(req: any, res: any) {
   try {

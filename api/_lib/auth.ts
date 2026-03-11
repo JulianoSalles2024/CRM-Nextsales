@@ -1,5 +1,5 @@
-import { supabaseAdmin } from './supabase';
-import { AuthError } from './errors';
+import { supabaseAdmin } from './supabase.js';
+import { AuthError } from './errors.js';
 
 // ── Contexto de autenticação retornado por requireAuth() ──────
 export interface AuthContext {

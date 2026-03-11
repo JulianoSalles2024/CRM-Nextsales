@@ -1,5 +1,5 @@
-import { requireAuth } from '../_lib/auth';
-import { AppError, apiError } from '../_lib/errors';
+import { requireAuth } from '../_lib/auth.js';
+import { AppError, apiError } from '../_lib/errors.js';
 
 export default async function handler(req: any, res: any) {
   try {
