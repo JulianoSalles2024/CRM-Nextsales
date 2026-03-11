@@ -33,6 +33,14 @@ function formatRelativeTime(ts: string | null | undefined): string {
     return `há ${days} dia${days !== 1 ? 's' : ''}`;
 }
 
+// ── Avatar helpers (visual only) ─────────────────────────────
+const AVATAR_COLORS = [
+    'bg-blue-700', 'bg-violet-700', 'bg-emerald-700',
+    'bg-amber-700', 'bg-rose-700',  'bg-cyan-700',
+];
+const getAvatarColor = (name: string) =>
+    AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
+
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
     <span 
         className="px-2 py-0.5 text-xs font-medium rounded-full text-white/90"
@@ -324,28 +332,37 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                 )}
                                 {virtualLeads.map(lead => (
                                     <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-slate-800/50 cursor-pointer transition-colors duration-150">
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            <div>
-                                                <div className="text-sm font-medium text-white">{lead.name}</div>
-                                                <div className="text-sm text-slate-400">{lead.company}</div>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(lead.name ?? '')}`}>
+                                                    {(lead.name ?? '?').charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-semibold text-white truncate leading-snug">{lead.name}</div>
+                                                    <div className="text-xs text-slate-500 truncate leading-snug mt-0.5">{lead.email || lead.company || '—'}</div>
+                                                </div>
                                             </div>
                                         </td>
                                         {listDisplaySettings.showStatus && (
                                             <td className="px-4 py-3 whitespace-nowrap">
-                                                {(() => {
-                                                    const s = getLeadComputedStatus(lead, columnTypeMap[lead.columnId]);
-                                                    const b = STATUS_BADGE[s];
-                                                    return (
-                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${b.classes}`}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_COLOR[s]}`} />
-                                                            {b.label}
-                                                        </span>
-                                                    );
-                                                })()}
+                                                <div className="flex items-center">
+                                                    {(() => {
+                                                        const s = getLeadComputedStatus(lead, columnTypeMap[lead.columnId]);
+                                                        const b = STATUS_BADGE[s];
+                                                        return (
+                                                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${b.classes}`}>
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_COLOR[s]}`} />
+                                                                {b.label}
+                                                            </span>
+                                                        );
+                                                    })()}
+                                                </div>
                                             </td>
                                         )}
                                         {listDisplaySettings.showValue && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{currencyFormatter.format(lead.value)}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <span className="text-sm font-semibold text-white tabular-nums">{currencyFormatter.format(lead.value)}</span>
+                                            </td>
                                         )}
                                         {listDisplaySettings.showEmail && (
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400 truncate max-w-xs">{lead.email || '—'}</td>
@@ -354,8 +371,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.phone || '—'}</td>
                                         )}
                                         {currentUserRole === 'admin'
-                                            ? <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
-                                                {boards.find(b => b.id === lead.boardId)?.name ?? '—'}
+                                            ? <td className="px-4 py-3 whitespace-nowrap">
+                                                <span className="text-sm text-slate-300">{boards.find(b => b.id === lead.boardId)?.name ?? '—'}</span>
                                               </td>
                                             : listDisplaySettings.showTags && (
                                                 <td className="px-4 py-3 whitespace-nowrap">
