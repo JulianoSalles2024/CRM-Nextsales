@@ -2,8 +2,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Lead, ColumnData, Activity, Task, User } from '@/types';
 import type { Board } from '@/types';
-import { getLeadComputedStatus } from '@/src/lib/leadStatus';
-import { Users, Target, TrendingUp, DollarSign, UserCheck, AlertTriangle, Wallet, Layers, CalendarDays } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, Layers, CalendarDays } from 'lucide-react';
 import KpiCard from './KpiCard';
 import TopSellers from './TopSellers';
 import RecentActivities from './RecentActivities';
@@ -131,58 +130,11 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         };
     }, [periodFilteredLeads, activeColumns]);
 
-    const walletHealth = useMemo(() => {
-        const getStatus = (l: typeof periodFilteredLeads[0]) =>
-            getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type);
-
-        const activeCount    = periodFilteredLeads.filter(l => getStatus(l) === 'ativo').length;
-        const perdidoCount   = periodFilteredLeads.filter(l => getStatus(l) === 'perdido').length;
-        const encerradoCount = periodFilteredLeads.filter(l => getStatus(l) === 'encerrado').length;
-        const ganhoCount     = periodFilteredLeads.filter(l => getStatus(l) === 'ganho').length;
-
-        const total = activeCount + perdidoCount + encerradoCount + ganhoCount || 1;
-
-        const activePct    = Math.round((activeCount    / total) * 100);
-        const perdidoPct   = Math.round((perdidoCount   / total) * 100);
-        const encerradoPct = Math.round((encerradoCount / total) * 100);
-        const ganhoPct     = Math.round((ganhoCount     / total) * 100);
-
-        const wonLeads = periodFilteredLeads.filter(l => activeColumns.find(c => c.id === l.columnId)?.type === 'won');
-        const ltv = wonLeads.length > 0
-            ? wonLeads.reduce((acc, curr) => acc + Number(curr.value || 0), 0) / wonLeads.length
-            : 0;
-
-        return {
-            activeCount, perdidoCount, encerradoCount, ganhoCount,
-            activePct, perdidoPct, encerradoPct, ganhoPct,
-            ltv
-        };
-    }, [periodFilteredLeads, activeColumns]);
-
     const currencyFormatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
         maximumFractionDigits: 0,
-    }); 
-
-    // Risk Detection Logic
-    const riskLeads = useMemo(() => {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        return leads.filter(l => {
-            const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
-            return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
-        });
-    }, [leads]);
-
-    const handleAnalyzePortfolio = () => {
-        if (riskLeads.length > 0) {
-            showNotification(`${riskLeads.length} alertas de risco gerados na lista de atividades!`, 'warning');
-        } else {
-            showNotification('Nenhum novo risco detectado. Carteira saudável!', 'info');
-        }
-        onAnalyzePortfolio?.();
-    };
+    });
 
     return (
         <div className="flex flex-col gap-4 pb-10">
@@ -249,84 +201,6 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     iconColor="text-orange-500"
                     onClick={() => onNavigate('Relatórios')}
                 />
-            </div>
-
-            {/* Wallet Health Section */}
-            <div>
-                <div className="flex items-center gap-2 mb-4 pl-1">
-                    <UserCheck className="w-5 h-5 text-blue-400" />
-                    <h2 className="text-xl font-bold text-white">Saúde da Carteira</h2>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Distribution Card */}
-                    <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full">
-                        <div className="mb-4">
-                            <p className="text-sm font-medium text-slate-400 mb-2">Distribuição da Carteira</p>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-3xl font-bold text-white">{walletHealth.activePct}%</span>
-                                <span className="text-blue-400 text-sm font-bold uppercase">Ativos</span>
-                            </div>
-                        </div>
-
-                        <div className="w-full h-2 rounded-full overflow-hidden flex mb-5 bg-slate-800">
-                            <div style={{ width: `${walletHealth.activePct}%`,    backgroundColor: '#3B82F6' }} />
-                            <div style={{ width: `${walletHealth.ganhoPct}%`,     backgroundColor: '#22C55E' }} />
-                            <div style={{ width: `${walletHealth.perdidoPct}%`,   backgroundColor: '#EF4444' }} />
-                            <div style={{ width: `${walletHealth.encerradoPct}%`, backgroundColor: '#6B7280' }} />
-                        </div>
-
-                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-medium text-slate-400">
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                <span>{walletHealth.activeCount} Ativos</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full bg-green-500" />
-                                <span>{walletHealth.ganhoCount} Ganhos</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full bg-red-500" />
-                                <span>{walletHealth.perdidoCount} Perdidos</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full bg-gray-500" />
-                                <span>{walletHealth.encerradoCount} Encerrados</span>
-                            </div>
-                        </div>
-                    </FlatCard>
-
-                    {/* Churn Risk Card */}
-                    <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
-                        <div className="relative z-10">
-                            <p className="text-sm font-medium text-slate-400 mb-2">Risco de Churn</p>
-                            <div className="flex items-center gap-3 mb-3">
-                                <span className="text-3xl font-bold text-white">{riskLeads.length} {riskLeads.length === 1 ? 'Cliente' : 'Clientes'}</span>
-                                <span className="text-red-400 text-[10px] font-bold uppercase bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded tracking-wide">Alertas</span>
-                            </div>
-                            <p className="text-xs text-slate-500 mb-5 leading-relaxed">Clientes ativos sem compra há {'>'} 30 dias.</p>
-                            <button 
-                                onClick={handleAnalyzePortfolio}
-                                className="text-sm text-blue-400 font-medium hover:text-blue-300 self-start transition-colors flex items-center gap-1"
-                            >
-                                Rodar verificação agora
-                            </button>
-                        </div>
-                        <AlertTriangle className="absolute right-4 top-4 w-12 h-12 text-slate-800/50" />
-                    </FlatCard>
-
-                    {/* LTV Card */}
-                    <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
-                        <div className="relative z-10">
-                            <p className="text-sm font-medium text-slate-400 mb-8">LTV Médio</p>
-                            <div className="flex items-center gap-3 mb-5">
-                                <span className="text-3xl font-bold text-white">{currencyFormatter.format(walletHealth.ltv / 1000)}k</span>
-                                <span className="text-emerald-400 text-[12px] font-bold uppercase bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded tracking-wide">Médio</span>
-                            </div>
-                            <p className="text-xs text-slate-500 leading-relaxed">Valor médio vitalício por cliente ativo.</p>
-                        </div>
-                        <Wallet className="absolute right-4 top-4 w-12 h-12 text-slate-800/50" />
-                    </FlatCard>
-                </div>
             </div>
 
             {/* Bottom Section: Top Sellers & Activities */}

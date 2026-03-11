@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Lead, ColumnData, Task, Activity } from '@/types';
 import type { Board } from '@/types';
-import { RefreshCw, Download, Users, Target, DollarSign, CheckCircle, Layers } from 'lucide-react';
+import { RefreshCw, Download, Users, Target, DollarSign, AlertTriangle, Layers } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import FlatCard from '@/components/ui/FlatCard';
 
@@ -94,9 +94,13 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         const totalValue = filteredLeads.reduce((sum, lead) => sum + lead.value, 0);
         const averageValue = totalLeads > 0 ? totalValue / totalLeads : 0;
 
-        const totalTasks = filteredTasks.length;
-        const completedTasks = filteredTasks.filter(t => t.status === 'completed').length;
-        const activityCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0.0';
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const churnRiskCount = boardFilteredLeads.filter(l => {
+            const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
+            return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
+        }).length;
+        const encerradoCount = boardFilteredLeads.filter(l => l.status === 'ENCERRADO').length;
 
         const funnelData = activeColumns.map(col => {
             const leadsInCol = filteredLeads.filter(l => l.columnId === col.id);
@@ -114,7 +118,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             totalLeads,
             conversionRate,
             averageValue,
-            activityCompletionRate,
+            churnRiskCount,
+            encerradoCount,
             funnelData,
             topLeads,
         };
@@ -386,7 +391,16 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 <ReportKpiCard title="Total de Leads" value={reportData.totalLeads.toString()} icon={Users} color="#8b5cf6" />
                 <ReportKpiCard title="Taxa de Conversão" value={`${reportData.conversionRate}%`} icon={Target} color="#ec4899" />
                 <ReportKpiCard title="Valor Médio" value={currencyFormatter.format(reportData.averageValue)} icon={DollarSign} color="#3b82f6" />
-                <ReportKpiCard title="Conclusão de Atividades" value={`${reportData.activityCompletionRate}%`} icon={CheckCircle} color="#10b981" />
+                <FlatCard className="p-5 flex justify-between items-center transition-all duration-200 ease-in-out hover:bg-slate-800/50 hover:-translate-y-1 hover:shadow-lg">
+                    <div>
+                        <p className="text-sm text-slate-400">Churn</p>
+                        <p className="text-sm text-slate-300 mt-2">Risco de churn: <span className="font-bold text-white">{reportData.churnRiskCount}</span></p>
+                        <p className="text-sm text-slate-300 mt-1">Perdas: <span className="font-bold text-white">{reportData.encerradoCount}</span></p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444420' }}>
+                        <AlertTriangle className="w-6 h-6" style={{ color: '#ef4444' }} />
+                    </div>
+                </FlatCard>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
