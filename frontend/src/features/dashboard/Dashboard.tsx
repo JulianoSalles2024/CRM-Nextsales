@@ -231,8 +231,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                 if (i === 0) return `M ${p.x},${p.y}`;
                 const [p0, p1, p2, p3] = [ys[i-2], ys[i-1], ys[i], ys[i+1]]
                     .map((q, j) => q || ys[j === 0 ? 0 : ys.length - 1]);
-                const cp1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
-                const cp2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+                const cp1 = { x: p1.x + (p2.x - p0.x) / 4, y: p1.y + (p2.y - p0.y) / 4 };
+                const cp2 = { x: p2.x - (p3.x - p1.x) / 4, y: p2.y - (p3.y - p1.y) / 4 };
                 return `${acc} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${p2.x},${p2.y}`;
             }, '');
 
@@ -276,22 +276,22 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             <AnimatePresence mode="wait">
                                 <motion.g
                                     key={dataKey}
-                                    initial={{ opacity: 0, y: 6 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -6 }}
-                                    transition={{ duration: 0.22, ease: 'easeInOut' }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.18, ease: 'easeInOut' }}
                                 >
                                     {data.labels.map((label, i) => (
                                         <text key={label} x={pts[i].x} y={cH + 22} fill="#64748b" textAnchor="middle" fontSize="11">{label}</text>
                                     ))}
 
                                     <path d={`${revPath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Receita)" />
-                                    <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Novos-Leads)" />
                                     <path d={`${chPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Churn)" />
+                                    <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Novos-Leads)" />
 
-                                    <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="2.5" />
-                                    <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="2.5" />
-                                    <path d={chPath}  fill="none" stroke="#ef4444" strokeWidth="2.5" />
+                                    <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="1.5" />
+                                    <path d={chPath}  fill="none" stroke="#ef4444" strokeWidth="1.5" />
+                                    <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="1.5" />
                                 </motion.g>
                             </AnimatePresence>
 
