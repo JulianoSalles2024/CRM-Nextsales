@@ -21,7 +21,7 @@ import SdrBotModal from '@/components/SdrBotModal';
 import SdrAssistantChat from '@/components/SdrAssistantChat';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateBoardModal from '@/components/CreateBoardModal';
-import Notification from '@/components/Notification';
+import Notification from '@/src/features/notifications/Notification';
 
 export default function RootLayout() {
     const ctx = useAppContext();

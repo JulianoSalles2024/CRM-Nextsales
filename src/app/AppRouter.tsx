@@ -13,7 +13,7 @@ import ChatView from '@/components/ChatView';
 import GroupsView from '@/components/GroupsView';
 import GroupsDashboard from '@/components/GroupsDashboard';
 import IntegrationsPage from '@/components/IntegrationsPage';
-import NotificationsView from '@/components/NotificationsView';
+import NotificationsView from '@/src/features/notifications/NotificationsView';
 import PlaybookSettings from '@/components/PlaybookSettings';
 import PrintableLeadsReport from '@/components/PrintableLeadsReport';
 import RecoveryView from '@/components/RecoveryView';

@@ -8,7 +8,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 import CreateStageModal from './CreateStageModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import NotificationSettings from './NotificationSettings';
+import NotificationSettings from '@/src/features/notifications/NotificationSettings';
 import PlaybookSettings from './PlaybookSettings';
 import IntegrationsPage from './IntegrationsPage';
 import TeamSettings from './TeamSettings';
