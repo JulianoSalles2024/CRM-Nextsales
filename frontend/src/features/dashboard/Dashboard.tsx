@@ -256,7 +256,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     <svg ref={svgRef} width="100%" viewBox={`0 0 ${svgW} ${svgH}`} onMouseMove={onMove} onMouseLeave={() => { setHoveredIndex(null); setTooltipPos(null); }}>
                         <defs>
                             {data.datasets.map(ds => (
-                                <linearGradient key={ds.label} id={`td-grad-${ds.label}`} x1="0" y1="0" x2="0" y2="1">
+                                <linearGradient key={ds.label} id={`td-grad-${ds.label.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%"   stopColor={ds.color} stopOpacity={0.25} />
                                     <stop offset="100%" stopColor={ds.color} stopOpacity={0} />
                                 </linearGradient>
@@ -276,9 +276,9 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                                 <text key={label} x={pts[i].x} y={cH + 22} fill="#64748b" textAnchor="middle" fontSize="11">{label}</text>
                             ))}
 
-                            <path d={`${revPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill={`url(#td-grad-Receita)`} />
-                            <path d={`${nlPath}   L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill={`url(#td-grad-Novos Leads)`} />
-                            <path d={`${chPath}   L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill={`url(#td-grad-Churn)`} />
+                            <path d={`${revPath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Receita)" />
+                            <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Novos-Leads)" />
+                            <path d={`${chPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Churn)" />
 
                             <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="2.5" />
                             <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="2.5" />
