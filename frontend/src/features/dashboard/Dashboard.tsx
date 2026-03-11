@@ -207,8 +207,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
         const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
-        const svgW = 800, svgH = 280;
-        const pad = { top: 20, right: 50, bottom: 36, left: 60 };
+        const svgW = 1000, svgH = 190;
+        const pad = { top: 10, right: 42, bottom: 28, left: 52 };
         const cW = svgW - pad.left - pad.right;
         const cH = svgH - pad.top - pad.bottom;
 
@@ -251,9 +251,9 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         };
 
         return (
-            <div className="relative flex flex-col h-full min-h-0">
-                <div className="flex-1 min-h-0">
-                    <svg ref={svgRef} width="100%" height="100%" viewBox={`0 0 ${svgW} ${svgH}`} onMouseMove={onMove} onMouseLeave={() => { setHoveredIndex(null); setTooltipPos(null); }}>
+            <div className="relative flex flex-col w-full">
+                <div className="w-full">
+                    <svg ref={svgRef} width="100%" viewBox={`0 0 ${svgW} ${svgH}`} onMouseMove={onMove} onMouseLeave={() => { setHoveredIndex(null); setTooltipPos(null); }}>
                         <defs>
                             {data.datasets.map(ds => (
                                 <linearGradient key={ds.label} id={`td-grad-${ds.label}`} x1="0" y1="0" x2="0" y2="1">
@@ -418,7 +418,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                         ))}
                     </div>
                 </div>
-                <div className="h-[240px]">
+                <div className="w-full">
                     <TrendChart data={trendData} />
                 </div>
             </FlatCard>
