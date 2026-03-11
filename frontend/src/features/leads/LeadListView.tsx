@@ -171,29 +171,6 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         setSortConfig({ key, direction });
     };
 
-    // --- SELECTION LOGIC ---
-    const toggleSelect = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setSelectedIds(prev => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id); else next.add(id);
-            return next;
-        });
-    };
-    const isAllOnPageSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedIds.has(l.id as string));
-    const toggleSelectAll = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setSelectedIds(prev => {
-            const next = new Set(prev);
-            if (isAllOnPageSelected) {
-                paginatedLeads.forEach(l => next.delete(l.id as string));
-            } else {
-                paginatedLeads.forEach(l => next.add(l.id as string));
-            }
-            return next;
-        });
-    };
-
     // --- CSV EXPORT LOGIC ---
     const handleExportCSV = () => {
         const headers = ['Nome', 'Empresa'];
@@ -247,6 +224,29 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const paginatedLeads = useMemo(() =>
         sortedLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
     [sortedLeads, currentPage]);
+
+    // --- SELECTION LOGIC (após paginatedLeads) ---
+    const toggleSelect = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+    const isAllOnPageSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedIds.has(l.id as string));
+    const toggleSelectAll = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (isAllOnPageSelected) {
+                paginatedLeads.forEach(l => next.delete(l.id as string));
+            } else {
+                paginatedLeads.forEach(l => next.add(l.id as string));
+            }
+            return next;
+        });
+    };
 
     // --- VIRTUALIZATION LOGIC ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
