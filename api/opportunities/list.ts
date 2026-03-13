@@ -11,7 +11,7 @@ const supabase = createClient(
 interface OpportunityItem {
   lead_id: string;
   lead_name: string;
-  column_id: string | null;
+  stage_id: string | null;
   owner_id: string | null;
   conversion_score: number;
   upsell_score: number;
