@@ -94,7 +94,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"company_id\":           \"{{ $json.company_id }}\",\n  \"prompt_rule\":          \"{{ $json.prompt_rule }}\",\n  \"contact_name\":         \"{{ $json.contact_name }}\",\n  \"agent_name\":           \"{{ $json.agent_name }}\",\n  \"company_name\":         \"{{ $json.company_name }}\",\n  \"conversation_history\": {{ JSON.stringify($json.conversation_history) }}\n}",
+        "jsonBody": "={\n  \"company_id\":           \"{{ $json.company_id }}\",\n  \"prompt_rule\":          \"{{ $json.prompt_rule }}\",\n  \"contact_name\":         \"{{ $json.contact_name || $json.contact_identifier }}\",\n  \"agent_name\":           \"{{ $json.agent_name }}\",\n  \"company_name\":         \"{{ $json.company_name }}\",\n  \"conversation_history\": {{ JSON.stringify($json.conversation_history) }}\n}",
         "options": {
           "timeout": 30000
         }

@@ -56,7 +56,7 @@ function formatHistory(history: HistoryEntry[]): string {
 /** Valida presença e tipo dos campos obrigatórios. Lança AppError(400) se inválido. */
 function validateBody(body: Partial<RequestBody>): asserts body is RequestBody {
   const required: (keyof RequestBody)[] = [
-    'company_id', 'prompt_rule', 'contact_name', 'agent_name', 'company_name',
+    'company_id', 'prompt_rule', 'agent_name', 'company_name',
   ];
 
   for (const field of required) {
@@ -110,7 +110,7 @@ export default async function handler(req: any, res: any) {
     const {
       company_id,
       prompt_rule,
-      contact_name,
+      contact_name = 'Cliente',
       agent_name,
       company_name,
       conversation_history = [],
