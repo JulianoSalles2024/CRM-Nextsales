@@ -54,6 +54,7 @@ COMMENT ON TABLE followup_rules IS
 -- ─── 3. Trigger updated_at ───────────────────────────────────────────────────
 
 -- Reutiliza a função set_updated_at() já criada em migrations anteriores
+DROP TRIGGER IF EXISTS trg_followup_rules_updated_at ON followup_rules;
 CREATE TRIGGER trg_followup_rules_updated_at
   BEFORE UPDATE ON followup_rules
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
