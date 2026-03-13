@@ -139,7 +139,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $('Code - Unpack Items').item.json.contact_identifier }}\",\n  \"textMessage\": {\n    \"text\": \"{{ $('HTTP - AI Generate Message').item.json.generated_text }}\"\n  },\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  }\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $('Code - Unpack Items').item.json.contact_identifier }}\",\n  \"text\": \"{{ $('HTTP - AI Generate Message').item.json.generated_text }}\",\n  \"delay\": 1200\n}",
         "options": {}
       },
       "id": "c0000003-0000-0000-0000-000000000008",
