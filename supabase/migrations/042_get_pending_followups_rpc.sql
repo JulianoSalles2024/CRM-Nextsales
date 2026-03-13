@@ -60,7 +60,7 @@ AS $$
     COALESCE(c.contact_name, c.contact_identifier)                     AS contact_name,
     COALESCE(p.name, 'Agente')                                         AS agent_name,
     COALESCE(co.name, '')                                              AS company_name,
-    COALESCE(cc.name, '')                                              AS instance_name,
+    COALESCE(cc.external_id, cc.name, '')                              AS instance_name,
     r.prompt                                                           AS prompt_rule,
     r.sequence_order                                                   AS next_followup_step,
 
