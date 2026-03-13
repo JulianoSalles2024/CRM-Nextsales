@@ -59,9 +59,9 @@
           "conditions": [
             {
               "id": "cond-skip-01",
-              "leftValue": "={{ $json.skip }}",
-              "rightValue": false,
-              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+              "leftValue": "={{ $json.conversation_id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
             }
           ],
           "combinator": "and"
