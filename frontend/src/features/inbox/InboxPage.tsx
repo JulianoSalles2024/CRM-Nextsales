@@ -12,7 +12,7 @@ export const InboxPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [activeConversation, setActiveConversation] = useState<OmniConversation | null>(null);
 
-  const { conversations, loading } = useConversations(statusFilter, search);
+  const { conversations, loading, removeConversation } = useConversations(statusFilter, search);
 
   const handleSelectConversation = useCallback((conv: OmniConversation) => {
     setActiveConversation(conv);
@@ -33,6 +33,11 @@ export const InboxPage: React.FC = () => {
     );
   }, []);
 
+  const handleDeleteConversation = useCallback((conversationId: string) => {
+    removeConversation(conversationId);
+    setActiveConversation(null);
+  }, [removeConversation]);
+
   return (
     <div className="flex h-full -mx-6 -mt-6 -mb-6 overflow-hidden rounded-xl border border-slate-800">
       <ConversationList
@@ -48,6 +53,7 @@ export const InboxPage: React.FC = () => {
       <ConversationPanel
         conversation={activeConversation}
         onStatusChange={handleStatusChange}
+        onDeleteConversation={handleDeleteConversation}
       />
     </div>
   );

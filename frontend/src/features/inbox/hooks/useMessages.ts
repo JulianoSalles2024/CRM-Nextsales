@@ -88,5 +88,7 @@ export function useMessages(conversationId: string | null) {
     setMessages(prev => [...prev, optimistic]);
   }, [conversationId, companyId, user]);
 
-  return { messages, loading, addOptimisticMessage };
+  const resetMessages = useCallback(() => setMessages([]), []);
+
+  return { messages, loading, addOptimisticMessage, resetMessages };
 }

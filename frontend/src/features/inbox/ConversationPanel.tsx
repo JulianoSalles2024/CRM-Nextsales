@@ -27,18 +27,19 @@ const STATUS_COLOR: Record<string, string> = {
 interface ConversationPanelProps {
   conversation: OmniConversation | null;
   onStatusChange: (conversationId: string, newStatus: ConversationStatus) => void;
+  onDeleteConversation: (conversationId: string) => void;
 }
 
 type ConfirmAction = 'clear' | 'block' | 'delete' | null;
 
-export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversation, onStatusChange }) => {
+export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversation, onStatusChange, onDeleteConversation }) => {
   const { user, companyId, currentUserRole } = useAuth();
   const { localUser } = useAppContext();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
   const [reopenError, setReopenError] = useState<string | null>(null);
   const { sendMessage, isSending, sendError, clearError } = useSendMessage();
-  const { messages, loading: messagesLoading, addOptimisticMessage } = useMessages(conversation?.id ?? null);
+  const { messages, loading: messagesLoading, addOptimisticMessage, resetMessages } = useMessages(conversation?.id ?? null);
 
   // ── Menu de ações (⋯) ────────────────────────────────────────────────────
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,8 +65,9 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
     if (confirmAction === 'block')  ok = await blockContact();
     if (confirmAction === 'delete') ok = await deleteConversation();
     if (ok) {
+      if (confirmAction === 'clear')  resetMessages();
+      if (confirmAction === 'delete') onDeleteConversation(conversation!.id);
       setConfirmAction(null);
-      if (confirmAction === 'delete') onStatusChange(conversation!.id, 'resolved'); // remove da lista
     }
   };
 

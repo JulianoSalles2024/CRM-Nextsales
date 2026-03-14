@@ -75,5 +75,9 @@ export function useConversations(statusFilter: ConversationStatus | null = null,
     return () => { supabase.removeChannel(channel); };
   }, [companyId]);
 
-  return { conversations, loading, refetch: fetchConversations };
+  const removeConversation = useCallback((id: string) => {
+    setConversations(prev => prev.filter(c => c.id !== id));
+  }, []);
+
+  return { conversations, loading, refetch: fetchConversations, removeConversation };
 }
