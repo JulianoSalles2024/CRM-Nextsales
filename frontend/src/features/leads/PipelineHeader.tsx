@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2, Settings, Download, LayoutGrid, List, Search, Bot } from 'lucide-react';
+import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2, Settings, Download, LayoutGrid, List, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
@@ -23,7 +23,6 @@ interface PipelineHeaderProps {
     onViewModeChange: (mode: 'kanban' | 'list') => void;
     searchQuery: string;
     onSearchChange: (q: string) => void;
-    onAIAgentClick: () => void;
 }
 
 const PipelineHeader: React.FC<PipelineHeaderProps> = ({ 
@@ -42,7 +41,6 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
     onViewModeChange,
     searchQuery,
     onSearchChange,
-    onAIAgentClick,
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isBoardMenuOpen, setBoardMenuOpen] = useState(false);
@@ -182,14 +180,6 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-                <button
-                    onClick={onAIAgentClick}
-                    className="flex items-center gap-2 text-sm text-white bg-gradient-to-r from-violet-600 to-purple-600 px-3 py-1.5 rounded-md font-semibold hover:shadow-[0_0_18px_rgba(139,92,246,0.45)] hover:-translate-y-0.5 transition-all duration-200"
-                    title="Configurar Agente de IA"
-                >
-                    <Bot className="w-4 h-4" />
-                    <span>Agente IA</span>
-                </button>
                 <button
                     onClick={onApplyPlaybookClick}
                     disabled={!isPlaybookActionEnabled}

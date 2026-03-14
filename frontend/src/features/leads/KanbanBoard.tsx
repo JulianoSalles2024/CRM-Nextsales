@@ -1,9 +1,7 @@
 
 
 import React, { useState, useMemo } from 'react';
-import { useAuth } from '@/src/features/auth/AuthContext';
 import FlatCard from '@/components/ui/FlatCard';
-import PipelineAIModal from './PipelineAIModal';
 import {
     DndContext,
     DragEndEvent,
@@ -73,12 +71,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     onUpdateBoard,
     onImportBoards
 }) => {
-    const { companyId } = useAuth();
     const [activeLead, setActiveLead] = useState<Lead | null>(null);
     const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
     const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-    const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
@@ -141,7 +137,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     onDeleteBoard={onDeleteBoard}
                     onEditBoardClick={() => setIsEditBoardModalOpen(true)}
                     onExportBoardClick={() => setIsExportModalOpen(true)}
-                    onAIAgentClick={() => setIsAIModalOpen(true)}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     searchQuery={searchQuery}
@@ -260,14 +255,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 />
             )}
 
-            {isAIModalOpen && activeBoard && companyId && (
-                <PipelineAIModal
-                    boardId={activeBoard.id}
-                    boardName={activeBoard.name}
-                    companyId={companyId}
-                    onClose={() => setIsAIModalOpen(false)}
-                />
-            )}
+
         </div>
     );
 };

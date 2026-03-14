@@ -7,6 +7,7 @@ const SETTINGS_TAB_PATHS: Record<string, string> = {
     'Automações':              '/configuracoes/automacoes',
     'Equipe':                  '/configuracoes/equipe',
     'Inteligência Artificial': '/configuracoes/inteligencia-artificial',
+    'Agente de IA':            '/configuracoes/agente-ia',
     'Credenciais de IA':       '/configuracoes/credenciais-ia',
     'Integrações':             '/configuracoes/integracoes',
 };
@@ -29,6 +30,7 @@ import TeamSettings from './TeamSettings';
 import SettingsInactiveActions from './SettingsInactiveActions';
 import { AIHubView } from '@/src/features/ai/AIHubView';
 import { AIProvidersPage } from '@/src/features/ai-credentials/AIProvidersPage';
+import PipelineAIModal from '@/src/features/leads/PipelineAIModal';
 import { Key } from 'lucide-react';
 import FlatCard from '@/components/ui/FlatCard';
 import { GlassSection } from '@/src/shared/components/GlassSection';
@@ -303,6 +305,63 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
     );
 };
 
+// --- Agente de IA por Board (admin only) ---
+const BoardsAISettings: React.FC<{ boards: Board[] }> = ({ boards }) => {
+    const { companyId } = useAuth();
+    const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
+
+    if (!companyId) return null;
+
+    return (
+        <>
+            <FlatCard className="p-0">
+                <div className="p-6 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                            <Bot className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-semibold text-white">Agente de IA por Pipeline</h2>
+                            <p className="text-sm text-slate-400 mt-0.5">Configure o comportamento do agente para cada pipeline. As configurações são globais e afetam todos os sellers.</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="p-6 space-y-3">
+                    {boards.map(board => (
+                        <GlassSection key={board.id} className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-[#0B1220] border border-white/5 flex items-center justify-center">
+                                    <Columns className="w-4 h-4 text-slate-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-medium text-white">{board.name}</h3>
+                                    <p className="text-xs text-slate-500">{board.columns.length} estágios</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedBoard(board)}
+                                className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <Bot className="w-4 h-4" />
+                                Configurar Agente
+                            </button>
+                        </GlassSection>
+                    ))}
+                </div>
+            </FlatCard>
+
+            {selectedBoard && (
+                <PipelineAIModal
+                    boardId={selectedBoard.id}
+                    boardName={selectedBoard.name}
+                    companyId={companyId}
+                    onClose={() => setSelectedBoard(null)}
+                />
+            )}
+        </>
+    );
+};
+
 // --- Placeholder ---
 const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
     <FlatCard className="text-center p-10 border-2 border-dashed border-white/10">
@@ -385,6 +444,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         return [
             ...(currentPermissions.canManageTeam ? [{ name: 'Equipe', icon: Users }] : []),
             { name: 'Inteligência Artificial', icon: Bot },
+            { name: 'Agente de IA', icon: Zap },
             ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
            // ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
             ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
@@ -444,6 +504,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 {activeTab === 'Estágios' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Equipe' && <TeamSettings users={users} currentUser={currentUser} onUpdateUsers={onUpdateUsers} />}
                 {activeTab === 'Inteligência Artificial' && <AIHubView />}
+                {activeTab === 'Agente de IA' && <BoardsAISettings boards={boards} />}
                 {activeTab === 'Credenciais de IA' && <AIProvidersPage />}
               {/*  {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />} */}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => { }} />}
