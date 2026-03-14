@@ -325,7 +325,7 @@ const BoardsAISettings: React.FC<{ boards: Board[] }> = ({ boards }) => {
                     </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                     {boards.map(board => (
                         <div key={board.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors">
                             <div className="flex items-center gap-3">
