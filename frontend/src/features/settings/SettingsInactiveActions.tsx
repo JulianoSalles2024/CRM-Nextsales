@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Clock, Trash2, Settings2, AlertTriangle, GripVertical,
-  Loader2, AlertCircle,
+  Loader2, AlertCircle, TimerOff, CheckCircle2,
 } from 'lucide-react';
 import FlatCard from '@/components/ui/FlatCard';
 import { AllowedScheduleModal, type ScheduleConfig, type WeekDay } from './AllowedScheduleModal';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import { useFollowupRules, type FollowupRule, type DelayUnit } from './hooks/useFollowupRules';
+import { useCompanySettings } from './hooks/useCompanySettings';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -159,6 +160,47 @@ export const SettingsInactiveActions: React.FC = () => {
   const [scheduleTarget, setScheduleTarget] = useState<string | null>(null);
   const [deleteTarget,   setDeleteTarget]   = useState<string | null>(null);
 
+  // ── Auto-close settings ──────────────────────────────────────────────────
+  const {
+    settings,
+    isLoading: isLoadingSettings,
+    isSaving:  isSavingSettings,
+    error:     settingsError,
+    updateAutoCloseHours,
+  } = useCompanySettings();
+
+  const [enabled,     setEnabled]     = useState(false);
+  const [hoursDraft,  setHoursDraft]  = useState('48');
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Sincroniza estado local quando o banco carrega
+  useEffect(() => {
+    if (settings !== undefined) {
+      const active = settings?.auto_close_hours != null;
+      setEnabled(active);
+      if (active) setHoursDraft(String(settings!.auto_close_hours));
+    }
+  }, [settings]);
+
+  const handleToggle = async (checked: boolean) => {
+    setEnabled(checked);
+    if (!checked) {
+      await updateAutoCloseHours(null);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+  };
+
+  const handleSaveAutoClose = async () => {
+    const hours = parseInt(hoursDraft, 10);
+    if (!hours || hours < 1) return;
+    const ok = await updateAutoCloseHours(hours);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+  };
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleLocalUpdate = (updated: FollowupRule) =>
@@ -261,14 +303,120 @@ export const SettingsInactiveActions: React.FC = () => {
             />
           ))}
 
-          {/* Encerramento automático */}
-          {!isLoading && localRules.length > 0 && (
-            <div className="flex items-start gap-3 px-4 py-3.5 bg-amber-500/5 border border-amber-500/15 rounded-xl mt-2">
+        </div>
+      </FlatCard>
+
+      {/* ── Encerramento Automático de Conversas ── */}
+      <FlatCard className="p-0">
+
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-lg font-semibold text-white">Encerramento Automático de Conversas</h2>
+              {isSavingSettings && (
+                <span className="flex items-center gap-1 text-xs text-slate-500">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Salvando...
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-slate-400 mt-1">
+              Conversas sem interação pelo período definido serão automaticamente
+              resolvidas e o lead marcado como{' '}
+              <span className="text-red-400 font-medium">PERDIDO</span>.
+            </p>
+          </div>
+
+          {/* Toggle switch */}
+          <button
+            role="switch"
+            aria-checked={enabled}
+            onClick={() => handleToggle(!enabled)}
+            disabled={isLoadingSettings || isSavingSettings}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent
+              transition-colors duration-200 ease-in-out focus:outline-none
+              disabled:opacity-50 disabled:cursor-not-allowed
+              ${enabled ? 'bg-blue-600' : 'bg-slate-700'}`}
+          >
+            <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow
+              transform transition-transform duration-200 ease-in-out
+              ${enabled ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+
+          {/* Skeleton */}
+          {isLoadingSettings && (
+            <div className="h-14 bg-slate-800/40 rounded-xl animate-pulse" />
+          )}
+
+          {/* Erro do banco */}
+          {settingsError && !isLoadingSettings && (
+            <div className="flex items-start gap-3 px-4 py-3.5 bg-red-500/5 border border-red-500/20 rounded-xl">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400/80">{settingsError}</p>
+            </div>
+          )}
+
+          {/* Input de horas — visível apenas quando habilitado */}
+          {!isLoadingSettings && enabled && (
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <TimerOff className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                <label className="text-sm text-slate-300 whitespace-nowrap">
+                  Encerrar após
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={hoursDraft}
+                  onChange={e => setHoursDraft(e.target.value)}
+                  className="w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5
+                    text-sm text-white text-center focus:outline-none
+                    focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/30"
+                />
+                <span className="text-sm text-slate-400">horas de inatividade</span>
+              </div>
+              <button
+                onClick={handleSaveAutoClose}
+                disabled={isSavingSettings || !hoursDraft || parseInt(hoursDraft, 10) < 1}
+                className="ml-auto px-4 py-1.5 bg-blue-600 hover:bg-blue-700
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Salvar
+              </button>
+            </div>
+          )}
+
+          {/* Estado desativado */}
+          {!isLoadingSettings && !enabled && (
+            <p className="text-xs text-slate-600 italic">
+              Ative o toggle para configurar o encerramento automático.
+            </p>
+          )}
+
+          {/* Feedback de sucesso */}
+          {saveSuccess && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+              <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+              <p className="text-xs text-green-300">Configuração salva com sucesso.</p>
+            </div>
+          )}
+
+          {/* Info box permanente */}
+          {!isLoadingSettings && (
+            <div className="flex items-start gap-3 px-4 py-3.5 bg-amber-500/5 border border-amber-500/15 rounded-xl">
               <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-300/80 leading-relaxed">
-                <span className="font-semibold text-amber-300">Encerramento Automático:</span>{' '}
-                Após o último follow-up (Passo {localRules.length}), se o cliente não responder, a conversa será encerrada e o lead irá para{' '}
-                <span className="font-semibold text-red-400">LOST</span>.
+                <span className="font-semibold text-amber-300">Atenção:</span>{' '}
+                O encerramento automático age <strong>após</strong> o último passo de follow-up.
+                O lead permanece no sistema com status{' '}
+                <span className="font-semibold text-red-400">PERDIDO</span>{' '}
+                para recuperação futura.
               </p>
             </div>
           )}
