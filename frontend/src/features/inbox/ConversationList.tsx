@@ -26,7 +26,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   onStatusFilterChange,
   onSearchChange,
 }) => (
-  <div className="flex flex-col w-80 flex-shrink-0 border-r border-slate-800 bg-[#0B1220]">
+  <div className="flex flex-col w-96 flex-shrink-0 border-r border-slate-800 bg-[#0B1220]">
     {/* Header */}
     <div className="px-4 py-4 border-b border-slate-800">
       <h2 className="text-base font-semibold text-white flex items-center gap-2">
