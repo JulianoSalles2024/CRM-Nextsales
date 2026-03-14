@@ -12,7 +12,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [0, 300],
+      "position": [
+        0,
+        300
+      ],
       "webhookId": "ai-agent"
     },
     {
@@ -25,18 +28,28 @@
       "name": "Respond 200 OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [260, 160]
+      "position": [
+        260,
+        160
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-text-only",
-              "leftValue": "={{ $json.content_type }}",
+              "leftValue": "={{ $json.body.content_type }}",
               "rightValue": "text",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -47,28 +60,41 @@
       "name": "IF - Is Text?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [520, 300]
+      "position": [
+        520,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// ── Code - Fetch Board Config ────────────────────────────────────────────\n// Recebe conversation_id + company_id, percorre:\n//   conversations → leads → board_stages → boards\n// Retorna ai_enabled, ai_prompt, instance_name, phone para o agente.\n\nconst body   = $input.first().json;\nconst { conversation_id, company_id, content_text, content_type } = body;\n\nconst SUPA_URL = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst headers = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` };\n\n// 1. Conversa → lead_id + channel_connection_id\nconst convRes  = await fetch(`${SUPA_URL}/rest/v1/conversations?id=eq.${conversation_id}&company_id=eq.${company_id}&select=lead_id,channel_connection_id`, { headers });\nconst convData = await convRes.json();\nif (!convData.length) return [{ json: { ai_enabled: false, error: 'conversation_not_found' } }];\nconst { lead_id, channel_connection_id } = convData[0];\n\n// 2. Lead → column_id + phone\nconst leadRes  = await fetch(`${SUPA_URL}/rest/v1/leads?id=eq.${lead_id}&company_id=eq.${company_id}&select=column_id,phone,name`, { headers });\nconst leadData = await leadRes.json();\nif (!leadData.length) return [{ json: { ai_enabled: false, error: 'lead_not_found' } }];\nconst { column_id, phone, name: lead_name } = leadData[0];\n\n// 3. Stage → board_id\nconst stageRes  = await fetch(`${SUPA_URL}/rest/v1/board_stages?id=eq.${column_id}&select=board_id`, { headers });\nconst stageData = await stageRes.json();\nif (!stageData.length) return [{ json: { ai_enabled: false, error: 'stage_not_found' } }];\nconst { board_id } = stageData[0];\n\n// 4. Board → ai_enabled + ai_prompt\nconst boardRes  = await fetch(`${SUPA_URL}/rest/v1/boards?id=eq.${board_id}&company_id=eq.${company_id}&select=ai_enabled,ai_prompt`, { headers });\nconst boardData = await boardRes.json();\nif (!boardData.length) return [{ json: { ai_enabled: false, error: 'board_not_found' } }];\nconst { ai_enabled, ai_prompt } = boardData[0];\n\n// 5. Channel connection → instance_name\nconst connRes  = await fetch(`${SUPA_URL}/rest/v1/channel_connections?id=eq.${channel_connection_id}&select=instance`, { headers });\nconst connData = await connRes.json();\nconst instance_name = connData[0]?.instance || '';\n\nreturn [{\n  json: {\n    conversation_id,\n    company_id,\n    content_text,\n    content_type,\n    lead_id,\n    phone,\n    lead_name,\n    ai_enabled,\n    ai_prompt,\n    instance_name\n  }\n}];"
+        "jsCode": "// ── Code - Fetch Board Config ────────────────────────────────────────────\n// Recebe conversation_id + company_id, percorre:\n//   conversations → leads → board_stages → boards\n// Retorna ai_enabled, ai_prompt, instance_name, phone para o agente.\n\nconst body   = $input.first().json.body ?? $input.first().json;\nconst { conversation_id, company_id, content_text, content_type } = body;\n\nconst SUPA_URL = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst headers = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` };\n\n// 1. Conversa → lead_id + channel_connection_id\nconst convRes  = await fetch(`${SUPA_URL}/rest/v1/conversations?id=eq.${conversation_id}&company_id=eq.${company_id}&select=lead_id,channel_connection_id`, { headers });\nconst convData = await convRes.json();\nif (!convData.length) return [{ json: { ai_enabled: false, error: 'conversation_not_found' } }];\nconst { lead_id, channel_connection_id } = convData[0];\n\n// 2. Lead → column_id + phone\nconst leadRes  = await fetch(`${SUPA_URL}/rest/v1/leads?id=eq.${lead_id}&company_id=eq.${company_id}&select=column_id,phone,name`, { headers });\nconst leadData = await leadRes.json();\nif (!leadData.length) return [{ json: { ai_enabled: false, error: 'lead_not_found' } }];\nconst { column_id, phone, name: lead_name } = leadData[0];\n\n// 3. Stage → board_id\nconst stageRes  = await fetch(`${SUPA_URL}/rest/v1/board_stages?id=eq.${column_id}&select=board_id`, { headers });\nconst stageData = await stageRes.json();\nif (!stageData.length) return [{ json: { ai_enabled: false, error: 'stage_not_found' } }];\nconst { board_id } = stageData[0];\n\n// 4. Board → ai_enabled + ai_prompt\nconst boardRes  = await fetch(`${SUPA_URL}/rest/v1/boards?id=eq.${board_id}&company_id=eq.${company_id}&select=ai_enabled,ai_prompt`, { headers });\nconst boardData = await boardRes.json();\nif (!boardData.length) return [{ json: { ai_enabled: false, error: 'board_not_found' } }];\nconst { ai_enabled, ai_prompt } = boardData[0];\n\n// 5. Channel connection → instance_name\nconst connRes  = await fetch(`${SUPA_URL}/rest/v1/channel_connections?id=eq.${channel_connection_id}&select=instance`, { headers });\nconst connData = await connRes.json();\nconst instance_name = connData[0]?.instance || '';\n\nreturn [{\n  json: {\n    conversation_id,\n    company_id,\n    content_text,\n    content_type,\n    lead_id,\n    phone,\n    lead_name,\n    ai_enabled,\n    ai_prompt,\n    instance_name\n  }\n}];"
       },
       "id": "a1b2c3d4-0004-4000-8000-000000000004",
       "name": "Code - Fetch Board Config",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [780, 300]
+      "position": [
+        780,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-ai-enabled",
               "leftValue": "={{ $json.ai_enabled }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true" }
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
             }
           ],
           "combinator": "and"
@@ -79,7 +105,10 @@
       "name": "IF - AI Enabled?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1040, 300]
+      "position": [
+        1040,
+        300
+      ]
     },
     {
       "parameters": {
@@ -89,31 +118,60 @@
       "name": "Code - Run Agent",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1300, 300]
+      "position": [
+        1300,
+        300
+      ]
     }
   ],
   "connections": {
     "Webhook Trigger": {
       "main": [
         [
-          { "node": "Respond 200 OK", "type": "main", "index": 0 },
-          { "node": "IF - Is Text?",  "type": "main", "index": 0 }
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF - Is Text?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "IF - Is Text?": {
       "main": [
-        [{ "node": "Code - Fetch Board Config", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Code - Fetch Board Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Code - Fetch Board Config": {
       "main": [
-        [{ "node": "IF - AI Enabled?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "IF - AI Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "IF - AI Enabled?": {
       "main": [
-        [{ "node": "Code - Run Agent", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Code - Run Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
