@@ -142,6 +142,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     onEditBoardClick={() => setIsEditBoardModalOpen(true)}
                     onExportBoardClick={() => setIsExportModalOpen(true)}
                     onAIAgentClick={() => setIsAIModalOpen(true)}
+                    isAIModalOpen={isAIModalOpen}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     searchQuery={searchQuery}

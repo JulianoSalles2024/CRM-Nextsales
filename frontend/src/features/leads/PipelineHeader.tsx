@@ -24,6 +24,7 @@ interface PipelineHeaderProps {
     searchQuery: string;
     onSearchChange: (q: string) => void;
     onAIAgentClick: () => void;
+    isAIModalOpen?: boolean;
 }
 
 const PipelineHeader: React.FC<PipelineHeaderProps> = ({ 
@@ -43,6 +44,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
     searchQuery,
     onSearchChange,
     onAIAgentClick,
+    isAIModalOpen = false,
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isBoardMenuOpen, setBoardMenuOpen] = useState(false);
@@ -184,7 +186,11 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
             <div className="flex items-center gap-2">
                 <button
                     onClick={onAIAgentClick}
-                    className="flex items-center gap-2 text-sm text-white bg-gradient-to-r from-violet-600 to-purple-600 px-3 py-1.5 rounded-md font-semibold hover:shadow-[0_0_18px_rgba(139,92,246,0.45)] hover:-translate-y-0.5 transition-all duration-200"
+                    className={`flex items-center gap-2 text-sm text-white px-3 py-1.5 rounded-md font-semibold hover:-translate-y-0.5 transition-all duration-200 ${
+                        isAIModalOpen
+                            ? 'bg-blue-600 hover:bg-blue-500 shadow-[0_0_18px_rgba(59,130,246,0.45)]'
+                            : 'bg-gradient-to-r from-violet-600 to-purple-600 hover:shadow-[0_0_18px_rgba(139,92,246,0.45)]'
+                    }`}
                     title="Configurar Agente de IA"
                 >
                     <Bot className="w-4 h-4" />
