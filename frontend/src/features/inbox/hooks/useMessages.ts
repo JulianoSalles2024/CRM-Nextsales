@@ -12,6 +12,7 @@ export interface OmniMessage {
   sender_id: string | null;
   content: string | null;
   content_type: string;
+  media_url: string | null;
   status: string | null;
   metadata: Record<string, any>;
   sent_at: string;
