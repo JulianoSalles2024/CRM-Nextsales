@@ -216,8 +216,9 @@ interface ConexoesTabProps {
 }
 
 const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConnect }) => {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const { connections, loading, refetch, updateLocalState } = useChannelConnections(companyId);
+  const myConnectionExists = connections.some((c: any) => c.owner_id === user?.id);
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
   const [lastCheck, setLastCheck] = useState<string | null>(null);
 
@@ -279,7 +280,7 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {onOpenConnect && (
+          {onOpenConnect && !myConnectionExists && (
             <button
               onClick={onOpenConnect}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 transition-all"
