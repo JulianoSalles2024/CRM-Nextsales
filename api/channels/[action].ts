@@ -57,10 +57,15 @@ async function handleConnect(req: any, res: any) {
         instanceName,
         integration: 'WHATSAPP-BAILEYS',
         qrcode: true,
-        webhook: n8nWebhook || undefined,
-        webhook_by_events: false,
-        webhook_base64: true,
-        events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED', 'SEND_MESSAGE'],
+        // Estrutura correta conforme docs Evolution API v2
+        ...(n8nWebhook ? {
+          webhook: {
+            url: n8nWebhook,
+            byEvents: false,
+            base64: true,
+            events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED', 'SEND_MESSAGE'],
+          },
+        } : {}),
       }),
       signal: AbortSignal.timeout(12000),
     });
@@ -88,7 +93,7 @@ async function handleConnect(req: any, res: any) {
       code   = qr.code;
     }
 
-    if (!base64) {
+    if (!base64 && !code) {
       throw new AppError(502, 'QR code não foi gerado pela Evolution API. Verifique se a instância está ativa no painel.');
     }
 
@@ -103,10 +108,14 @@ async function fetchQRWithRetry(evolutionUrl: string, apiKey: string, instanceNa
         { headers: { apikey: apiKey }, signal: AbortSignal.timeout(8000) });
       if (r.ok) {
         const d = await r.json();
-        const base64 = d?.base64 ?? d?.qrcode?.base64 ?? null;
+        // Evolution v2: { code: "raw-qr-string", pairingCode, count }
+        // Evolution v1/legacy: { base64: "data:image/png;base64,..." }
         const code   = d?.code   ?? d?.qrcode?.code   ?? null;
-        console.log(`[fetchQR] attempt ${i + 1} — base64: ${base64 ? 'ok' : 'null'}`);
-        if (base64) return { base64, code };
+        const base64 = d?.base64 ?? d?.qrcode?.base64 ?? null;
+        console.log(`[fetchQR] attempt ${i + 1} — code: ${code ? 'ok' : 'null'} | base64: ${base64 ? 'ok' : 'null'}`);
+        if (code || base64) return { code, base64 };
+      } else {
+        console.log(`[fetchQR] attempt ${i + 1} — HTTP ${r.status}`);
       }
     } catch (e: any) {
       console.log(`[fetchQR] attempt ${i + 1} error: ${e?.message}`);

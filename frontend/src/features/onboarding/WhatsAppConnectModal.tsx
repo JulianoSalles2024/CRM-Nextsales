@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   MessageCircle, CheckCircle2, AlertCircle, RefreshCw, X, Smartphone, Wifi,
 } from 'lucide-react';
@@ -14,13 +15,15 @@ interface Props {
   userName?: string;
 }
 
-const QR_TTL = 28; // segundos antes do QR expirar
-const POLL_INTERVAL = 5000; // ms entre verificações de estado
+const QR_TTL = 28;
+const POLL_INTERVAL = 5000;
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName }) => {
   const [step, setStep] = useState<Step>('loading');
-  const [qrBase64, setQrBase64] = useState<string | null>(null);
+  // qrValue: raw string para QRCodeSVG | base64 PNG fallback
+  const [qrValue, setQrValue] = useState<string | null>(null);
+  const [qrIsBase64, setQrIsBase64] = useState(false);
   const [instanceName, setInstanceName] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(QR_TTL);
   const [errorMsg, setErrorMsg] = useState('');
@@ -34,10 +37,21 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
     if (countdownRef.current) clearInterval(countdownRef.current);
   };
 
+  /* Aplica o QR recebido — prefere raw code, fallback para base64 */
+  const applyQR = (code: string | null, base64: string | null) => {
+    if (code) {
+      setQrValue(code);
+      setQrIsBase64(false);
+    } else if (base64) {
+      setQrValue(base64);
+      setQrIsBase64(true);
+    }
+  };
+
   /* ── 1. Criar instância + obter QR ───────────────────────────────────── */
   const startConnect = useCallback(async () => {
     setStep('loading');
-    setQrBase64(null);
+    setQrValue(null);
     setErrorMsg('');
     stopTimers();
 
@@ -54,19 +68,19 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
       const data = await res.json();
       setInstanceName(data.instanceName);
 
-      if (data.base64) {
-        setQrBase64(data.base64);
+      if (data.code || data.base64) {
+        applyQR(data.code ?? null, data.base64 ?? null);
         setStep('qr');
         startPolling(data.instanceName);
         startCountdown(data.instanceName);
       } else {
-        throw new Error('QR code não retornado pela Evolution API.');
+        throw new Error('QR code não retornado pela Evolution API. Verifique as configurações da instância.');
       }
     } catch (err: any) {
       setErrorMsg(err.message ?? 'Erro desconhecido.');
       setStep('error');
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── 2. Polling de estado ─────────────────────────────────────────────── */
   const startPolling = useCallback((name: string) => {
@@ -82,29 +96,27 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
         if (data.state === 'open') {
           stopTimers();
           await registerConnection(name);
-        } else if (data.base64 && data.base64 !== qrBase64) {
-          // QR atualizado pela Evolution
-          setQrBase64(data.base64);
+        } else if (data.code || data.base64) {
+          applyQR(data.code ?? null, data.base64 ?? null);
           setCountdown(QR_TTL);
         }
       } catch { /* ignora erros de rede no polling */ }
     }, POLL_INTERVAL);
-  }, [qrBase64]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── 3. Countdown + refresh de QR ───────────────────────────────────── */
   const startCountdown = useCallback((name: string) => {
     setCountdown(QR_TTL);
-    countdownRef.current = setInterval(async () => {
+    countdownRef.current = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
-          // Busca QR atualizado
           refreshQR(name);
           return QR_TTL;
         }
         return prev - 1;
       });
     }, 1000);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshQR = async (name: string) => {
     try {
@@ -114,11 +126,8 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.base64) setQrBase64(data.base64);
-        if (data.state === 'open') {
-          stopTimers();
-          await registerConnection(name);
-        }
+        if (data.code || data.base64) applyQR(data.code ?? null, data.base64 ?? null);
+        if (data.state === 'open') { stopTimers(); await registerConnection(name); }
       }
     } catch { /* ignora */ }
   };
@@ -132,16 +141,11 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
       const { data: { session } } = await supabase.auth.getSession();
       await fetch('/api/channels/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.access_token ?? ''}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
         body: JSON.stringify({ instanceName: name }),
       });
-      // Aguarda animação de sucesso
       setTimeout(() => { onConnected(); }, 2200);
     } catch {
-      // Mesmo com erro no DB, mostra sucesso (conexão Evolution está OK)
       setTimeout(() => { onConnected(); }, 2200);
     }
   };
@@ -233,9 +237,18 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
 
                 {/* QR */}
                 <div className="relative">
-                  {qrBase64 && (
-                    <div className="rounded-xl overflow-hidden border border-white/8 bg-white p-3">
-                      <img src={qrBase64} alt="QR Code WhatsApp" className="w-full aspect-square object-contain" />
+                  {qrValue && (
+                    <div className="rounded-xl overflow-hidden border border-white/8 bg-white p-3 flex items-center justify-center">
+                      {qrIsBase64 ? (
+                        <img src={qrValue} alt="QR Code WhatsApp" className="w-full aspect-square object-contain" />
+                      ) : (
+                        <QRCodeSVG
+                          value={qrValue}
+                          size={280}
+                          level="M"
+                          className="w-full h-auto"
+                        />
+                      )}
                     </div>
                   )}
 
