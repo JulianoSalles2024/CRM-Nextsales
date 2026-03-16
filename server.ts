@@ -8,6 +8,12 @@ import generateHandler from "./api/ai/generate";
 import migrateHandler from "./api/install/migrate";
 import analyzeOpportunitiesHandler from "./api/opportunities/analyze";
 import listOpportunitiesHandler from "./api/opportunities/list";
+import channelsConnectHandler from "./api/channels/connect";
+import channelsInstanceStateHandler from "./api/channels/instance-state";
+import channelsRegisterHandler from "./api/channels/register";
+import channelsHealthHandler from "./api/channels/health";
+import channelsSendHandler from "./api/channels/send";
+import apiKeysHandler from "./api/api-keys/index";
 
 const app = express();
 const PORT = 3000;
@@ -29,6 +35,13 @@ app.post("/api/opportunities/analyze", (req, res) => analyzeOpportunitiesHandler
 app.get("/api/opportunities/list", (req, res) => listOpportunitiesHandler(req as any, res as any));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
+
+app.post("/api/channels/connect", (req, res) => channelsConnectHandler(req as any, res as any));
+app.get("/api/channels/instance-state", (req, res) => channelsInstanceStateHandler(req as any, res as any));
+app.post("/api/channels/register", (req, res) => channelsRegisterHandler(req as any, res as any));
+app.all("/api/channels/health", (req, res) => channelsHealthHandler(req as any, res as any));
+app.post("/api/channels/send", (req, res) => channelsSendHandler(req as any, res as any));
+app.all("/api/api-keys", (req, res) => apiKeysHandler(req as any, res as any));
 
 // Production: serve frontend estático
 if (process.env.NODE_ENV === "production") {
