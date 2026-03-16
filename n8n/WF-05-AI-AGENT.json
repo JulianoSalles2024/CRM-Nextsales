@@ -213,16 +213,20 @@
                                          "queryParameters":  {
                                                                  "parameters":  [
                                                                                     {
-                                                                                        "name":  "id",
-                                                                                        "value":  "=eq.{{ $(\u0027HTTP - Get Stage\u0027).first().json.board_id ?? $(\u0027HTTP - Get Lead\u0027).first().json.board_id }}"
-                                                                                    },
-                                                                                    {
                                                                                         "name":  "company_id",
                                                                                         "value":  "=eq.{{ $(\u0027Webhook Trigger\u0027).first().json.body.company_id }}"
                                                                                     },
                                                                                     {
                                                                                         "name":  "select",
-                                                                                        "value":  "ai_enabled,ai_prompt"
+                                                                                        "value":  "id,ai_enabled,ai_prompt"
+                                                                                    },
+                                                                                    {
+                                                                                        "name":  "order",
+                                                                                        "value":  "created_at.asc"
+                                                                                    },
+                                                                                    {
+                                                                                        "name":  "limit",
+                                                                                        "value":  "1"
                                                                                     }
                                                                                 ]
                                                              },
