@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
     ToyBrick, KeyRound, Webhook as WebhookIcon, FileCode, Server, Copy, BookOpen, Settings, Eye, EyeOff, RefreshCw,
     Lock, ShieldCheck, Gauge, GitBranch, Download, AlertTriangle, ChevronRight, Check, List, FileJson2, Database, BarChartHorizontal, Plus, MoreVertical, Trash2, ChevronLeft, LogIn, LogOut, HelpCircle, ChevronDown,
@@ -31,7 +31,7 @@ interface OutgoingWebhook {
 const CodeBlock: React.FC<{ code: string; language?: string; onCopy?: () => void }> = ({ code, language = 'bash', onCopy }) => (
     <div className="bg-zinc-900 border border-zinc-700 rounded-lg relative group my-4">
         <pre className="p-4 overflow-x-auto text-sm scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-            <code className={`language-${language} text-violet-300`}>
+            <code className={`language-${language} text-blue-300`}>
                 {code.trim()}
             </code>
         </pre>
@@ -39,7 +39,7 @@ const CodeBlock: React.FC<{ code: string; language?: string; onCopy?: () => void
             <button 
                 onClick={onCopy}
                 className="absolute top-2 right-2 p-2 bg-zinc-700/50 text-zinc-400 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-zinc-700 hover:text-white"
-                aria-label="Copiar código"
+                aria-label="Copiar cÃ³digo"
             >
                 <Copy className="w-4 h-4" />
             </button>
@@ -50,7 +50,7 @@ const CodeBlock: React.FC<{ code: string; language?: string; onCopy?: () => void
 const InfoCard: React.FC<{ icon: React.ElementType, title: string, description: string }> = ({ icon: Icon, title, description }) => (
     <div className="bg-zinc-800/50 p-4 rounded-lg border border-zinc-700 flex items-start gap-4 h-full">
         <div className="bg-zinc-800 p-2 rounded-md">
-            <Icon className="w-5 h-5 text-violet-400 mt-0.5 flex-shrink-0" />
+            <Icon className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
         </div>
         <div>
             <h3 className="font-semibold text-white">{title}</h3>
@@ -63,7 +63,7 @@ const Section: React.FC<{ icon: React.ElementType, title: string, children: Reac
     <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
         <div className="p-5 border-b border-zinc-700 flex justify-between items-center">
             <div className="flex items-center gap-3">
-                <Icon className="w-5 h-5 text-violet-400" />
+                <Icon className="w-5 h-5 text-blue-400" />
                 <h2 className="text-lg font-semibold text-white">{title}</h2>
             </div>
             {actions}
@@ -108,10 +108,10 @@ const CreateApiKeyModal: React.FC<{ onClose: () => void, onCreate: (name: string
                 <form onSubmit={handleSubmit}>
                     <div className="p-6">
                         <h2 className="text-xl font-bold text-white">Criar nova chave de API</h2>
-                        <p className="text-sm text-zinc-400 mt-1">Dê um nome para sua chave para identificá-la facilmente.</p>
+                        <p className="text-sm text-zinc-400 mt-1">DÃª um nome para sua chave para identificÃ¡-la facilmente.</p>
                         <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                            placeholder="Ex: Integração App Externo" required
-                            className="mt-4 w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"/>
+                            placeholder="Ex: IntegraÃ§Ã£o App Externo" required
+                            className="mt-4 w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </div>
                     <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 flex justify-end gap-3">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600">Cancelar</button>
@@ -133,9 +133,9 @@ const ShowNewApiKeyModal: React.FC<{ apiKey: ApiKey, onClose: () => void, onCopy
                     <p className="text-sm text-zinc-400 mt-1">Sua nova chave para "{apiKey.name}" foi gerada. Copie-a e guarde em um local seguro.</p>
                     <div className="p-3 my-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-300 flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                        <span>Esta chave secreta <strong className="text-yellow-200">não será exibida novamente</strong>.</span>
+                        <span>Esta chave secreta <strong className="text-yellow-200">nÃ£o serÃ¡ exibida novamente</strong>.</span>
                     </div>
-                    <div className="flex items-center gap-2 p-3 bg-zinc-900 border border-zinc-700 rounded-md font-mono text-violet-300">
+                    <div className="flex items-center gap-2 p-3 bg-zinc-900 border border-zinc-700 rounded-md font-mono text-blue-300">
                         <span className="flex-1 truncate">{apiKey.key}</span>
                         <button onClick={onCopy} className="p-2 text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-md"><Copy className="w-4 h-4"/></button>
                     </div>
@@ -189,17 +189,17 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <InfoCard icon={Lock} title="Bearer Authentication" description="Formato padrão da indústria para autenticação segura e stateless." />
+                <InfoCard icon={Lock} title="Bearer Authentication" description="Formato padrÃ£o da indÃºstria para autenticaÃ§Ã£o segura e stateless." />
                 <InfoCard icon={ShieldCheck} title="SHA-256 Hash" description="Armazenamento seguro no banco de dados para proteger suas chaves." />
-                <InfoCard icon={Gauge} title="Rate Limiting" description="100 requisições/minuto para garantir a estabilidade da plataforma." />
+                <InfoCard icon={Gauge} title="Rate Limiting" description="100 requisiÃ§Ãµes/minuto para garantir a estabilidade da plataforma." />
             </div>
             <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300">
-                <strong className="text-white">Autenticação Bearer:</strong> Use suas chaves no formato <code className="bg-zinc-900 px-1 py-0.5 rounded-md text-violet-300">Authorization: Bearer sk_live_...</code>
+                <strong className="text-white">AutenticaÃ§Ã£o Bearer:</strong> Use suas chaves no formato <code className="bg-zinc-900 px-1 py-0.5 rounded-md text-blue-300">Authorization: Bearer sk_live_...</code>
             </div>
              <div className="p-3 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-300 flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div>
-                    <strong className="text-yellow-200">Migrando de X-API-Key?</strong> O header <code className="bg-yellow-900/50 px-1 py-0.5 rounded-md">X-API-KEY</code> foi descontinuado. Use apenas <code className="bg-yellow-900/50 px-1 py-0.5 rounded-md">Authorization: Bearer</code> em todas as suas integrações.
+                    <strong className="text-yellow-200">Migrando de X-API-Key?</strong> O header <code className="bg-yellow-900/50 px-1 py-0.5 rounded-md">X-API-KEY</code> foi descontinuado. Use apenas <code className="bg-yellow-900/50 px-1 py-0.5 rounded-md">Authorization: Bearer</code> em todas as suas integraÃ§Ãµes.
                 </div>
             </div>
             <Section icon={KeyRound} title="Gerenciar API Keys" actions={
@@ -207,13 +207,13 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
                     <Plus className="w-4 h-4" /> Nova Chave
                 </button>
             }>
-                <p className="text-sm text-zinc-400 mb-4">Gere e revogue chaves de autenticação para suas integrações. As chaves funcionam em todos os endpoints (API REST, Webhooks, MCP).</p>
+                <p className="text-sm text-zinc-400 mb-4">Gere e revogue chaves de autenticaÃ§Ã£o para suas integraÃ§Ãµes. As chaves funcionam em todos os endpoints (API REST, Webhooks, MCP).</p>
 
                 {apiKeys.length === 0 ? (
                     <div className="text-center py-10">
                         <KeyRound className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                         <h3 className="font-semibold text-white">Nenhuma API Key gerada ainda</h3>
-                        <p className="text-sm text-zinc-500 mt-1">Crie sua primeira chave para começar a integrar.</p>
+                        <p className="text-sm text-zinc-500 mt-1">Crie sua primeira chave para comeÃ§ar a integrar.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -235,7 +235,7 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
                                     <span className="font-semibold text-zinc-400">Criada em:</span> {formatDate(apiKey.createdAt)}
                                 </div>
                                 <div className="text-xs text-zinc-500 flex-1 md:text-center">
-                                     <span className="font-semibold text-zinc-400">Último uso:</span> {formatDate(apiKey.lastUsed)}
+                                     <span className="font-semibold text-zinc-400">Ãšltimo uso:</span> {formatDate(apiKey.lastUsed)}
                                 </div>
                                 <div className="flex items-center gap-2">
                                      <button onClick={() => setKeyToRevoke(apiKey)} className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-md hover:bg-red-900/30 transition-colors">
@@ -254,7 +254,7 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
                 {keyToRevoke && (
                     <ConfirmDeleteModal
                         onClose={() => setKeyToRevoke(null)} onConfirm={handleRevokeKey}
-                        title={`Revogar a chave "${keyToRevoke.name}"?`} message="Esta ação não pode ser desfeita. Qualquer integração usando esta chave irá parar de funcionar."
+                        title={`Revogar a chave "${keyToRevoke.name}"?`} message="Esta aÃ§Ã£o nÃ£o pode ser desfeita. Qualquer integraÃ§Ã£o usando esta chave irÃ¡ parar de funcionar."
                         confirmText="Sim, Revogar" confirmVariant="danger"
                     />
                 )}
@@ -280,7 +280,7 @@ const AccordionItem: React.FC<{
                 className="w-full flex justify-between items-center p-4 text-left hover:bg-zinc-800 transition-colors"
             >
                 <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5 text-violet-400" />
+                    <Icon className="w-5 h-5 text-blue-400" />
                     <span className="font-semibold text-white">{title}</span>
                 </div>
                 <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -316,10 +316,10 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
     const availableEvents = {
         'lead.created': 'Lead Criado',
         'lead.updated': 'Lead Atualizado',
-        'lead.stage_changed': 'Lead Mudou de Estágio',
+        'lead.stage_changed': 'Lead Mudou de EstÃ¡gio',
         'lead.converted': 'Lead Convertido em Cliente',
         'contact.created': 'Cliente Criado',
-        'activity.completed': 'Atividade Concluída',
+        'activity.completed': 'Atividade ConcluÃ­da',
     };
     
     const [selectedEvents, setSelectedEvents] = useState<Record<string, boolean>>(
@@ -342,13 +342,13 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
         const activeEvents = Object.keys(selectedEvents).filter(key => selectedEvents[key]);
 
         if (!newWebhookUrl.trim()) {
-            showNotification('Por favor, insira uma URL válida.', 'error');
+            showNotification('Por favor, insira uma URL vÃ¡lida.', 'error');
             return;
         }
         try {
             new URL(newWebhookUrl);
         } catch (_) {
-            showNotification('A URL fornecida é inválida.', 'error');
+            showNotification('A URL fornecida Ã© invÃ¡lida.', 'error');
             return;
         }
         if (activeEvents.length === 0) {
@@ -390,19 +390,19 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
 
     const subTabs = [
         { name: 'Entrada', icon: LogIn },
-        { name: 'Saída', icon: LogOut },
-        { name: 'Documentação', icon: BookOpen }
+        { name: 'SaÃ­da', icon: LogOut },
+        { name: 'DocumentaÃ§Ã£o', icon: BookOpen }
     ];
 
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <InfoCard icon={GitBranch} title="Bidirecional" description="Receba e envie dados automaticamente para manter seus sistemas sincronizados." />
-                <InfoCard icon={Lock} title="Bearer Auth" description="Entrada usa Bearer e HMAC na saída para garantir a segurança e autenticidade dos dados." />
-                <InfoCard icon={List} title="8 Eventos" description="Notificações para lead.*, contact.*, activity.* para cobrir todo o ciclo de vida do cliente." />
+                <InfoCard icon={Lock} title="Bearer Auth" description="Entrada usa Bearer e HMAC na saÃ­da para garantir a seguranÃ§a e autenticidade dos dados." />
+                <InfoCard icon={List} title="8 Eventos" description="NotificaÃ§Ãµes para lead.*, contact.*, activity.* para cobrir todo o ciclo de vida do cliente." />
             </div>
              <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300">
-                <strong className="text-white">Autenticação Bearer:</strong> Webhooks de entrada usam <code className="bg-zinc-900 px-1 py-0.5 rounded-md text-violet-300">Authorization: Bearer sk_live_...</code>
+                <strong className="text-white">AutenticaÃ§Ã£o Bearer:</strong> Webhooks de entrada usam <code className="bg-zinc-900 px-1 py-0.5 rounded-md text-blue-300">Authorization: Bearer sk_live_...</code>
             </div>
             
             <SubTabs tabs={subTabs} activeTab={activeSubTab} onTabClick={setActiveSubTab} />
@@ -422,8 +422,8 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                         <div>
                             <h4 className="text-sm font-medium text-zinc-300 mb-2">Eventos Suportados:</h4>
                             <ul className="list-disc list-inside text-sm text-zinc-400 space-y-1">
-                                <li><code className="text-violet-300">lead.created</code> - Criar novo lead</li>
-                                <li><code className="text-violet-300">contact.created</code> - Criar novo cliente</li>
+                                <li><code className="text-blue-300">lead.created</code> - Criar novo lead</li>
+                                <li><code className="text-blue-300">contact.created</code> - Criar novo cliente</li>
                             </ul>
                         </div>
                         <div>
@@ -433,10 +433,10 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                     </div>
                 </Section>
             )}
-             {activeSubTab === 'Saída' && (
+             {activeSubTab === 'SaÃ­da' && (
                 <div className="space-y-6">
-                    <Section icon={ChevronLeft} title="Webhooks de Saída">
-                        <p className="text-zinc-400 text-sm mb-6">Configure URLs para receber notificações quando eventos ocorrerem no CRM.</p>
+                    <Section icon={ChevronLeft} title="Webhooks de SaÃ­da">
+                        <p className="text-zinc-400 text-sm mb-6">Configure URLs para receber notificaÃ§Ãµes quando eventos ocorrerem no CRM.</p>
                         <form onSubmit={handleAddWebhook} className="space-y-4 p-4 bg-zinc-900/50 rounded-lg border border-zinc-700/50">
                             <h3 className="font-semibold text-white">Adicionar Webhook</h3>
                             <div>
@@ -447,7 +447,7 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                                     value={newWebhookUrl}
                                     onChange={e => setNewWebhookUrl(e.target.value)}
                                     placeholder="https://seu-servidor.com/webhook"
-                                    className="w-full bg-zinc-800 border border-zinc-600 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    className="w-full bg-zinc-800 border border-zinc-600 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                             <div>
@@ -459,7 +459,7 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                                                 type="checkbox"
                                                 checked={selectedEvents[key]}
                                                 onChange={() => handleEventToggle(key)}
-                                                className="h-4 w-4 rounded bg-zinc-700 border-zinc-600 text-violet-600 focus:ring-violet-500 focus:ring-offset-zinc-900/50"
+                                                className="h-4 w-4 rounded bg-zinc-700 border-zinc-600 text-blue-600 focus:ring-blue-500 focus:ring-offset-zinc-900/50"
                                             />
                                             <span className="text-sm text-zinc-300">{label}</span>
                                         </label>
@@ -477,7 +477,7 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                              <div className="text-center py-10">
                                 <WebhookIcon className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                                 <h3 className="font-semibold text-white">Nenhum webhook configurado ainda</h3>
-                                <p className="text-sm text-zinc-500 mt-1">Adicione um webhook para começar a receber eventos.</p>
+                                <p className="text-sm text-zinc-500 mt-1">Adicione um webhook para comeÃ§ar a receber eventos.</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -504,23 +504,23 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                         {webhookToRevoke && (
                             <ConfirmDeleteModal
                                 onClose={() => setWebhookToRevoke(null)} onConfirm={handleRevokeWebhook}
-                                title={`Revogar o webhook?`} message={<>Esta ação não pode ser desfeita. Sua aplicação em <strong className="font-mono text-white">{new URL(webhookToRevoke.url).hostname}</strong> irá parar de receber eventos neste endpoint.</>}
+                                title={`Revogar o webhook?`} message={<>Esta aÃ§Ã£o nÃ£o pode ser desfeita. Sua aplicaÃ§Ã£o em <strong className="font-mono text-white">{new URL(webhookToRevoke.url).hostname}</strong> irÃ¡ parar de receber eventos neste endpoint.</>}
                                 confirmText="Sim, Revogar" confirmVariant="danger"
                             />
                         )}
                     </AnimatePresence>
                 </div>
             )}
-             {activeSubTab === 'Documentação' && (
+             {activeSubTab === 'DocumentaÃ§Ã£o' && (
                 <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
-                     <AccordionItem title="API Keys - Autenticação" icon={KeyRound} isOpen={openAccordion === 'auth'} onClick={() => setOpenAccordion(openAccordion === 'auth' ? null : 'auth')}>
-                        <p>Todos os webhooks, tanto de entrada quanto de saída, são protegidos usando API Keys. Você deve incluir sua chave no cabeçalho de autorização para autenticar suas requisições.</p>
-                        <p>Vá para a aba "API Keys" para gerar e gerenciar suas chaves.</p>
+                     <AccordionItem title="API Keys - AutenticaÃ§Ã£o" icon={KeyRound} isOpen={openAccordion === 'auth'} onClick={() => setOpenAccordion(openAccordion === 'auth' ? null : 'auth')}>
+                        <p>Todos os webhooks, tanto de entrada quanto de saÃ­da, sÃ£o protegidos usando API Keys. VocÃª deve incluir sua chave no cabeÃ§alho de autorizaÃ§Ã£o para autenticar suas requisiÃ§Ãµes.</p>
+                        <p>VÃ¡ para a aba "API Keys" para gerar e gerenciar suas chaves.</p>
                         <CodeBlock language="http" code={`Authorization: Bearer sk_live_...`} />
                     </AccordionItem>
                     <AccordionItem title="Webhooks de Entrada (Receber Dados)" icon={LogIn} isOpen={openAccordion === 'incoming'} onClick={() => setOpenAccordion(openAccordion === 'incoming' ? null : 'incoming')}>
-                        <p>Envie dados para o seu CRM a partir de sistemas externos fazendo uma requisição POST para a URL do Webhook Receiver.</p>
-                        <p>O corpo da requisição deve ser um JSON contendo a propriedade "event" e "data".</p>
+                        <p>Envie dados para o seu CRM a partir de sistemas externos fazendo uma requisiÃ§Ã£o POST para a URL do Webhook Receiver.</p>
+                        <p>O corpo da requisiÃ§Ã£o deve ser um JSON contendo a propriedade "event" e "data".</p>
                         <h4>Eventos Suportados</h4>
                         <ul>
                             <li><code>lead.created</code>: Cria um novo lead no sistema.</li>
@@ -529,30 +529,30 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                         <h4>Exemplo de Payload</h4>
                         <CodeBlock language="json" code={`{\n  "event": "lead.created",\n  "data": {\n    "name": "Novo Lead via Webhook",\n    "company": "Empresa Exemplo",\n    "email": "contato@exemplo.com",\n    "value": 2500.00,\n    "source": "Webhook Externo"\n  }\n}`} />
                     </AccordionItem>
-                    <AccordionItem title="Webhooks de Saída (Enviar Notificações)" icon={LogOut} isOpen={openAccordion === 'outgoing'} onClick={() => setOpenAccordion(openAccordion === 'outgoing' ? null : 'outgoing')}>
-                        <p>Receba notificações em tempo real em seus próprios sistemas quando eventos importantes ocorrerem no CRM. Configure os endpoints na aba "Saída".</p>
-                        <p>Seu endpoint receberá uma requisição POST com um payload JSON contendo o evento e os dados associados.</p>
+                    <AccordionItem title="Webhooks de SaÃ­da (Enviar NotificaÃ§Ãµes)" icon={LogOut} isOpen={openAccordion === 'outgoing'} onClick={() => setOpenAccordion(openAccordion === 'outgoing' ? null : 'outgoing')}>
+                        <p>Receba notificaÃ§Ãµes em tempo real em seus prÃ³prios sistemas quando eventos importantes ocorrerem no CRM. Configure os endpoints na aba "SaÃ­da".</p>
+                        <p>Seu endpoint receberÃ¡ uma requisiÃ§Ã£o POST com um payload JSON contendo o evento e os dados associados.</p>
                         <h4>Exemplo de Payload (lead.updated)</h4>
                         <CodeBlock language="json" code={`{\n  "event": "lead.updated",\n  "timestamp": "2024-01-01T12:00:00Z",\n  "data": {\n    "id": "lead-123",\n    "name": "Lead Atualizado",\n    "value": 7500.00,\n    "columnId": "proposal"\n    /* ...outros campos do lead */\n  }\n}`} />
-                        <h4>Verificação de Assinatura (HMAC)</h4>
-                        <p>Para garantir que a requisição veio do nosso sistema, cada webhook de saída inclui um cabeçalho <code>X-Signature-256</code>. Ele é um hash HMAC-SHA256 do corpo da requisição, usando sua chave secreta da API. Compare o hash que você gera com o que está no header para validar a requisição.</p>
+                        <h4>VerificaÃ§Ã£o de Assinatura (HMAC)</h4>
+                        <p>Para garantir que a requisiÃ§Ã£o veio do nosso sistema, cada webhook de saÃ­da inclui um cabeÃ§alho <code>X-Signature-256</code>. Ele Ã© um hash HMAC-SHA256 do corpo da requisiÃ§Ã£o, usando sua chave secreta da API. Compare o hash que vocÃª gera com o que estÃ¡ no header para validar a requisiÃ§Ã£o.</p>
                     </AccordionItem>
-                    <AccordionItem title="Boas Práticas de Segurança" icon={ShieldCheck} isOpen={openAccordion === 'security'} onClick={() => setOpenAccordion(openAccordion === 'security' ? null : 'security')}>
+                    <AccordionItem title="Boas PrÃ¡ticas de SeguranÃ§a" icon={ShieldCheck} isOpen={openAccordion === 'security'} onClick={() => setOpenAccordion(openAccordion === 'security' ? null : 'security')}>
                         <ul>
-                            <li><strong>Use HTTPS:</strong> Sempre configure seus endpoints de webhook com URLs HTTPS para garantir que os dados sejam criptografados em trânsito.</li>
-                            <li><strong>Valide as Assinaturas:</strong> Para webhooks de saída, sempre valide a assinatura HMAC para prevenir ataques de falsificação de requisição (request forgery).</li>
+                            <li><strong>Use HTTPS:</strong> Sempre configure seus endpoints de webhook com URLs HTTPS para garantir que os dados sejam criptografados em trÃ¢nsito.</li>
+                            <li><strong>Valide as Assinaturas:</strong> Para webhooks de saÃ­da, sempre valide a assinatura HMAC para prevenir ataques de falsificaÃ§Ã£o de requisiÃ§Ã£o (request forgery).</li>
                             <li><strong>Proteja suas Chaves:</strong> Nunca exponha suas chaves de API no lado do cliente (frontend). Mantenha-as seguras no seu backend.</li>
-                            <li><strong>Responda Rapidamente:</strong> Seu endpoint deve responder com um status <code>200 OK</code> o mais rápido possível. Processamentos longos devem ser feitos de forma assíncrona para evitar timeouts.</li>
+                            <li><strong>Responda Rapidamente:</strong> Seu endpoint deve responder com um status <code>200 OK</code> o mais rÃ¡pido possÃ­vel. Processamentos longos devem ser feitos de forma assÃ­ncrona para evitar timeouts.</li>
                         </ul>
                     </AccordionItem>
-                    <AccordionItem title="Solução de Problemas" icon={HelpCircle} isOpen={openAccordion === 'troubleshooting'} onClick={() => setOpenAccordion(openAccordion === 'troubleshooting' ? null : 'troubleshooting')}>
-                        <h4>Meu webhook não está funcionando. O que verificar?</h4>
+                    <AccordionItem title="SoluÃ§Ã£o de Problemas" icon={HelpCircle} isOpen={openAccordion === 'troubleshooting'} onClick={() => setOpenAccordion(openAccordion === 'troubleshooting' ? null : 'troubleshooting')}>
+                        <h4>Meu webhook nÃ£o estÃ¡ funcionando. O que verificar?</h4>
                         <ul>
-                            <li><strong>Logs do Servidor:</strong> Verifique os logs do seu servidor de recebimento para ver se a requisição está chegando e se há erros.</li>
-                            <li><strong>Firewall:</strong> Certifique-se de que seu firewall não está bloqueando requisições POST dos nossos endereços IP.</li>
-                            <li><strong>Status de Resposta:</strong> Seu endpoint deve retornar um status na faixa 2xx. Qualquer outro status (3xx, 4xx, 5xx) será considerado uma falha na entrega.</li>
-                            <li><strong>Autenticação:</strong> Para webhooks de entrada, verifique se o cabeçalho <code>Authorization: Bearer sk_live_...</code> está correto.</li>
-                            <li><strong>Validação de Assinatura:</strong> Para webhooks de saída, confira se seu algoritmo de validação HMAC está correto.</li>
+                            <li><strong>Logs do Servidor:</strong> Verifique os logs do seu servidor de recebimento para ver se a requisiÃ§Ã£o estÃ¡ chegando e se hÃ¡ erros.</li>
+                            <li><strong>Firewall:</strong> Certifique-se de que seu firewall nÃ£o estÃ¡ bloqueando requisiÃ§Ãµes POST dos nossos endereÃ§os IP.</li>
+                            <li><strong>Status de Resposta:</strong> Seu endpoint deve retornar um status na faixa 2xx. Qualquer outro status (3xx, 4xx, 5xx) serÃ¡ considerado uma falha na entrega.</li>
+                            <li><strong>AutenticaÃ§Ã£o:</strong> Para webhooks de entrada, verifique se o cabeÃ§alho <code>Authorization: Bearer sk_live_...</code> estÃ¡ correto.</li>
+                            <li><strong>ValidaÃ§Ã£o de Assinatura:</strong> Para webhooks de saÃ­da, confira se seu algoritmo de validaÃ§Ã£o HMAC estÃ¡ correto.</li>
                         </ul>
                     </AccordionItem>
                 </div>
@@ -569,7 +569,7 @@ interface ApiRestTabProps {
 }
 
 const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
-    const [activeSubTab, setActiveSubTab] = useState('Visão Geral');
+    const [activeSubTab, setActiveSubTab] = useState('VisÃ£o Geral');
 
     // FIX: Defined handleCopy function to be used by CodeBlock components.
     const handleCopy = (text: string, subject: string) => {
@@ -586,15 +586,15 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
     const examplePy = `import requests\n\nresponse = requests.get(\n    'https://.../api-v1/leads',\n    headers={'Authorization': 'Bearer sk_live_SUA_CHAVE'}\n)`;
 
     const endpointsData = {
-        Leads: { count: 7, endpoints: [{m:'GET',p:'/leads', d:'Listar leads com paginação e filtros'}, {m:'GET',p:'/leads/{id}', d:'Obter detalhes de um lead'}, {m:'POST',p:'/leads', d: 'Criar novo lead'}, {m:'PUT',p:'/leads/{id}', d:'Atualizar lead'}, {m:'PATCH',p:'/leads/{id}/stage', d: 'Mover lead de estágio'}, {m:'PATCH',p:'/leads/{id}/convert', d:'Converter lead em cliente'}, {m:'DELETE',p:'/leads/{id}', d:'Deletar lead'}] },
+        Leads: { count: 7, endpoints: [{m:'GET',p:'/leads', d:'Listar leads com paginaÃ§Ã£o e filtros'}, {m:'GET',p:'/leads/{id}', d:'Obter detalhes de um lead'}, {m:'POST',p:'/leads', d: 'Criar novo lead'}, {m:'PUT',p:'/leads/{id}', d:'Atualizar lead'}, {m:'PATCH',p:'/leads/{id}/stage', d: 'Mover lead de estÃ¡gio'}, {m:'PATCH',p:'/leads/{id}/convert', d:'Converter lead em cliente'}, {m:'DELETE',p:'/leads/{id}', d:'Deletar lead'}] },
         Contacts: { count: 5, endpoints: [{m:'GET',p:'/contacts', d:'Listar clientes'}, {m:'GET',p:'/contacts/{id}',d:'Obter detalhes de um cliente'}, {m:'POST',p:'/contacts', d:'Criar novo cliente'}, {m:'PUT',p:'/contacts/{id}', d:'Atualizar cliente'}, {m:'DELETE',p:'/contacts/{id}', d:'Deletar cliente'}] },
-        Activities: { count: 6, endpoints: [{m:'GET',p:'/activities', d:'Listar atividades'}, {m:'GET',p:'/activities/{id}', d:'Obter detalhes de uma atividade'}, {m:'POST',p:'/activities', d:'Criar nova atividade'}, {m:'PUT',p:'/activities/{id}', d:'Atualizar atividade'}, {m:'PATCH',p:'/activities/{id}/complete', d:'Marcar como concluída'}, {m:'DELETE',p:'/activities/{id}', d:'Deletar atividade'}] },
-        Pipeline: { count: 5, endpoints: [{m:'GET',p:'/pipeline/stages', d:'Listar estágios'}, {m:'POST',p:'/pipeline/stages', d:'Criar novo estágio'}, {m:'PUT',p:'/pipeline/stages/{id}', d:'Atualizar estágio'}, {m:'DELETE',p:'/pipeline/stages/{id}', d:'Deletar estágio'}, {m:'PUT',p:'/pipeline/stages/reorder', d:'Reordenar estágios'}] },
-        Metrics: { count: 1, endpoints: [{m:'GET',p:'/metrics/dashboard', d:'Obter métricas do dashboard'}] },
+        Activities: { count: 6, endpoints: [{m:'GET',p:'/activities', d:'Listar atividades'}, {m:'GET',p:'/activities/{id}', d:'Obter detalhes de uma atividade'}, {m:'POST',p:'/activities', d:'Criar nova atividade'}, {m:'PUT',p:'/activities/{id}', d:'Atualizar atividade'}, {m:'PATCH',p:'/activities/{id}/complete', d:'Marcar como concluÃ­da'}, {m:'DELETE',p:'/activities/{id}', d:'Deletar atividade'}] },
+        Pipeline: { count: 5, endpoints: [{m:'GET',p:'/pipeline/stages', d:'Listar estÃ¡gios'}, {m:'POST',p:'/pipeline/stages', d:'Criar novo estÃ¡gio'}, {m:'PUT',p:'/pipeline/stages/{id}', d:'Atualizar estÃ¡gio'}, {m:'DELETE',p:'/pipeline/stages/{id}', d:'Deletar estÃ¡gio'}, {m:'PUT',p:'/pipeline/stages/reorder', d:'Reordenar estÃ¡gios'}] },
+        Metrics: { count: 1, endpoints: [{m:'GET',p:'/metrics/dashboard', d:'Obter mÃ©tricas do dashboard'}] },
     };
     
     const getMethodClass = (method: string) => ({
-        'GET': 'bg-blue-900/50 text-blue-400', 'POST': 'bg-violet-900/50 text-violet-400', 'PUT': 'bg-orange-900/50 text-orange-400', 
+        'GET': 'bg-blue-900/50 text-blue-400', 'POST': 'bg-blue-900/50 text-blue-400', 'PUT': 'bg-orange-900/50 text-orange-400', 
         'PATCH': 'bg-yellow-900/50 text-yellow-400', 'DELETE': 'bg-red-900/50 text-red-400'
     }[method] || 'bg-zinc-700 text-zinc-400');
 
@@ -606,32 +606,32 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
                 </button>
             }>
                 <div className="space-y-4">
-                    <p className="text-zinc-300">API RESTful completa para integração com seu CRM. Autenticação via JWT ou API Key com rate limiting inteligente.</p>
+                    <p className="text-zinc-300">API RESTful completa para integraÃ§Ã£o com seu CRM. AutenticaÃ§Ã£o via JWT ou API Key com rate limiting inteligente.</p>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <InfoCard icon={List} title="26 Endpoints" description="CRUD completo para todos os recursos." />
-                        <InfoCard icon={Gauge} title="Rate Limiting" description="JWT: 300/min • API Key: 100/min" />
-                        <InfoCard icon={WebhookIcon} title="8 Webhooks" description="Notificações em tempo real." />
+                        <InfoCard icon={Gauge} title="Rate Limiting" description="JWT: 300/min â€¢ API Key: 100/min" />
+                        <InfoCard icon={WebhookIcon} title="8 Webhooks" description="NotificaÃ§Ãµes em tempo real." />
                     </div>
                      <div className="p-3 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-300 flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                         <div>
-                            <strong className="text-yellow-200">Sobre Validação OpenAPI 3.1:</strong> Esta especificação segue OpenAPI 3.1.0. O Swagger Editor 3.x pode mostrar erros estruturais falsos. Para validação completa, use: Swagger Editor 5.x+, Redocly CLI, Stoplight Studio, ou Postman v10+.
+                            <strong className="text-yellow-200">Sobre ValidaÃ§Ã£o OpenAPI 3.1:</strong> Esta especificaÃ§Ã£o segue OpenAPI 3.1.0. O Swagger Editor 3.x pode mostrar erros estruturais falsos. Para validaÃ§Ã£o completa, use: Swagger Editor 5.x+, Redocly CLI, Stoplight Studio, ou Postman v10+.
                         </div>
                     </div>
                 </div>
             </Section>
 
-            <SubTabs tabs={[{name:'Visão Geral'}, {name:'Autenticação'}, {name:'Endpoints'}, {name:'Exemplos'}]} activeTab={activeSubTab} onTabClick={setActiveSubTab} />
+            <SubTabs tabs={[{name:'VisÃ£o Geral'}, {name:'AutenticaÃ§Ã£o'}, {name:'Endpoints'}, {name:'Exemplos'}]} activeTab={activeSubTab} onTabClick={setActiveSubTab} />
 
-            {activeSubTab === 'Visão Geral' && (
+            {activeSubTab === 'VisÃ£o Geral' && (
                 <div className="space-y-6">
                     <Section icon={ChevronRight} title="Quick Start">
                         <div className="prose prose-sm prose-invert text-zinc-300 max-w-none">
                             <h4>1. Base URL</h4>
                             <CodeBlock language='text' code={baseUrl} onCopy={() => handleCopy(baseUrl, 'URL Base')}/>
                             <h4>2. Obtenha sua API Key</h4>
-                            <p>Vá para a aba "API Keys" e gere uma nova API Key. Ela será usada para autenticar suas requisições.</p>
-                            <h4>3. Faça sua primeira requisição</h4>
+                            <p>VÃ¡ para a aba "API Keys" e gere uma nova API Key. Ela serÃ¡ usada para autenticar suas requisiÃ§Ãµes.</p>
+                            <h4>3. FaÃ§a sua primeira requisiÃ§Ã£o</h4>
                             <CodeBlock language='bash' code={quickStartCurl} onCopy={() => handleCopy(quickStartCurl, "Exemplo cURL")}/>
                             <h4>4. Resposta esperada</h4>
                             <CodeBlock language="json" code={quickStartResponse} onCopy={() => handleCopy(quickStartResponse, "Exemplo de resposta")}/>
@@ -639,18 +639,18 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
                     </Section>
                 </div>
             )}
-            {activeSubTab === 'Autenticação' && (
+            {activeSubTab === 'AutenticaÃ§Ã£o' && (
                 <div className="space-y-6">
-                    <Section icon={Lock} title="Métodos de Autenticação">
+                    <Section icon={Lock} title="MÃ©todos de AutenticaÃ§Ã£o">
                          <div className="p-3 bg-zinc-900/50 rounded-md border border-zinc-700 text-white font-medium">Recomendado: Bearer Token (JWT ou API Key)</div>
-                         <div className="p-3 mt-2 bg-zinc-900/50 rounded-md border border-zinc-700 text-zinc-400">Query Parameter (não recomendado)</div>
+                         <div className="p-3 mt-2 bg-zinc-900/50 rounded-md border border-zinc-700 text-zinc-400">Query Parameter (nÃ£o recomendado)</div>
                     </Section>
                     <Section icon={Gauge} title="Rate Limiting Headers">
                         <p className="text-zinc-400 text-sm mb-4">Todas as respostas incluem headers informativos sobre o rate limiting:</p>
                         <div className="font-mono text-sm text-zinc-300 space-y-2">
-                            <div className="flex justify-between items-center"><span className="text-violet-300">X-RateLimit-Limit</span><span className="text-zinc-500">Limite total de requisições</span></div>
-                            <div className="flex justify-between items-center"><span className="text-violet-300">X-RateLimit-Remaining</span><span className="text-zinc-500">Requisições restantes</span></div>
-                            <div className="flex justify-between items-center"><span className="text-violet-300">X-RateLimit-Reset</span><span className="text-zinc-500">Timestamp do reset</span></div>
+                            <div className="flex justify-between items-center"><span className="text-blue-300">X-RateLimit-Limit</span><span className="text-zinc-500">Limite total de requisiÃ§Ãµes</span></div>
+                            <div className="flex justify-between items-center"><span className="text-blue-300">X-RateLimit-Remaining</span><span className="text-zinc-500">RequisiÃ§Ãµes restantes</span></div>
+                            <div className="flex justify-between items-center"><span className="text-blue-300">X-RateLimit-Reset</span><span className="text-zinc-500">Timestamp do reset</span></div>
                         </div>
                     </Section>
                 </div>
@@ -673,7 +673,7 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
                  </div>
              )}
              {activeSubTab === 'Exemplos' && (
-                <Section icon={FileJson2} title="Exemplos de Código">
+                <Section icon={FileJson2} title="Exemplos de CÃ³digo">
                     <h4 className="font-semibold text-white mb-2">Exemplo com cURL:</h4>
                     <CodeBlock code={exampleCurl} onCopy={() => handleCopy(exampleCurl, "Exemplo cURL")} />
                     <h4 className="font-semibold text-white mb-2 mt-6">Exemplo com JavaScript/Node.js:</h4>
@@ -703,22 +703,22 @@ const McpTab: React.FC = () => {
         { name: 'create_task', desc: 'Cria tarefa associada a um lead', ready: true },
         { name: 'send_message', desc: 'Envia mensagem via canal conectado', ready: true },
         { name: 'get_pipeline_summary', desc: 'Retorna resumo do pipeline para o agente de IA', ready: false },
-        { name: 'schedule_followup', desc: 'Agenda follow-up automático', ready: false },
+        { name: 'schedule_followup', desc: 'Agenda follow-up automÃ¡tico', ready: false },
     ];
 
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-violet-500/8 to-blue-500/5 border border-violet-500/15">
-                <div className="p-3 rounded-xl bg-violet-500/15 border border-violet-500/20">
-                    <Layers className="w-6 h-6 text-violet-400" />
+            <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-blue-500/8 to-blue-500/5 border border-blue-500/15">
+                <div className="p-3 rounded-xl bg-blue-500/15 border border-blue-500/20">
+                    <Layers className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
                     <h3 className="text-base font-bold text-white mb-1">Model Context Protocol (MCP)</h3>
                     <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
                         O MCP padroniza como agentes de IA interagem com o NextSales. Em vez de chamadas ad-hoc,
-                        cada ferramenta é um contrato tipado — o agente sabe exatamente o que pode fazer, com quais
-                        parâmetros e quais garantias de isolamento por <code className="text-violet-400">company_id</code>.
+                        cada ferramenta Ã© um contrato tipado â€” o agente sabe exatamente o que pode fazer, com quais
+                        parÃ¢metros e quais garantias de isolamento por <code className="text-blue-400">company_id</code>.
                     </p>
                 </div>
             </div>
@@ -726,7 +726,7 @@ const McpTab: React.FC = () => {
             {/* Service Registry */}
             <div>
                 <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Globe className="w-4 h-4" /> Serviços Registrados
+                    <Globe className="w-4 h-4" /> ServiÃ§os Registrados
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {services.map(({ name, type, envKey, status, icon: Icon }) => (
@@ -752,13 +752,13 @@ const McpTab: React.FC = () => {
             {/* Tool Registry */}
             <div>
                 <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Zap className="w-4 h-4" /> Ferramentas MCP disponíveis
+                    <Zap className="w-4 h-4" /> Ferramentas MCP disponÃ­veis
                 </h4>
                 <div className="space-y-2">
                     {tools.map(({ name, desc, ready }) => (
                         <div key={name} className="flex items-center gap-3 p-3 rounded-xl bg-[#0B1220] border border-white/5">
                             <div className={`w-2 h-2 rounded-full shrink-0 ${ready ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-                            <code className="text-xs text-violet-400 font-mono w-48 shrink-0">{name}</code>
+                            <code className="text-xs text-blue-400 font-mono w-48 shrink-0">{name}</code>
                             <span className="text-xs text-slate-400 flex-1">{desc}</span>
                             <span className={`text-[10px] font-bold ${ready ? 'text-emerald-400' : 'text-slate-600'}`}>
                                 {ready ? 'pronto' : 'em breve'}
@@ -777,22 +777,22 @@ const McpTab: React.FC = () => {
                     <div className="flex items-center gap-3 flex-wrap text-xs">
                         {[
                             { label: 'Evolution API', color: 'text-emerald-400 bg-emerald-500/10' },
-                            { label: '→', color: 'text-slate-600' },
+                            { label: 'â†’', color: 'text-slate-600' },
                             { label: 'n8n WF-01', color: 'text-blue-400 bg-blue-500/10' },
-                            { label: '→', color: 'text-slate-600' },
-                            { label: 'resolve_or_create_lead()', color: 'text-violet-400 bg-violet-500/10' },
-                            { label: '→', color: 'text-slate-600' },
-                            { label: 'resolve_or_create_conversation()', color: 'text-violet-400 bg-violet-500/10' },
-                            { label: '→', color: 'text-slate-600' },
+                            { label: 'â†’', color: 'text-slate-600' },
+                            { label: 'resolve_or_create_lead()', color: 'text-blue-400 bg-blue-500/10' },
+                            { label: 'â†’', color: 'text-slate-600' },
+                            { label: 'resolve_or_create_conversation()', color: 'text-blue-400 bg-blue-500/10' },
+                            { label: 'â†’', color: 'text-slate-600' },
                             { label: 'WF-05 AI Agent', color: 'text-amber-400 bg-amber-500/10' },
                         ].map(({ label, color }, i) => (
-                            label === '→'
+                            label === 'â†’'
                                 ? <span key={i} className="text-slate-600 font-bold">{label}</span>
                                 : <span key={i} className={`px-2 py-0.5 rounded-md font-mono font-medium ${color}`}>{label}</span>
                         ))}
                     </div>
                     <p className="text-[11px] text-slate-600 mt-3">
-                        O <code className="text-slate-500">company_id</code> é propagado em cada etapa via tenant guard nas RPCs (SECURITY DEFINER).
+                        O <code className="text-slate-500">company_id</code> Ã© propagado em cada etapa via tenant guard nas RPCs (SECURITY DEFINER).
                         Nenhum payload de uma empresa pode ser processado no contexto de outra.
                     </p>
                 </div>
@@ -819,7 +819,7 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
     const [activeTab, setActiveTab] = useState('API Keys');
 
     const mainTabs = [
-        { name: 'Conexões', icon: Wifi },
+        { name: 'ConexÃµes', icon: Wifi },
         { name: 'Eventos', icon: Activity },
         { name: 'API Keys', icon: KeyRound },
         { name: 'Webhooks', icon: WebhookIcon },
@@ -829,12 +829,9 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
 
     return (
         <div className="flex flex-col gap-6 h-full">
-            <div className="flex items-center gap-4">
-                <ToyBrick className="w-8 h-8 text-violet-500" />
-                <div>
-                    <h1 className="text-2xl font-bold text-white">Integrações</h1>
-                    <p className="text-zinc-400">Conecte seu CRM com outras ferramentas e APIs.</p>
-                </div>
+            <div>
+                <h1 className="text-2xl font-bold text-white">IntegraÃ§Ãµes</h1>
+                <p className="text-zinc-400">Conecte seu CRM com outras ferramentas e APIs.</p>
             </div>
 
             <div>
@@ -844,7 +841,7 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
                             <button
                                 key={tab.name}
                                 onClick={() => setActiveTab(tab.name)}
-                                className={`whitespace-nowrap flex items-center gap-2 py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.name ? 'border-violet-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+                                className={`whitespace-nowrap flex items-center gap-2 py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.name ? 'border-blue-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
                             >
                                 <tab.icon className="w-4 h-4" />
                                 {tab.name}
@@ -855,7 +852,7 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 -mr-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-                 {activeTab === 'Conexões'  && <ConexoesTab showNotification={showNotification} />}
+                 {activeTab === 'ConexÃµes'  && <ConexoesTab showNotification={showNotification} />}
                  {activeTab === 'Eventos'   && <EventosTab  showNotification={showNotification} />}
                  {activeTab === 'API Keys'  && <ApiKeysTab  showNotification={showNotification} />}
                  {activeTab === 'Webhooks'  && <WebhooksTab showNotification={showNotification} />}

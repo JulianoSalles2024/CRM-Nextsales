@@ -24,7 +24,7 @@ const CHANNEL_COLOR: Record<string, string> = {
   email: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
   instagram: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
   telegram: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
-  webchat: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
+  webchat: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
 };
 
 type EvoState = 'open' | 'connecting' | 'close' | 'error' | 'unknown' | 'checking';
@@ -166,7 +166,7 @@ const ConnCard: React.FC<ConnCardProps> = ({ conn, onHealthCheck, checking, show
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-white/3 border border-white/5">
                       <Shield className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
                       <span className="text-xs text-slate-400">
-                        Configuração isolada por empresa. API Key armazenada no campo <code className="text-violet-400">config</code> da conexão.
+                        Configuração isolada por empresa. API Key armazenada no campo <code className="text-blue-400">config</code> da conexão.
                       </span>
                     </div>
                   )}
