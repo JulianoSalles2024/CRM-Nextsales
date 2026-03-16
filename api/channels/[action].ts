@@ -289,12 +289,20 @@ async function handleDisconnect(req: any, res: any) {
 
     const evolutionUrl = process.env.EVOLUTION_API_URL?.replace(/\/$/, '');
     const apiKey       = process.env.EVOLUTION_API_KEY;
-    const instanceName = `ns_${userId.replace(/-/g, '').slice(0, 8)}`;
+
+    // Busca o external_id real da conexão do usuário (pode diferir do padrão ns_xxx)
+    const { data: conn } = await supabaseAdmin
+      .from('channel_connections')
+      .select('id, external_id')
+      .eq('owner_id', userId)
+      .eq('company_id', companyId)
+      .eq('channel', 'whatsapp')
+      .maybeSingle();
 
     // Tenta deletar instância na Evolution API — ignora erros (já pode não existir)
-    if (evolutionUrl && apiKey) {
+    if (evolutionUrl && apiKey && conn?.external_id) {
       try {
-        await fetch(`${evolutionUrl}/instance/delete/${encodeURIComponent(instanceName)}`, {
+        await fetch(`${evolutionUrl}/instance/delete/${encodeURIComponent(conn.external_id)}`, {
           method: 'DELETE',
           headers: { apikey: apiKey },
           signal: AbortSignal.timeout(8000),
