@@ -447,7 +447,7 @@
                                                               },
                                          "sendBody":  true,
                                          "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"number\": \"{{ $(\u0027HTTP - Get Lead\u0027).first().json.phone }}@s.whatsapp.net\",\n  \"text\":   \"{{ $(\u0027HTTP - Call OpenAI\u0027).first().json.choices[0].message.content }}\"\n}",
+                                         "jsonBody":  "{\n  \"number\": \"{{ ($(\u0027HTTP - Get Lead\u0027).first().json.phone || $(\u0027Webhook Trigger\u0027).first().json.body.phone) }}@s.whatsapp.net\",\n  \"text\":   \"{{ $(\u0027HTTP - Call OpenAI\u0027).first().json.choices[0].message.content }}\"\n}",
                                          "options":  {
 
                                                      }
