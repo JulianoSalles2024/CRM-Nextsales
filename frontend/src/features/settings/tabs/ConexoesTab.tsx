@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle, Wifi, WifiOff, Loader2, RefreshCw, Plus,
   QrCode, CheckCircle2, AlertCircle, Clock, ChevronDown, ChevronUp,
-  Shield, Zap, ExternalLink, Copy, Info,
+  Shield, Zap, ExternalLink, Copy, Info, PhoneOff,
 } from 'lucide-react';
 import { useChannelConnections, ChannelConnection } from '@/src/hooks/useChannelConnections';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -221,6 +221,8 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
   const myConnectionExists = connections.some((c: any) => c.owner_id === user?.id);
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
   const [lastCheck, setLastCheck] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
   const handleHealthCheck = useCallback(async (id?: string) => {
     const ids = id ? [id] : connections.map(c => c.id);
@@ -249,6 +251,25 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
       setCheckingIds(new Set());
     }
   }, [connections, updateLocalState, showNotification]);
+
+  const handleDisconnect = useCallback(async () => {
+    setDisconnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/channels/disconnect', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      });
+      if (!res.ok) throw new Error('Falha ao desconectar');
+      showNotification('WhatsApp desconectado com sucesso.', 'success');
+      refetch();
+    } catch {
+      showNotification('Erro ao desconectar. Tente novamente.', 'error');
+    } finally {
+      setDisconnecting(false);
+      setConfirmDisconnect(false);
+    }
+  }, [showNotification, refetch]);
 
   const autoCheckedRef = useRef(false);
 
@@ -280,14 +301,27 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {onOpenConnect && !myConnectionExists && (
-            <button
-              onClick={onOpenConnect}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 transition-all"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              Conectar meu WhatsApp
-            </button>
+          {onOpenConnect && (
+            myConnectionExists ? (
+              <button
+                onClick={() => setConfirmDisconnect(true)}
+                disabled={disconnecting}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-all disabled:opacity-50"
+              >
+                {disconnecting
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <PhoneOff className="w-3.5 h-3.5" />}
+                Desconectar WhatsApp
+              </button>
+            ) : (
+              <button
+                onClick={onOpenConnect}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 transition-all"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Conectar meu WhatsApp
+              </button>
+            )
           )}
           <button
             onClick={() => handleHealthCheck()}
@@ -377,6 +411,59 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
           Nenhum dado de outra empresa é acessível. API Keys da Evolution API ficam armazenadas no campo <code className="text-blue-300">config</code> da conexão, nunca expostas ao cliente.
         </div>
       </div>
+
+      {/* Modal de confirmação de desconexão */}
+      <AnimatePresence>
+        {confirmDisconnect && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setConfirmDisconnect(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-[#0B1220] border border-white/8 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <PhoneOff className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">Desconectar WhatsApp</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Esta ação não pode ser desfeita</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Isso irá encerrar o serviço de WhatsApp para sua conta e remover a instância da Evolution API.
+                Deseja continuar?
+              </p>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  onClick={() => setConfirmDisconnect(false)}
+                  className="flex-1 py-2 rounded-lg border border-white/10 text-sm text-slate-300 hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="flex-1 py-2 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 text-sm font-semibold text-red-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {disconnecting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Desconectar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

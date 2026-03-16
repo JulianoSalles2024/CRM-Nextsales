@@ -14,6 +14,7 @@ export default async function handler(req: any, res: any) {
     case 'register':       return handleRegister(req, res);
     case 'health':         return handleHealth(req, res);
     case 'send':           return handleSend(req, res);
+    case 'disconnect':     return handleDisconnect(req, res);
     default:               return res.status(404).json({ error: `Unknown action: ${action}` });
   }
 }
@@ -275,6 +276,42 @@ async function handleSend(req: any, res: any) {
     } finally { clearTimeout(timeout); }
 
     if (!n8nRes.ok) throw new AppError(502, 'Falha ao encaminhar mensagem. Tente novamente.');
+    return res.status(200).json({ ok: true });
+  } catch (err) { return apiError(res, err); }
+}
+
+/* ── disconnect ──────────────────────────────────────────────────────── */
+async function handleDisconnect(req: any, res: any) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    const ctx = await requireAuth(req);
+    const { userId, companyId } = ctx;
+
+    const evolutionUrl = process.env.EVOLUTION_API_URL?.replace(/\/$/, '');
+    const apiKey       = process.env.EVOLUTION_API_KEY;
+    const instanceName = `ns_${userId.replace(/-/g, '').slice(0, 8)}`;
+
+    // Tenta deletar instância na Evolution API — ignora erros (já pode não existir)
+    if (evolutionUrl && apiKey) {
+      try {
+        await fetch(`${evolutionUrl}/instance/delete/${encodeURIComponent(instanceName)}`, {
+          method: 'DELETE',
+          headers: { apikey: apiKey },
+          signal: AbortSignal.timeout(8000),
+        });
+      } catch { /* ignora erros de rede — garante limpeza local */ }
+    }
+
+    // Remove do banco — isolamento por owner_id + company_id
+    const { error } = await supabaseAdmin
+      .from('channel_connections')
+      .delete()
+      .eq('owner_id', userId)
+      .eq('company_id', companyId)
+      .eq('channel', 'whatsapp');
+
+    if (error) throw new AppError(500, 'Erro ao remover conexão do banco.');
+
     return res.status(200).json({ ok: true });
   } catch (err) { return apiError(res, err); }
 }
