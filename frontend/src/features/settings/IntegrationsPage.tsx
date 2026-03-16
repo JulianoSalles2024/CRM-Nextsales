@@ -11,6 +11,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useApiKeys, ApiKey } from './hooks/useApiKeys';
 import { useOutgoingWebhooks, OutgoingWebhook } from './hooks/useOutgoingWebhooks';
+import WhatsAppConnectModal from '@/src/features/onboarding/WhatsAppConnectModal';
 
 
 // --- Reusable Components ---
@@ -821,6 +822,7 @@ interface IntegrationsPageProps {
 
 const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification }) => {
     const [activeTab, setActiveTab] = useState('API Keys');
+    const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
     const mainTabs = [
         { name: 'Conexões', icon: Wifi },
@@ -856,13 +858,25 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 -mr-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-                 {activeTab === 'Conexões'  && <ConexoesTab showNotification={showNotification} />}
+                 {activeTab === 'Conexões'  && <ConexoesTab showNotification={showNotification} onOpenConnect={() => setWhatsappModalOpen(true)} />}
                  {activeTab === 'Eventos'   && <EventosTab  showNotification={showNotification} />}
                  {activeTab === 'API Keys'  && <ApiKeysTab  showNotification={showNotification} />}
                  {activeTab === 'Webhooks'  && <WebhooksTab showNotification={showNotification} />}
                  {activeTab === 'API REST'  && <ApiRestTab  showNotification={showNotification} />}
                  {activeTab === 'MCP Server' && <McpTab />}
             </div>
+
+            <AnimatePresence>
+                {whatsappModalOpen && (
+                    <WhatsAppConnectModal
+                        onClose={() => setWhatsappModalOpen(false)}
+                        onConnected={() => {
+                            setWhatsappModalOpen(false);
+                            showNotification('WhatsApp conectado com sucesso!', 'success');
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

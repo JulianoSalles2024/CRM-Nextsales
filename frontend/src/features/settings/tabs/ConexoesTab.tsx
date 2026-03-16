@@ -212,9 +212,10 @@ const ConnCard: React.FC<ConnCardProps> = ({ conn, onHealthCheck, checking, show
 /* ─── Main Tab ──────────────────────────────────────────────────────────── */
 interface ConexoesTabProps {
   showNotification: (msg: string, type: 'success' | 'error' | 'info') => void;
+  onOpenConnect?: () => void;
 }
 
-const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification }) => {
+const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConnect }) => {
   const { companyId } = useAuth();
   const { connections, loading, refetch, updateLocalState } = useChannelConnections(companyId);
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
@@ -268,6 +269,15 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification }) => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {onOpenConnect && (
+            <button
+              onClick={onOpenConnect}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 transition-all"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Conectar meu WhatsApp
+            </button>
+          )}
           <button
             onClick={() => handleHealthCheck()}
             disabled={checkingIds.size > 0 || connections.length === 0}

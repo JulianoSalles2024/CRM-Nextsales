@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { MessageCircle, X } from 'lucide-react';
 
 import { useAppContext } from './AppContext';
 import { VIEW_PATHS } from './viewPaths';
 import { AppRouter } from '@/src/app/AppRouter';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import PipelineOnboarding from '@/src/features/onboarding/PipelineOnboarding';
+import WhatsAppConnectModal from '@/src/features/onboarding/WhatsAppConnectModal';
+import { useMyConnection } from '@/src/hooks/useMyConnection';
 
 // Layout components
 import Sidebar from '@/src/app/Sidebar';
@@ -27,8 +30,23 @@ import Notification from '@/src/features/notifications/Notification';
 
 export default function RootLayout() {
     const ctx = useAppContext();
-    const { currentUserRole, isRoleReady } = useAuth();
+    const { currentUserRole, isRoleReady, companyId, user } = useAuth();
     const navigate = useNavigate();
+
+    const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+    const [bannerDismissed, setBannerDismissed] = useState(false);
+
+    const { hasConnection, loading: connLoading, refetch: refetchConn } = useMyConnection(
+        user?.id ?? null,
+        companyId ?? null
+    );
+
+    // Banner: usuário autenticado sem WhatsApp conectado
+    const showWhatsAppBanner =
+        isRoleReady &&
+        !connLoading &&
+        !hasConnection &&
+        !bannerDismissed;
 
     // Seller sem pipeline → tela de onboarding gamificada
     const showPipelineOnboarding =
@@ -170,6 +188,39 @@ export default function RootLayout() {
                     onOpenSdrBot={ctx.handleOpenSdrBot}
                     activeView={ctx.activeView}
                 />
+
+                {/* Banner WhatsApp — aparece para quem ainda não conectou */}
+                <AnimatePresence>
+                    {showWhatsAppBanner && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center gap-3 px-6 py-2.5 bg-emerald-500/8 border-b border-emerald-500/15 overflow-hidden"
+                        >
+                            <div className="p-1 rounded-lg bg-emerald-500/15">
+                                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                            </div>
+                            <p className="text-xs text-emerald-300 flex-1">
+                                Conecte seu WhatsApp para receber e enviar mensagens diretamente no CRM.
+                            </p>
+                            <button
+                                onClick={() => setWhatsappModalOpen(true)}
+                                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-1 border border-emerald-500/30 rounded-lg transition-colors whitespace-nowrap"
+                            >
+                                Conectar agora
+                            </button>
+                            <button
+                                onClick={() => setBannerDismissed(true)}
+                                className="text-emerald-700 hover:text-emerald-500 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <main className="flex-1 overflow-auto p-6 bg-transparent">
                     <AppRouter {...routerProps} />
                 </main>
@@ -308,6 +359,21 @@ export default function RootLayout() {
                         message={ctx.notification.message}
                         type={ctx.notification.type}
                         onClose={() => ctx.setNotification(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Modal QR Code WhatsApp */}
+            <AnimatePresence>
+                {whatsappModalOpen && (
+                    <WhatsAppConnectModal
+                        onClose={() => setWhatsappModalOpen(false)}
+                        onConnected={() => {
+                            setWhatsappModalOpen(false);
+                            setBannerDismissed(true);
+                            refetchConn();
+                        }}
+                        userName={ctx.localUser?.name}
                     />
                 )}
             </AnimatePresence>
