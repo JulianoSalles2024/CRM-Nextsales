@@ -268,7 +268,7 @@
                                                                                     },
                                                                                     {
                                                                                         "name":  "select",
-                                                                                        "value":  "instance"
+                                                                                        "value":  "external_id"
                                                                                     }
                                                                                 ]
                                                              },
@@ -431,7 +431,7 @@
                   {
                       "parameters":  {
                                          "method":  "POST",
-                                         "url":  "=https://easypanel.julianosalles.com.br/message/sendText/{{ encodeURIComponent($(\u0027HTTP - Get Connection\u0027).first().json.instance) }}",
+                                         "url":  "=https://easypanel.julianosalles.com.br/message/sendText/{{ encodeURIComponent($(\u0027HTTP - Get Connection\u0027).first().json.external_id) }}",
                                          "sendHeaders":  true,
                                          "headerParameters":  {
                                                                   "parameters":  [
