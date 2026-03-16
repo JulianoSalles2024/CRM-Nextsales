@@ -71,33 +71,29 @@ async function handleConnect(req: any, res: any) {
     });
 
     const createBody = await createRes.json().catch(() => ({}));
-    console.log(`[connect] Evolution create status: ${createRes.status}`, JSON.stringify(createBody).slice(0, 300));
+    console.log(`[connect] Evolution create status: ${createRes.status}`, JSON.stringify(createBody).slice(0, 400));
 
-    let base64: string | null = null;
-    let code: string | null   = null;
-
-    if (createRes.ok) {
-      base64 = createBody?.qrcode?.base64 ?? createBody?.base64 ?? null;
-      code   = createBody?.qrcode?.code   ?? createBody?.code   ?? null;
-    } else if (createRes.status === 403 || createRes.status === 401) {
-      // API Key inválida ou sem permissão — falha explícita
-      throw new AppError(502, `Evolution API rejeitou a requisição (${createRes.status}): verifique a EVOLUTION_API_KEY.`);
-    }
-    // Status 4xx diferente de 401/403 geralmente significa instância já existe — tenta QR direto
-
-    if (!base64) {
-      // Aguarda até 2s para a instância ficar pronta antes de buscar QR
-      await new Promise(r => setTimeout(r, 1500));
-      const qr = await fetchQRWithRetry(evolutionUrl, apiKey, instanceName);
-      base64 = qr.base64;
-      code   = qr.code;
+    if (createRes.status === 401) {
+      throw new AppError(502, `EVOLUTION_API_KEY inválida ou sem permissão (401).`);
     }
 
-    if (!base64 && !code) {
-      throw new AppError(502, 'QR code não foi gerado pela Evolution API. Verifique se a instância está ativa no painel.');
+    // 403 = instância já existe na Evolution ("already in use") → ok, segue para fetchQR
+    // 200/201 = criada com sucesso → também segue para fetchQR (create não retorna QR)
+    // Qualquer outro status → loga e segue
+
+    // Docs confirmam: create NUNCA retorna QR — sempre buscar via /instance/connect
+    await new Promise(r => setTimeout(r, 2000)); // aguarda instância ficar pronta
+
+    const qr = await fetchQRWithRetry(evolutionUrl, apiKey, instanceName);
+
+    if (!qr.code && !qr.base64) {
+      const hint = createRes.status === 403
+        ? `Instância "${instanceName}" pode já existir na Evolution. Acesse o painel e delete-a manualmente, ou tente desconectar primeiro.`
+        : `Evolution retornou status ${createRes.status}. Verifique as configurações.`;
+      throw new AppError(502, hint);
     }
 
-    return res.status(200).json({ instanceName, base64, code, alreadyRegistered: false });
+    return res.status(200).json({ instanceName, base64: qr.base64, code: qr.code, alreadyRegistered: false });
   } catch (err) { return apiError(res, err); }
 }
 
@@ -115,7 +111,8 @@ async function fetchQRWithRetry(evolutionUrl: string, apiKey: string, instanceNa
         console.log(`[fetchQR] attempt ${i + 1} — code: ${code ? 'ok' : 'null'} | base64: ${base64 ? 'ok' : 'null'}`);
         if (code || base64) return { code, base64 };
       } else {
-        console.log(`[fetchQR] attempt ${i + 1} — HTTP ${r.status}`);
+        const errBody = await r.text().catch(() => '');
+        console.log(`[fetchQR] attempt ${i + 1} — HTTP ${r.status} | body: ${errBody.slice(0, 200)}`);
       }
     } catch (e: any) {
       console.log(`[fetchQR] attempt ${i + 1} error: ${e?.message}`);
