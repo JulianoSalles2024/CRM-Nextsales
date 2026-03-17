@@ -8,7 +8,7 @@ import SettingsPage from '@/src/features/settings/SettingsPage';
 import ActivitiesView from '@/src/features/tasks/ActivitiesView';
 import CalendarPage from '@/src/features/tasks/CalendarPage';
 import ReportsPage from '@/src/features/reports/ReportsPage';
-import LeadListView from '@/src/features/leads/LeadListView';
+import LeadsPage from '@/src/features/leads/LeadsPage';
 import ChatView from '@/src/features/chat/ChatView';
 import GroupsView from '@/src/features/groups/GroupsView';
 import GroupsDashboard from '@/src/features/dashboard/GroupsDashboard';
@@ -16,7 +16,6 @@ import IntegrationsPage from '@/src/features/settings/IntegrationsPage';
 import NotificationsView from '@/src/features/notifications/NotificationsView';
 import PlaybookSettings from '@/src/features/playbooks/PlaybookSettings';
 import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
-import RecoveryView from '@/src/features/leads/RecoveryView';
 import InboxView from '@/src/features/chat/InboxView';
 import { InboxPage } from '@/src/features/inbox/InboxPage';
 
@@ -174,7 +173,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <PlaybookSettings initialPlaybooks={playbooks} pipelineColumns={columns} onSave={setPlaybooks} />;
     case 'Leads': {
       listViewFilteredLeads = filteredLeads.filter((l: any) => l.columnId !== 'closed');
-      return <LeadListView
+      const recoveryLeads = leads.filter((l: any) => l.reactivationDate);
+      return <LeadsPage
                   leads={listViewFilteredLeads}
                   columns={columns}
                   users={users}
@@ -193,6 +193,9 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   onExportPDF={() => handleExportPDF(listViewFilteredLeads)}
                   onOpenCreateLeadModal={() => setCreateLeadModalOpen(true)}
                   onOpenCreateTaskModal={() => setCreateTaskModalOpen(true)}
+                  recoveryLeads={recoveryLeads}
+                  onReactivateLead={handleReactivateLead}
+                  onExportRecoveryPDF={handleExportPDF}
              />;
     }
     case 'Clientes': {
@@ -225,15 +228,6 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                />;
     case 'Relatórios':
         return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} boards={boards} />;
-    case 'Recuperação':
-        const recoveryLeads = leads.filter((l: any) => l.reactivationDate);
-        return <RecoveryView 
-            leads={recoveryLeads} 
-            onReactivateLead={handleReactivateLead} 
-            onExportPDF={handleExportPDF} 
-            onDeleteLead={handleDeleteLead}
-            onLeadClick={handleCardClick}
-        />;
     case 'Omnichannel':
       return <InboxPage />;
     case 'Chat':

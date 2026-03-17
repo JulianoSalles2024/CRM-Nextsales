@@ -17,7 +17,6 @@ import {
   Inbox as InboxIcon,
   ToyBrick,
   BookOpen,
-  ArchiveRestore,
   ScanLine,
 } from 'lucide-react';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -90,7 +89,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     // { icon: Contact, label: 'Clientes' }, // Disabled
     { icon: ClipboardList, label: 'Tarefas' },
     { icon: BarChart, label: 'Relatórios' },
-    { icon: ArchiveRestore, label: 'Recuperação' },
     { icon: InboxIcon, label: 'Omnichannel' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
