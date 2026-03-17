@@ -1,0 +1,238 @@
+{
+    "name": "WF-02-WA-OUTBOUND-V3(evo-url-fix)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wa-outbound",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "b1c2d3e4-f001-4a5b-8c9d-000000000001",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                -1200,
+                300
+            ],
+            "webhookId": "wa-outbound"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{ \"ok\": true }",
+                "options": {}
+            },
+            "id": "b1c2d3e4-f002-4a5b-8c9d-000000000002",
+            "name": "Respond 200 OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                -960,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://evo.julianosalles.com.br/message/sendText/{{ $json.body.instanceName }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "AB3858C6-C145-4063-B66E-7315BD43115F"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"number\": \"{{ $json.body.contactIdentifier }}\",\n  \"text\": \"{{ $json.body.content }}\",\n  \"delay\": 1200\n}",
+                "options": {}
+            },
+            "id": "b1c2d3e4-f003-4a5b-8c9d-000000000003",
+            "name": "HTTP - Evolution API - sendText",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -720,
+                300
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "// ── Prepara resultado unificado para os nós downstream ────────────────────\nconst wh  = $('Webhook').first().json.body;\nconst evo = $input.first().json;\n\n// Função helper para limpar strings (remove whitespace/newlines)\nconst clean = (v) => (typeof v === 'string' ? v.trim() : (v || ''));\n\n// Evolution retorna { key: { remoteJid, fromMe, id }, ... } em caso de sucesso\nconst success = evo.key !== undefined && evo.key !== null && evo.error === undefined;\n\nreturn [{\n  json: {\n    conversationId:      clean(wh.conversationId),\n    companyId:           clean(wh.companyId),\n    contactIdentifier:   clean(wh.contactIdentifier),\n    content:             clean(wh.content),\n    agentId:             clean(wh.agentId),\n    instanceName:        clean(wh.instanceName),\n    success:             success,\n    evolutionMessageId:  success ? evo.key.id  : null,\n    evolutionError:      success ? null : JSON.stringify(evo.error || evo)\n  }\n}];"
+            },
+            "id": "b1c2d3e4-f004-4a5b-8c9d-000000000004",
+            "name": "Code - Check Evolution Result",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -480,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "e9f8a7b6-c5d4-4e3f-a2b1-evo000000001",
+                            "leftValue": "={{ $json.success }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "b1c2d3e4-f005-4a5b-8c9d-000000000005",
+            "name": "IF - Evolution Success?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                -240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// ── Insert Message (Sent) via Supabase REST API ──────────────────────────\nconst data = $json;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages',\n  headers: {\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY',\n    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY',\n    'Content-Type': 'application/json',\n    'Prefer': 'return=minimal'\n  },\n  body: {\n    conversation_id: data.conversationId,\n    company_id: data.companyId,\n    direction: 'outbound',\n    sender_type: 'agent',\n    sender_id: data.agentId,\n    content: data.content,\n    content_type: 'text',\n    status: 'sent',\n    external_message_id: data.evolutionMessageId,\n    metadata: { instanceName: data.instanceName }\n  }\n});\n\nreturn [{ json: { ...data, insertResult: 'sent_ok' } }];"
+            },
+            "id": "b1c2d3e4-f006-4a5b-8c9d-000000000006",
+            "name": "Code - Insert Message (Sent)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                160
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// ── Update Conversation Preview via Supabase REST API ─────────────────────\nconst data = $json;\nconst convId = data.conversationId.replace(/\\s/g, '');\nconst preview = data.content.substring(0, 80);\n\nconst response = await this.helpers.httpRequest({\n  method: 'PATCH',\n  url: `https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations?id=eq.${convId}`,\n  headers: {\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY',\n    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY',\n    'Content-Type': 'application/json',\n    'Prefer': 'return=minimal'\n  },\n  body: {\n    last_message_at: new Date().toISOString(),\n    last_message_preview: preview\n  }\n});\n\nreturn [{ json: { success: true, conversationId: convId, preview } }];"
+            },
+            "id": "b1c2d3e4-f007-4a5b-8c9d-000000000007",
+            "name": "Code - Update Conversation Preview",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                240,
+                160
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// ── Insert Message (Failed) via Supabase REST API ────────────────────────\nconst data = $json;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages',\n  headers: {\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY',\n    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY',\n    'Content-Type': 'application/json',\n    'Prefer': 'return=minimal'\n  },\n  body: {\n    conversation_id: data.conversationId,\n    company_id: data.companyId,\n    direction: 'outbound',\n    sender_type: 'agent',\n    sender_id: data.agentId,\n    content: data.content,\n    content_type: 'text',\n    status: 'failed',\n    metadata: { error: data.evolutionError }\n  }\n});\n\nreturn [{ json: { ...data, insertResult: 'failed_recorded' } }];"
+            },
+            "id": "b1c2d3e4-f008-4a5b-8c9d-000000000008",
+            "name": "Code - Insert Message (Failed)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                460
+            ]
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Respond 200 OK",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Respond 200 OK": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Evolution API - sendText",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Evolution API - sendText": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Check Evolution Result",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Check Evolution Result": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Evolution Success?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Evolution Success?": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Insert Message (Sent)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Code - Insert Message (Failed)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Insert Message (Sent)": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Update Conversation Preview",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

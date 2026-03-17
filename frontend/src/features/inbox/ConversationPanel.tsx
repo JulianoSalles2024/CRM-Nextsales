@@ -357,7 +357,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
         canSend={canUpdate && conversation.status === 'in_progress' && !isSending}
         onSendMessage={(text) => {
           addOptimisticMessage(text);
-          sendMessage(conversation.id, text, conversation.contact_identifier);
+          sendMessage(conversation.id, text, conversation.contact_identifier, conversation.channel_connection_id);
         }}
       />
     </div>
