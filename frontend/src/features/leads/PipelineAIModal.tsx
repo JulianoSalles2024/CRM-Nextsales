@@ -167,7 +167,11 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
             name: s.name,
             color: s.color ?? '#6b7280',
             ai_prompt: s.ai_prompt ?? '',
-            auto_triggers: Array.isArray(s.auto_triggers) ? s.auto_triggers : [],
+            auto_triggers: Array.isArray(s.auto_triggers)
+                ? (s.auto_triggers as unknown[]).map((t) =>
+                    typeof t === 'string' ? t : (t as Record<string, string>)?.keyword ?? ''
+                  ).filter(Boolean)
+                : [],
             auto_playbook_id: s.auto_playbook_id ?? null,
             requires_approval: s.requires_approval ?? false,
           })),

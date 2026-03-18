@@ -1,0 +1,1201 @@
+{
+    "name": "WF-05-AI-AGENT-V7(media-takeover)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "ai-agent",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0001-4000-8000-000000000001",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                300
+            ],
+            "webhookId": "ai-agent"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{ \"ok\": true }",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0002-4000-8000-000000000002",
+            "name": "Respond 200 OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                280,
+                140
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-text",
+                            "leftValue": "={{ $json.body.content_type }}",
+                            "rightValue": "text",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "cond-audio",
+                            "leftValue": "={{ $json.body.content_type }}",
+                            "rightValue": "audio",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "or"
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0003-4000-8000-000000000003",
+            "name": "IF - Is Text?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                280,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "value": "=eq.{{ $('Webhook Trigger').first().json.body.conversation_id }}"
+                        },
+                        {
+                            "name": "company_id",
+                            "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}"
+                        },
+                        {
+                            "name": "select",
+                            "value": "lead_id,channel_connection_id,status"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0004-4000-8000-000000000004",
+            "name": "HTTP - Get Conversation",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                560,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/leads",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "value": "=eq.{{ $('HTTP - Get Conversation').first().json.lead_id }}"
+                        },
+                        {
+                            "name": "company_id",
+                            "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}"
+                        },
+                        {
+                            "name": "select",
+                            "value": "column_id,phone,name,board_id"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0005-4000-8000-000000000005",
+            "name": "HTTP - Get Lead",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                840,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/board_stages",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "value": "=eq.{{ $('HTTP - Get Lead').first().json.column_id }}"
+                        },
+                        {
+                            "name": "select",
+                            "value": "id,name,board_id,ai_prompt,auto_triggers,auto_playbook_id,requires_approval,order"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0006-4000-8000-000000000006",
+            "name": "HTTP - Get Stage",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1120,
+                300
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/boards",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "company_id",
+                            "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}"
+                        },
+                        {
+                            "name": "select",
+                            "value": "id,ai_enabled,ai_prompt"
+                        },
+                        {
+                            "name": "order",
+                            "value": "created_at.asc"
+                        },
+                        {
+                            "name": "limit",
+                            "value": "1"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0007-4000-8000-000000000007",
+            "name": "HTTP - Get Board",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/channel_connections",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "value": "=eq.{{ $('HTTP - Get Conversation').first().json.channel_connection_id }}"
+                        },
+                        {
+                            "name": "select",
+                            "value": "external_id"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0008-4000-8000-000000000008",
+            "name": "HTTP - Get Connection",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-ai-enabled",
+                            "leftValue": "={{ $('HTTP - Get Board').first().json.ai_enabled }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0009-4000-8000-000000000009",
+            "name": "IF - AI Enabled?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1960,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "conversation_id",
+                            "value": "=eq.{{ $('Webhook Trigger').first().json.body.conversation_id }}"
+                        },
+                        {
+                            "name": "company_id",
+                            "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}"
+                        },
+                        {
+                            "name": "order",
+                            "value": "sent_at.desc"
+                        },
+                        {
+                            "name": "limit",
+                            "value": "8"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0010-4000-8000-000000000010",
+            "name": "HTTP - Get History",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const webhook = $('Webhook Trigger').first().json.body;\nconst content_text = webhook.content_text;\n\nconst stageData = $('HTTP - Get Stage').first().json;\nconst stage_prompt = (stageData && stageData.ai_prompt) ? stageData.ai_prompt.trim() : '';\n\nconst boardData = $('HTTP - Get Board').first().json;\nconst board_prompt = (boardData && boardData.ai_prompt) ? boardData.ai_prompt.trim() : '';\n\nconst systemPrompt = stage_prompt || board_prompt\n  || 'Voce e um assistente de vendas profissional e cordial. Responda sempre em portugues brasileiro.';\n\nconst histArr = $('HTTP - Get History').first().json;\nconst chatHistory = (Array.isArray(histArr) ? histArr : [])\n  .slice(1).reverse()\n  .map(function(m) { return { role: m.sender_type === 'lead' ? 'user' : 'assistant', content: (m.content || '').trim() }; })\n  .filter(function(m) { return m.content; });\n\nconst messages = [{ role: 'system', content: systemPrompt }]\n  .concat(chatHistory)\n  .concat([{ role: 'user', content: content_text }]);\n\nreturn [{ json: { model: 'gpt-4o-mini', messages: messages, max_tokens: 500, temperature: 0.7 } }];"
+            },
+            "id": "a1b2c3d4-0011-4000-8000-000000000011",
+            "name": "Code - Build OpenAI Payload",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2520,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.openai.com/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer OPENAI_API_KEY_PLACEHOLDER"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json) }}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0012-4000-8000-000000000012",
+            "name": "HTTP - Call OpenAI",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2800,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://easypanel.julianosalles.com.br/message/sendText/{{ encodeURIComponent($('HTTP - Get Connection').first().json.external_id) }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "LZLQMWZUSZSRPEIJLMVXBDPRQYVUZBCI"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"number\": \"{{ ($('HTTP - Get Lead').first().json.phone || $('Webhook Trigger').first().json.body.phone) }}@s.whatsapp.net\",\n  \"text\":   \"{{ $('HTTP - Call OpenAI').first().json.choices[0].message.content }}\"\n}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0013-4000-8000-000000000013",
+            "name": "HTTP - Send WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                3080,
+                300
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/insert_message",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"p_company_id\":          \"{{ $('Webhook Trigger').first().json.body.company_id }}\",\n  \"p_conversation_id\":     \"{{ $('Webhook Trigger').first().json.body.conversation_id }}\",\n  \"p_external_message_id\": \"agent-{{ Date.now() }}\",\n  \"p_direction\":           \"outbound\",\n  \"p_sender_type\":         \"agent\",\n  \"p_content\":             \"{{ $('HTTP - Call OpenAI').first().json.choices[0].message.content }}\",\n  \"p_content_type\":        \"text\",\n  \"p_sent_at\":             \"{{ new Date().toISOString() }}\",\n  \"p_media_url\":           null,\n  \"p_metadata\":            {}\n}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0014-4000-8000-000000000014",
+            "name": "HTTP - Insert Agent Message",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                3360,
+                300
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "// ── Cadência: detecta gatilhos (keywords) configurados no estágio ──\nconst webhook      = $('Webhook Trigger').first().json.body;\nconst content_text = (webhook.content_text || '').toLowerCase();\n\nconst stageData         = $('HTTP - Get Stage').first().json;\nconst auto_triggers     = Array.isArray(stageData.auto_triggers) ? stageData.auto_triggers : [];\nconst requires_approval = stageData.requires_approval ?? false;\nconst auto_playbook_id  = stageData.auto_playbook_id  ?? null;\nconst stage_name        = stageData.name || 'estágio atual';\n\nconst leadData          = $('HTTP - Get Lead').first().json;\nconst convData          = $('HTTP - Get Conversation').first().json;\nconst current_column_id = leadData.column_id;\nconst lead_id           = convData.lead_id;\nconst company_id        = webhook.company_id;\n\nlet matched_trigger = null;\nfor (const trigger of auto_triggers) {\n  const keyword = (typeof trigger === 'object'\n    ? (trigger.keyword || '')\n    : (trigger || '')\n  ).toLowerCase().trim();\n  if (keyword && content_text.includes(keyword)) {\n    matched_trigger = keyword;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    trigger_detected:   !!matched_trigger,\n    matched_trigger,\n    requires_approval,\n    auto_playbook_id,\n    current_column_id,\n    lead_id,\n    lead_name:   leadData.name  || '',\n    stage_name,\n    company_id,\n  }\n}];"
+            },
+            "id": "a1b2c3d4-0015-4000-8000-000000000015",
+            "name": "Code - Check Triggers",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2520,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-trigger",
+                            "leftValue": "={{ $json.trigger_detected }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0016-4000-8000-000000000016",
+            "name": "IF - Trigger Detected?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                2800,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/get_next_stage",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"p_current_stage_id\": \"{{ $('Code - Check Triggers').first().json.current_column_id }}\"\n}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0017-4000-8000-000000000017",
+            "name": "HTTP - Get Next Stage",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                3080,
+                600
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "// RPC get_next_stage retorna jsonb: { next_stage_id: 'uuid' }\nconst raw = $input.first().json;\nconst next_stage_id = (raw && raw.next_stage_id) ? raw.next_stage_id : null;\nreturn [{ json: { next_stage_id, has_next_stage: !!next_stage_id } }];"
+            },
+            "id": "a1b2c3d4-0018-4000-8000-000000000018",
+            "name": "Code - Extract Next Stage",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                3360,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-has-next",
+                            "leftValue": "={{ $json.has_next_stage }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0019-4000-8000-000000000019",
+            "name": "IF - Has Next Stage?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                3640,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-approval",
+                            "leftValue": "={{ $('Code - Check Triggers').first().json.requires_approval }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0020-4000-8000-000000000020",
+            "name": "IF - Requires Approval?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                3920,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/notifications",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"company_id\": \"{{ $('Code - Check Triggers').first().json.company_id }}\",\n  \"type\":       \"stage_approval\",\n  \"title\":      \"Lead pronto para avançar de estágio\",\n  \"body\":       \"{{ $('Code - Check Triggers').first().json.matched_trigger ? 'Gatilho: \\\"' + $('Code - Check Triggers').first().json.matched_trigger + '\\\"' : 'Análise de IA' }} — {{ $('Code - Check Triggers').first().json.lead_name }}\",\n  \"lead_id\":    \"{{ $('Code - Check Triggers').first().json.lead_id }}\",\n  \"metadata\":   {\n    \"suggested_column_id\": \"{{ $('Code - Extract Next Stage').first().json.next_stage_id }}\",\n    \"trigger_text\":        \"{{ $('Code - Check Triggers').first().json.matched_trigger || 'análise de IA' }}\",\n    \"auto_playbook_id\":    \"{{ $('Code - Check Triggers').first().json.auto_playbook_id }}\"\n  }\n}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0021-4000-8000-000000000021",
+            "name": "HTTP - Insert Approval Notification",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                4200,
+                800
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PATCH",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/leads",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "value": "=eq.{{ $('Code - Check Triggers').first().json.lead_id }}"
+                        },
+                        {
+                            "name": "company_id",
+                            "value": "=eq.{{ $('Code - Check Triggers').first().json.company_id }}"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"column_id\": \"{{ $('Code - Extract Next Stage').first().json.next_stage_id }}\"\n}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0022-4000-8000-000000000022",
+            "name": "HTTP - Auto Move Lead",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                4200,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/notifications",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"company_id\": \"{{ $('Code - Check Triggers').first().json.company_id }}\",\n  \"type\":       \"info\",\n  \"title\":      \"Lead avançou de estágio automaticamente\",\n  \"body\":       \"{{ $('Code - Check Triggers').first().json.lead_name }} avançou via {{ $('Code - Check Triggers').first().json.matched_trigger ? 'gatilho: \\\"' + $('Code - Check Triggers').first().json.matched_trigger + '\\\"' : 'análise de IA' }}\",\n  \"lead_id\":    \"{{ $('Code - Check Triggers').first().json.lead_id }}\",\n  \"metadata\":   {\n    \"new_column_id\":    \"{{ $('Code - Extract Next Stage').first().json.next_stage_id }}\",\n    \"trigger_text\":     \"{{ $('Code - Check Triggers').first().json.matched_trigger || 'análise de IA' }}\",\n    \"auto_playbook_id\": \"{{ $('Code - Check Triggers').first().json.auto_playbook_id }}\"\n  }\n}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0023-4000-8000-000000000023",
+            "name": "HTTP - Insert Move Notification",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                4480,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// ── Cadência Híbrida: análise de IA quando nenhum keyword foi detectado ──\n// Usa o histórico da conversa para decidir se o lead deve avançar de estágio.\n\nconst webhook      = $('Webhook Trigger').first().json.body;\nconst content_text = webhook.content_text || '';\nconst stage_name   = $('Code - Check Triggers').first().json.stage_name || 'estágio atual';\n\n// Monta histórico recente (últimas 8 mensagens, ordem cronológica)\nconst histArr   = $('HTTP - Get History').first().json;\nconst recentMsgs = (Array.isArray(histArr) ? histArr : [])\n  .slice(0, 8).reverse()\n  .map(function(m) {\n    const who = m.sender_type === 'lead' ? 'Lead' : 'Agente';\n    return who + ': ' + (m.content || '').trim();\n  })\n  .filter(function(line) { return line; })\n  .join('\\n');\n\nconst systemPrompt =\n  'Você é um especialista em análise de conversas de vendas. ' +\n  'Analise o histórico abaixo e determine se o lead demonstrou interesse, ' +\n  'engajamento ou intenção suficiente para avançar no funil comercial. ' +\n  'O lead está no estágio: \"' + stage_name + '\". ' +\n  'Responda APENAS com uma palavra: SIM (deve avançar) ou NAO (deve permanecer).';\n\nconst userMsg =\n  'Histórico da conversa:\\n' + (recentMsgs || '(sem histórico)') +\n  '\\n\\nÚltima mensagem do lead: \"' + content_text + '\"' +\n  '\\n\\nO lead deve avançar de estágio?';\n\nreturn [{ json: {\n  model: 'gpt-4o-mini',\n  messages: [\n    { role: 'system', content: systemPrompt },\n    { role: 'user',   content: userMsg }\n  ],\n  max_tokens: 10,\n  temperature: 0.1\n} }];"
+            },
+            "id": "a1b2c3d4-0024-4000-8000-000000000024",
+            "name": "Code - Build AI Stage Analysis",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                3080,
+                900
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.openai.com/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer OPENAI_API_KEY_PLACEHOLDER"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json) }}",
+                "options": {}
+            },
+            "id": "a1b2c3d4-0025-4000-8000-000000000025",
+            "name": "HTTP - Call OpenAI Stage Analysis",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                3360,
+                900
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extrai SIM/NAO da resposta do OpenAI\nconst response = $input.first().json;\nconst content  = ((response && response.choices && response.choices[0] &&\n  response.choices[0].message && response.choices[0].message.content) || '')\n  .trim().toUpperCase();\nconst should_advance = content.startsWith('SIM');\nreturn [{ json: { should_advance: should_advance, ai_decision: content } }];"
+            },
+            "id": "a1b2c3d4-0026-4000-8000-000000000026",
+            "name": "Code - Parse Stage Decision",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                3640,
+                900
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-ai-advance",
+                            "leftValue": "={{ $json.should_advance }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0027-4000-8000-000000000027",
+            "name": "IF - AI Says Advance?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                3920,
+                900
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "loose"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-status-waiting",
+                            "leftValue": "={{ $json.status }}",
+                            "rightValue": "waiting",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0028-4000-8000-000000000028",
+            "name": "IF - Status is Waiting?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                700,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Respond 200 OK",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "IF - Is Text?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Is Text?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get Conversation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Get Conversation": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Status is Waiting?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Get Lead": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get Stage",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Get Stage": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get Board",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Get Board": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get Connection",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Get Connection": {
+            "main": [
+                [
+                    {
+                        "node": "IF - AI Enabled?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - AI Enabled?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get History",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Get History": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Build OpenAI Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Build OpenAI Payload": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Call OpenAI",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Call OpenAI": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Send WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Send WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Insert Agent Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Insert Agent Message": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Check Triggers",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Check Triggers": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Trigger Detected?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Trigger Detected?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get Next Stage",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Code - Build AI Stage Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Build AI Stage Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Call OpenAI Stage Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Call OpenAI Stage Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Parse Stage Decision",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Parse Stage Decision": {
+            "main": [
+                [
+                    {
+                        "node": "IF - AI Says Advance?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - AI Says Advance?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get Next Stage",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "HTTP - Get Next Stage": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Extract Next Stage",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Extract Next Stage": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Has Next Stage?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Has Next Stage?": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Requires Approval?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "IF - Requires Approval?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Insert Approval Notification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "HTTP - Auto Move Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Auto Move Lead": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Insert Move Notification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Status is Waiting?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Get Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "pinData": {}
+}

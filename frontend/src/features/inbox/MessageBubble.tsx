@@ -45,8 +45,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     // Audio
     if (content_type === 'audio' && media_url) {
       return (
-        // eslint-disable-next-line jsx-a11y/media-has-caption
-        <audio controls src={media_url} className="max-w-[260px] h-10" />
+        <div className="flex flex-col gap-1.5 max-w-[260px]">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio controls src={media_url} className="w-full h-10" />
+          {content && (
+            <p className="text-xs text-slate-300 italic leading-relaxed">
+              🎤 {content}
+            </p>
+          )}
+        </div>
       );
     }
 

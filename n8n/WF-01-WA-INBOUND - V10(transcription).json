@@ -1,0 +1,912 @@
+{
+    "name": "WF-01-WA-INBOUND - V10(transcription)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wa-inbound",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "39fd129d-2d64-4c72-8c99-6beb77a2d585",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                -3840,
+                368
+            ],
+            "webhookId": "wa-inbound"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{ \"ok\": true }",
+                "options": {}
+            },
+            "id": "ca8bba59-5a11-44d1-9262-e6a5aeb53814",
+            "name": "Respond 200 OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                -3600,
+                368
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// â”€â”€ Node 3: Validate Payload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n// Accepts Evolution API webhook payload, filters out non-message events,\n// fromMe=true, group messages, and missing required fields.\n\nconst body = ($input.first().json.body !== undefined)\n  ? $input.first().json.body\n  : $input.first().json;\n\nconst eventType = (body.event || body.type || '').toLowerCase();\nconst validPrefixes = ['messages.upsert', 'message_received', 'message'];\nconst isValidEvent = validPrefixes.some(function(p) { return eventType.includes(p); });\n\nif (!isValidEvent) {\n  return [{ json: { valid: false, reason: 'not_message_event', event_type: eventType } }];\n}\n\nconst data  = body.data || body;\nconst key   = data.key || (data.message && data.message.key) || {};\nconst msg   = data.message || data;\n\nif (key.fromMe === true) {\n  return [{ json: { valid: false, reason: 'from_me' } }];\n}\n\nconst remoteJid         = key.remoteJid  || '';\nconst instanceName      = body.instance  || body.instanceName || '';\nconst externalMessageId = key.id         || '';\n\nif (!remoteJid || !instanceName || !externalMessageId) {\n  return [{ json: { valid: false, reason: 'missing_required_fields' } }];\n}\n\n// Skip group messages â€” remove this block if you want to handle groups\nif (remoteJid.endsWith('@g.us')) {\n  return [{ json: { valid: false, reason: 'group_message_skipped' } }];\n}\n\nconst contactIdentifier = remoteJid.replace(/@.*$/, '');\n\nlet contentType = 'text';\nlet contentText = null;\nlet mediaUrl    = null;\nlet caption     = null;\n\nif (msg.conversation) {\n  contentText = msg.conversation;\n} else if (msg.extendedTextMessage && msg.extendedTextMessage.text) {\n  contentText = msg.extendedTextMessage.text;\n} else if (msg.imageMessage) {\n  contentType = 'image';\n  mediaUrl    = msg.imageMessage.url     || null;\n  caption     = msg.imageMessage.caption || null;\n} else if (msg.audioMessage) {\n  contentType = 'audio';\n  mediaUrl    = msg.audioMessage.url || null;\n} else if (msg.documentMessage) {\n  contentType = 'document';\n  mediaUrl    = msg.documentMessage.url   || null;\n  caption     = msg.documentMessage.title || null;\n} else if (msg.videoMessage) {\n  contentType = 'video';\n  mediaUrl    = msg.videoMessage.url     || null;\n  caption     = msg.videoMessage.caption || null;\n} else {\n  contentType = 'unknown';\n}\n\nconst contactName = data.pushName || data.notifyName || null;\nconst ts          = data.messageTimestamp;\nconst sentAt      = ts ? new Date(Number(ts) * 1000).toISOString() : new Date().toISOString();\n\nreturn [{\n  json: {\n    valid:                true,\n    instance_name:        instanceName,\n    external_message_id:  externalMessageId,\n    contact_identifier:   contactIdentifier,\n    contact_name:         contactName,\n    contact_jid:          remoteJid,\n    content_type:         contentType,\n    content_text:         contentText,\n    media_url:            mediaUrl,\n    caption:              caption,\n    sent_at:              sentAt,\n    raw_body:             body\n  }\n}];"
+            },
+            "id": "5e949aca-4dbb-4161-bc3c-b858b59dd27d",
+            "name": "Code - Validate Payload",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -3360,
+                368
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/channel_connections",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "external_id",
+                            "value": "=eq.{{ $('Code - Validate Payload').first().json.instance_name }}"
+                        },
+                        {
+                            "name": "is_active",
+                            "value": "eq.true"
+                        },
+                        {
+                            "name": "select",
+                            "value": " id,company_id,owner_id,channel,external_id"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "81b24e5b-9f60-4075-9cba-fdf934dce2eb",
+            "name": "HTTP - Lookup Channel Connection",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -2880,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// â”€â”€ Node 6: Extract Connection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n// PostgREST returns an array. Extract the first row or flag as not found.\n\nconst items = $input.all();\nlet connection = null;\n\nfor (var i = 0; i < items.length; i++) {\n  var item = items[i].json;\n  if (Array.isArray(item) && item.length > 0) {\n    connection = item[0];\n    break;\n  } else if (item && item.id) {\n    connection = item;\n    break;\n  }\n}\n\nif (!connection || !connection.id || !connection.company_id) {\n  return [{ json: { found: false } }];\n}\n\nreturn [{\n  json: {\n    found:       true,\n    id:          connection.id,\n    company_id:  connection.company_id,\n    owner_id:    connection.owner_id || null,\n    channel:     connection.channel,\n    external_id: connection.external_id\n  }\n}];"
+            },
+            "id": "f1a07b30-8471-4096-9758-ee320a551b3c",
+            "name": "Code - Extract Connection",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -2640,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// â”€â”€ Node 8: Normalize to Canonical Event â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n// Merges validated payload + connection data into the canonical event JSON.\n// Optionally validates HMAC signature if EVOLUTION_WEBHOOK_SECRET is set.\n\nconst validated = $('Code - Validate Payload').first().json;\nconst conn      = $input.first().json;\n\n// â”€â”€ Optional HMAC validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\nconst secret = '';\nif (secret) {\n  let headers = {};\n  try { headers = $('Webhook Trigger').first().json.headers || {}; } catch(e) {}\n  const sig = headers['x-evolution-signature'] || headers['x-hub-signature-256'] || '';\n  if (!sig) {\n    throw new Error('HMAC secret configured but no signature header received');\n  }\n  const crypto   = require('crypto');\n  const rawBody  = JSON.stringify(validated.raw_body);\n  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\n  if (sig !== expected) {\n    throw new Error('Invalid webhook signature â€” possible spoofed request');\n  }\n}\n\nconst canonicalEvent = {\n  event_id:              validated.external_message_id + '_' + conn.company_id,\n  source:                'evolution_api',\n  channel:               'whatsapp',\n  instance_name:         validated.instance_name,\n  channel_connection_id: conn.id,\n  company_id:            conn.company_id,\n  owner_id:              conn.owner_id || null,\n  direction:             'inbound',\n  external_message_id:   validated.external_message_id,\n  contact_identifier:    validated.contact_identifier,\n  contact_name:          validated.contact_name,\n  contact_jid:           validated.contact_jid,\n  content_type:          validated.content_type,\n  content_text:          validated.content_text,\n  media_url:             validated.media_url,\n  caption:               validated.caption,\n  sent_at:               validated.sent_at,\n  raw_payload:           validated.raw_body\n};\n\nreturn [{ json: canonicalEvent }];"
+            },
+            "id": "7eb90d44-606b-49b0-a14e-6c3cc2816765",
+            "name": "Code - Normalize to Canonical Event",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -2160,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// â”€â”€ Code - Resolve Media URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n// Requires 'Webhook Base64' enabled in Evolution API.\n// The base64-encoded media arrives directly in the webhook payload under\n// data.message.{type}Message.base64 â€” no extra API call needed.\n// Steps:\n//   1. Read base64 + mimetype from raw_payload\n//   2. Upload binary to Supabase Storage bucket 'inbox-media'\n//   3. Return canonical event with media_url = permanent public URL\n// Falls back to original media_url on any error (never breaks the pipeline).\n\nconst canonical = $input.first().json;\n\nconst SUPABASE_URL = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst BUCKET      = 'inbox-media';\n\nconst mediaTypes = ['image', 'audio', 'video', 'document'];\nif (!mediaTypes.includes(canonical.content_type) || !canonical.media_url) {\n  return [{ json: canonical }];\n}\n\ntry {\n  // Step 1: Extract base64 from webhook payload\n  const data         = canonical.raw_payload.data || canonical.raw_payload;\n  const msg          = data.message || {};\n  const mediaMsgKey  = `${canonical.content_type}Message`;\n  const mediaMsg     = msg[mediaMsgKey] || {};\n  const base64       = mediaMsg.base64;\n  const mime         = mediaMsg.mimetype || 'application/octet-stream';\n\n  if (!base64) return [{ json: canonical }];\n\n  // Step 2: Determine file extension\n  const extMap = {\n    'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',\n    'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/aac': 'aac',\n    'audio/ogg; codecs=opus': 'ogg',\n    'video/mp4': 'mp4', 'video/3gpp': '3gp', 'video/webm': 'webm',\n    'application/pdf': 'pdf',\n  };\n  const ext         = extMap[mime] || (mime.split('/')[1] || 'bin').split(';')[0].trim();\n  const storagePath = `${canonical.company_id}/${canonical.external_message_id}.${ext}`;\n\n  // Step 3: Upload to Supabase Storage\n  const binary    = Buffer.from(base64, 'base64');\n  const uploadRes = await fetch(\n    `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${storagePath}`,\n    {\n      method: 'POST',\n      headers: {\n        'Authorization': `Bearer ${SUPABASE_KEY}`,\n        'Content-Type': mime,\n        'x-upsert': 'true',\n      },\n      body: binary,\n    }\n  );\n\n  if (!uploadRes.ok) return [{ json: canonical }];\n\n  // Step 4: Permanent public URL\n  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;\n  return [{ json: { ...canonical, media_url: publicUrl } }];\n\n} catch (_) {\n  return [{ json: canonical }];\n}"
+            },
+            "id": "a2b3c4d5-e6f7-8901-bcde-f01234567892",
+            "name": "Code - Resolve Media URL",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -2040,
+                340
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/webhook_events",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=representation,resolution=ignore-duplicates"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "source",
+                            "value": "evolution_api"
+                        },
+                        {
+                            "name": "external_id",
+                            "value": "={{ $json.external_message_id }}"
+                        },
+                        {
+                            "name": "company_id",
+                            "value": "={{ $json.company_id }}"
+                        },
+                        {
+                            "name": "payload",
+                            "value": "={{ JSON.stringify($json.raw_payload) }}"
+                        },
+                        {
+                            "name": "status",
+                            "value": "received"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "044c312c-fc00-4e41-b2ae-ccbd8873374a",
+            "name": "HTTP - Register Webhook Event",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -1920,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// â”€â”€ Node 10: Check Duplicate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n// PostgREST with resolution=ignore-duplicates returns [] on conflict.\n// If result is empty â†’ duplicate â†’ stop pipeline.\n\nconst items = $input.all();\nlet isDuplicate = true;\n\nfor (var i = 0; i < items.length; i++) {\n  var item = items[i].json;\n  if (Array.isArray(item) && item.length > 0) {\n    isDuplicate = false;\n    break;\n  } else if (item && item.id) {\n    isDuplicate = false;\n    break;\n  }\n}\n\n// Pass the canonical event forward together with the duplicate flag\nconst canonical = $('Code - Normalize to Canonical Event').first().json;\n\nreturn [{ json: Object.assign({}, canonical, { is_duplicate: isDuplicate }) }];"
+            },
+            "id": "e6f58272-ccfe-4b09-90e7-00ae4a7664bd",
+            "name": "Code - Check Duplicate",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -1680,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/resolve_or_create_lead",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=representation"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "=  {\n    \"p_company_id\":   \"{{ $json.company_id }}\",\n    \"p_channel\":      \"whatsapp\",\n    \"p_identifier\":   \"{{ $json.contact_identifier }}\",\n    \"p_contact_name\": \"{{ $json.contact_name }}\",\n    \"p_owner_id\":     {{ $json.owner_id ? '\"' + $json.owner_id + '\"' : 'null' }}\n  }",
+                "options": {}
+            },
+            "id": "0d38cfb5-378e-47e3-92c6-564668645785",
+            "name": "HTTP - RPC resolve_or_create_lead",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -1200,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/resolve_or_create_conversation",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=representation"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"p_company_id\":               \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"p_channel_connection_id\":    {{ $('Code - Normalize to Canonical Event').first().json.channel_connection_id ? '\"' + $('Code - Normalize to Canonical Event').first().json.channel_connection_id + '\"' : 'null' }},\n  \"p_channel\":                  \"whatsapp\",\n  \"p_contact_identifier\":       \"{{ $('Code - Normalize to Canonical Event').first().json.contact_identifier }}\",\n  \"p_contact_name\":             \"{{ $('Code - Normalize to Canonical Event').first().json.contact_name }}\",\n  \"p_lead_id\":                  {{ $input.first().json.lead_id ? '\"' + $input.first().json.lead_id + '\"' : 'null' }},\n  \"p_assignee_id\":              {{ $('Code - Normalize to Canonical Event').first().json.owner_id ? '\"' + $('Code - Normalize to Canonical Event').first().json.owner_id + '\"' : 'null' }}\n}",
+                "options": {}
+            },
+            "id": "9f2e5ae5-0137-4dcf-81b3-e017111aa3c1",
+            "name": "HTTP - RPC resolve_or_create_conversation",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -960,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/insert_message",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=representation"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"p_company_id\":          \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"p_conversation_id\":     \"{{ $input.first().json.conversation_id }}\",\n  \"p_external_message_id\": \"{{ $('Code - Normalize to Canonical Event').first().json.external_message_id }}\",\n  \"p_direction\":           \"inbound\",\n  \"p_sender_type\":         \"lead\",\n  \"p_content\":             \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"p_content_type\":        \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\",\n  \"p_sent_at\":             \"{{ $('Code - Normalize to Canonical Event').first().json.sent_at }}\",\n  \"p_media_url\":           \"{{ $('Code - Resolve Media URL').first().json.media_url }}\",\n  \"p_metadata\":            {}\n}",
+                "options": {}
+            },
+            "id": "cf7d6c45-a315-41a5-bfc8-27b432d0ac11",
+            "name": "HTTP - RPC insert_message",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -720,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PATCH",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "value": "=eq.{{ $('HTTP - RPC resolve_or_create_conversation').first().json.conversation_id }}"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "{ \"current_followup_step\": 0, \"last_followup_sent_at\": null }",
+                "options": {}
+            },
+            "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "name": "HTTP - Reset Followup Step",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -480,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PATCH",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/webhook_events",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "external_id",
+                            "value": "=eq.{{ $('Code - Normalize to Canonical Event').first().json.external_message_id }}"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "{ \"status\": \"processed\" }",
+                "options": {}
+            },
+            "id": "92697486-7463-4503-9260-cc255c2d6a02",
+            "name": "HTTP - Mark Webhook Processed",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -240,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/notifications",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "company_id",
+                            "value": "32a1ab33-e2f2-4c33-b6b4-5a4d00e7e2ed"
+                        },
+                        {
+                            "name": "recipient_user_id",
+                            "value": "5fe7ae00-d465-48d2-aca5-404ea48058d4"
+                        },
+                        {
+                            "name": "type",
+                            "value": "new_conversation"
+                        },
+                        {
+                            "name": "title",
+                            "value": "Nova conversa via WhatsApp"
+                        },
+                        {
+                            "name": "message",
+                            "value": "={{ $('Code - Normalize to Canonical Event').first().json.contact_identifier }} iniciou uma   â”‚   â”‚                   â”‚ conversa"
+                        },
+                        {
+                            "name": "is_read",
+                            "value": "false"
+                        },
+                        {
+                            "name": "company_id",
+                            "value": "32a1ab33-e2f2-4c33-b6b4-5a4d00e7e2ed"
+                        },
+                        {
+                            "name": "recipient_user_id",
+                            "value": "5fe7ae00-d465-48d2-aca5-404ea48058d4"
+                        },
+                        {
+                            "name": "type",
+                            "value": "new_conversation"
+                        },
+                        {
+                            "name": "title",
+                            "value": "Nova conversa via WhatsApp"
+                        },
+                        {
+                            "name": "message",
+                            "value": "={{ $('Code - Normalize to Canonical Event').first().json.contact_identifier }} iniciou uma   â”‚   â”‚                   â”‚ conversa"
+                        },
+                        {
+                            "name": "is_read",
+                            "value": "false"
+                        },
+                        {
+                            "name": "actor_user_id",
+                            "value": "5fe7ae00-d465-48d2-aca5-404ea48058d4"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "fc313c92-9d8f-48b6-a8a2-91d243e15e78",
+            "name": "HTTP - Create Notification",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "e1e5b38a-05fe-471a-b771-921238b3bf2b",
+                            "leftValue": "={{ $json.valid }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                -3152,
+                304
+            ],
+            "id": "0ee1d96b-db26-4cff-bb26-ae1314eeee83",
+            "name": "IF - Is Valid?."
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "806db91f-eb1b-42d3-b096-21c6e789f55b",
+                            "leftValue": "={{ $json.found }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                -2432,
+                256
+            ],
+            "id": "4dea6f7b-d9a5-47e8-a91d-566b48bae68c",
+            "name": "IF - Connection Found?"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "6a67d473-c804-4bce-b6ae-165640484217",
+                            "leftValue": "={{ $json.is_duplicate }}",
+                            "rightValue": false,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "false",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                -1456,
+                256
+            ],
+            "id": "672636e7-2a15-4b8e-ae12-fe16a6ce34e3",
+            "name": "IF - Not Duplicate?"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "694e3c12-8f39-40ca-a7cf-043e8a095283",
+                            "leftValue": "={{ $('HTTP - RPC resolve_or_create_conversation').first().json.is_new }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                -256,
+                96
+            ],
+            "id": "fc571339-d6aa-421d-8ebf-ec96bae005d4",
+            "name": "Is New Conversation?"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://n8n.julianosalles.com.br/webhook/ai-agent",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"conversation_id\": \"{{ $('HTTP - RPC resolve_or_create_conversation').first().json.conversation_id }}\",\n  \"company_id\":      \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"content_text\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"content_type\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\",\n  \"phone\":           \"{{ $('Code - Normalize to Canonical Event').first().json.contact_identifier }}\"\n}",
+                "options": {
+                    "timeout": 3000
+                }
+            },
+            "id": "a1b2c3d4-0099-4000-8000-000000000099",
+            "name": "HTTP - Trigger AI Agent",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -720,
+                340
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "// ── Transcrição de Áudio via OpenAI Whisper ─────────────────────────────────\n// Chamado após Code - Resolve Media URL.\n// Se content_type === 'audio', transcreve com Whisper e grava em canonical.content.\n// Falls back gracefully — nunca quebra o pipeline.\n\nconst canonical = $input.first().json;\nconst OPENAI_KEY = 'OPENAI_API_KEY_PLACEHOLDER';\n\nif (canonical.content_type !== 'audio') {\n  return [{ json: canonical }];\n}\n\ntry {\n  const data     = canonical.raw_payload.data || canonical.raw_payload;\n  const msg      = data.message || {};\n  const mediaMsg = msg.audioMessage || {};\n  const base64   = mediaMsg.base64;\n  const mime     = mediaMsg.mimetype || 'audio/ogg; codecs=opus';\n\n  if (!base64) return [{ json: canonical }];\n\n  const extMap = {\n    'audio/ogg': 'ogg', 'audio/ogg; codecs=opus': 'ogg',\n    'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/aac': 'aac', 'audio/wav': 'wav',\n  };\n  const ext = extMap[mime] || 'ogg';\n\n  const binary   = Buffer.from(base64, 'base64');\n  const formData = new FormData();\n  const blob     = new Blob([binary], { type: mime.split(';')[0].trim() });\n  formData.append('file', blob, `audio.${ext}`);\n  formData.append('model', 'whisper-1');\n  formData.append('language', 'pt');\n\n  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {\n    method: 'POST',\n    headers: { 'Authorization': `Bearer ${OPENAI_KEY}` },\n    body: formData,\n  });\n\n  if (!res.ok) return [{ json: canonical }];\n\n  const result = await res.json();\n  const transcription = (result.text || '').trim();\n\n  if (!transcription) return [{ json: canonical }];\n\n  return [{ json: { ...canonical, content: transcription } }];\n\n} catch (_) {\n  return [{ json: canonical }];\n}\n"
+            },
+            "id": "wf01-transcribe-audio-001",
+            "name": "Code - Transcribe Audio",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -2040,
+                480
+            ],
+            "continueOnFail": true
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Respond 200 OK",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Respond 200 OK": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Validate Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Validate Payload": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Is Valid?.",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Is Valid?.": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Lookup Channel Connection",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Lookup Channel Connection": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Extract Connection",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Extract Connection": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Connection Found?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Connection Found?": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Normalize to Canonical Event",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Normalize to Canonical Event": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Resolve Media URL",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Resolve Media URL": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Transcribe Audio",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Register Webhook Event": {
+            "main": [
+                [
+                    {
+                        "node": "Code - Check Duplicate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Check Duplicate": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Not Duplicate?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Not Duplicate?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - RPC resolve_or_create_lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - RPC resolve_or_create_lead": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - RPC resolve_or_create_conversation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - RPC resolve_or_create_conversation": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - RPC insert_message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - RPC insert_message": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Reset Followup Step",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "HTTP - Trigger AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Reset Followup Step": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Mark Webhook Processed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Mark Webhook Processed": {
+            "main": [
+                [
+                    {
+                        "node": "Is New Conversation?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is New Conversation?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Create Notification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code - Transcribe Audio": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Register Webhook Event",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "executionOrder": "v1",
+        "availableInMCP": false
+    },
+    "versionId": "6b2cd3e4-f5a6-7890-cdef-012345678902",
+    "meta": {
+        "instanceId": "c3733f9c85f0461c0399c4bc0fba364bdfa3fecaafb3cd654abc5afe90d2cf63"
+    },
+    "id": "qDeqOn-Z4kwBwei35p6Jl",
+    "tags": []
+}
