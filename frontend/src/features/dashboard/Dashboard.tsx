@@ -495,15 +495,21 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             <FlatCard className="p-5 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-white">Tendência do Negócio</h2>
-                    <div className="flex items-center gap-1">
+                    <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+                        {/* sliding pill */}
+                        <div
+                            className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
+                            style={{
+                                width: 'calc(33.333% - 2px)',
+                                left: `calc(${['day','week','month'].indexOf(chartViewMode)} * 33.333% + 4px)`,
+                            }}
+                        />
                         {(['day', 'week', 'month'] as const).map(view => (
                             <button
                                 key={view}
                                 onClick={() => setChartViewMode(view)}
-                                className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
-                                    chartViewMode === view
-                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                        : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                className={`relative z-10 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 w-20 text-center ${
+                                    chartViewMode === view ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
                                 }`}
                             >
                                 {view === 'day' ? 'Dia' : view === 'week' ? 'Semana' : 'Mês'}
