@@ -240,7 +240,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
 
         <div className="flex items-center gap-2">
           {conversation.ai_agent_id && (
-            <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border text-purple-400 bg-purple-500/10 border-purple-500/20">
+            <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border text-blue-400 bg-blue-500/10 border-blue-500/20">
               <Bot className="w-3 h-3" />
               Agente IA
             </span>
@@ -310,7 +310,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
                   onClick={() => { setMenuOpen(false); setAssignAgentOpen(true); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
                 >
-                  <Bot className="w-4 h-4 text-purple-400" />
+                  <Bot className="w-4 h-4 text-blue-400" />
                   {conversation.ai_agent_id ? 'Trocar Agente IA' : 'Atribuir Agente IA'}
                 </button>
                 {conversation.ai_agent_id && (
@@ -354,10 +354,10 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
       {/* Modal Atribuir Agente IA */}
       {assignAgentOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0B1220] border border-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
+          <div className="bg-[#0B1220] border border-blue-500/30 rounded-2xl shadow-2xl shadow-blue-900/20 w-full max-w-sm mx-4 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Bot className="w-5 h-5 text-purple-400" />
+                <Bot className="w-5 h-5 text-blue-400" />
                 <h3 className="text-base font-semibold text-white">Atribuir Agente IA</h3>
               </div>
               <button onClick={() => setAssignAgentOpen(false)} className="text-slate-500 hover:text-white">
@@ -376,19 +376,19 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
                   disabled={isAssigning}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                     conversation.ai_agent_id === agent.id
-                      ? 'bg-purple-500/20 border border-purple-500/30 text-white'
+                      ? 'bg-blue-500/10 border border-blue-500/30 text-white'
                       : 'hover:bg-slate-800 text-slate-300'
                   }`}
                 >
-                  <div className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-3.5 h-3.5 text-purple-400" />
+                  <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-3.5 h-3.5 text-blue-400" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">{agent.name}</p>
                     <p className="text-xs text-slate-500">{agent.function_type}</p>
                   </div>
                   {conversation.ai_agent_id === agent.id && (
-                    <span className="ml-auto text-xs text-purple-400">Atual</span>
+                    <span className="ml-auto text-xs text-blue-400">Atual</span>
                   )}
                 </button>
               ))}
