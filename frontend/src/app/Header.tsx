@@ -72,8 +72,8 @@ const Header: React.FC<HeaderProps> = ({
           </AnimatePresence>
         </button>
 
-        {/* Notifications Bell (ADMIN ONLY) */}
-        {isAdmin && <NotificationsBell />}
+        {/* Notifications Bell */}
+        <NotificationsBell />
 
         {/* User Menu */}
         <div className="relative" ref={userMenuRef}>

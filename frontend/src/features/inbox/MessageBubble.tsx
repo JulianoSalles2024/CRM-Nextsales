@@ -45,7 +45,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
               src={media_url}
               alt="Imagem"
               className="rounded-xl max-w-[260px] max-h-[320px] object-cover cursor-pointer"
-              onClick={() => window.open(media_url, '_blank')}
+              onClick={() => {
+                const win = window.open('', '_blank');
+                if (win) win.document.write(`<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${media_url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+              }}
               onError={() => setImgError(true)}
             />
             {content && <span className="text-sm leading-relaxed">{content}</span>}
@@ -63,9 +66,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     if (content_type === 'audio') {
       if (media_url && !audioError) {
         return (
-          <div className="flex flex-col gap-1.5 max-w-[260px]">
+          <div className="flex flex-col gap-1.5">
             {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <audio controls src={media_url} className="w-full h-10" onError={() => setAudioError(true)} />
+            <audio controls src={media_url} style={{ display: 'block', width: '260px' }} onError={() => setAudioError(true)} />
             {content && (
               <p className="text-xs text-slate-300 italic leading-relaxed">
                 🎤 {content}
