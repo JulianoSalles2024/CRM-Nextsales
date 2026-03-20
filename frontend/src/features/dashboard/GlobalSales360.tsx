@@ -421,17 +421,16 @@ const GlobalSales360: React.FC = () => {
                             <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
                                 {/* sliding pill */}
                                 <div
-                                    className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
+                                    className="absolute top-1 bottom-1 w-[88px] rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
                                     style={{
-                                        width: 'calc(20% - 2px)',
-                                        left: `calc(${(['hoje','semana','mes','ano','custom'] as Period[]).indexOf(period)} * 20% + 4px)`,
+                                        left: `calc(${(['hoje','semana','mes','ano','custom'] as Period[]).indexOf(period)} * 88px + 4px)`,
                                     }}
                                 />
                                 {(['hoje', 'semana', 'mes', 'ano', 'custom'] as Period[]).map(p => (
                                     <button
                                         key={p}
                                         onClick={() => setPeriod(p)}
-                                        className={`relative z-10 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 text-center ${
+                                        className={`relative z-10 w-[88px] py-1.5 text-sm rounded-lg transition-colors duration-200 text-center ${
                                             period === p ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
                                         }`}
                                     >

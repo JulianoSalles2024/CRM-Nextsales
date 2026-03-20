@@ -498,17 +498,16 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
                         {/* sliding pill */}
                         <div
-                            className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
+                            className="absolute top-1 bottom-1 w-[72px] rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
                             style={{
-                                width: 'calc(33.333% - 2px)',
-                                left: `calc(${['day','week','month'].indexOf(chartViewMode)} * 33.333% + 4px)`,
+                                left: `calc(${['day','week','month'].indexOf(chartViewMode)} * 72px + 4px)`,
                             }}
                         />
                         {(['day', 'week', 'month'] as const).map(view => (
                             <button
                                 key={view}
                                 onClick={() => setChartViewMode(view)}
-                                className={`relative z-10 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 w-20 text-center ${
+                                className={`relative z-10 w-[72px] py-1.5 text-sm rounded-lg transition-colors duration-200 text-center ${
                                     chartViewMode === view ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
                                 }`}
                             >
