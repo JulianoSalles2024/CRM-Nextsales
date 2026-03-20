@@ -125,7 +125,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
 
     const timeSeriesData = useMemo(() => {
         const now = new Date();
-        const buckets: { label: string; startDate: Date; endDate: Date; revenue: number; newLeads: number; churn: number }[] = [];
+        const buckets: { label: string; startDate: Date; endDate: Date; revenue: number; newLeads: number; churn: number; pipelineValue: number }[] = [];
         
         if (chartViewMode === 'day') {
             const todayStart = new Date(now);
@@ -139,7 +139,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                     label: `${String(i).padStart(2, '0')}:00`,
                     startDate: hourStart,
                     endDate: hourEnd,
-                    revenue: 0, newLeads: 0, churn: 0
+                    revenue: 0, newLeads: 0, churn: 0, pipelineValue: 0
                 });
             }
         } else if (chartViewMode === 'week') {
@@ -150,7 +150,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                     label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
                     startDate: new Date(new Date(date).setHours(0, 0, 0, 0)),
                     endDate: new Date(new Date(date).setHours(23, 59, 59, 999)),
-                    revenue: 0, newLeads: 0, churn: 0
+                    revenue: 0, newLeads: 0, churn: 0, pipelineValue: 0
                 });
             }
         } else if (chartViewMode === 'month') {
@@ -159,12 +159,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 weekEnd.setDate(now.getDate() - (i * 7));
                 const weekStart = new Date(weekEnd);
                 weekStart.setDate(weekEnd.getDate() - 6);
-                
+
                 buckets.push({
                     label: `Semana ${4 - i}`,
                     startDate: new Date(new Date(weekStart).setHours(0,0,0,0)),
                     endDate: new Date(new Date(weekEnd).setHours(23,59,59,999)),
-                    revenue: 0, newLeads: 0, churn: 0
+                    revenue: 0, newLeads: 0, churn: 0, pipelineValue: 0
                 });
              }
         }
@@ -180,11 +180,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             for (const bucket of buckets) {
                 if (creationDate && creationDate >= bucket.startDate && creationDate <= bucket.endDate) {
                     bucket.newLeads++;
+                    bucket.pipelineValue += lead.value;
                 }
                 if (wonDate && wonDate >= bucket.startDate && wonDate <= bucket.endDate) {
                     bucket.revenue += lead.value;
                 }
-                 if (churnDate && churnDate >= bucket.startDate && churnDate <= bucket.endDate) {
+                if (churnDate && churnDate >= bucket.startDate && churnDate <= bucket.endDate) {
                     bucket.churn++;
                 }
             }
@@ -196,6 +197,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 { label: 'Receita', data: buckets.map(b => b.revenue), color: '#8b5cf6' },
                 { label: 'Novos Leads', data: buckets.map(b => b.newLeads), color: '#3b82f6' },
                 { label: 'Churn', data: buckets.map(b => b.churn), color: '#ef4444' },
+                { label: 'Pipeline', data: buckets.map(b => b.pipelineValue), color: '#eab308' },
             ],
         };
     }, [boardFilteredLeads, activeColumns, chartViewMode]);
@@ -270,7 +272,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         const chartWidth = svgWidth - padding.left - padding.right;
         const chartHeight = svgHeight - padding.top - padding.bottom;
     
-        const maxRevenue = Math.max(...data.datasets[0].data, 1);
+        const maxRevenue = Math.max(...data.datasets[0].data, ...data.datasets[3].data, 1);
         const maxCount = Math.max(...data.datasets[1].data, ...data.datasets[2].data, 5);
     
         const getCoords = (value: number, type: 'revenue' | 'count') => {
@@ -285,6 +287,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 revenue: getCoords(data.datasets[0].data[i], 'revenue'),
                 newLeads: getCoords(data.datasets[1].data[i], 'count'),
                 churn: getCoords(data.datasets[2].data[i], 'count'),
+                pipeline: getCoords(data.datasets[3].data[i], 'revenue'),
             };
         });
     
@@ -301,6 +304,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         const revenuePath = line(points.map(p => ({ x: p.x, y: p.revenue })));
         const newLeadsPath = line(points.map(p => ({ x: p.x, y: p.newLeads })));
         const churnPath = line(points.map(p => ({ x: p.x, y: p.churn })));
+        const pipelinePath = line(points.map(p => ({ x: p.x, y: p.pipeline })));
     
         const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
             if (!svgRef.current) return;
@@ -347,10 +351,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                             <path d={`${revenuePath} L ${points[points.length-1].x},${chartHeight} L ${points[0].x},${chartHeight} Z`} fill={`url(#gradient-${data.datasets[0].label})`} />
                             <path d={`${newLeadsPath} L ${points[points.length-1].x},${chartHeight} L ${points[0].x},${chartHeight} Z`} fill={`url(#gradient-${data.datasets[1].label})`} />
                             <path d={`${churnPath} L ${points[points.length-1].x},${chartHeight} L ${points[0].x},${chartHeight} Z`} fill={`url(#gradient-${data.datasets[2].label})`} />
+                            <path d={`${pipelinePath} L ${points[points.length-1].x},${chartHeight} L ${points[0].x},${chartHeight} Z`} fill={`url(#gradient-${data.datasets[3].label})`} />
 
                             <path d={revenuePath} fill="none" stroke={data.datasets[0].color} strokeWidth="2.5" />
                             <path d={newLeadsPath} fill="none" stroke={data.datasets[1].color} strokeWidth="2.5" />
                             <path d={churnPath} fill="none" stroke={data.datasets[2].color} strokeWidth="2.5" />
+                            <path d={pipelinePath} fill="none" stroke={data.datasets[3].color} strokeWidth="2.5" strokeDasharray="5 3" />
 
                             <AnimatePresence>
                             {hoveredIndex !== null && (
@@ -359,6 +365,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                     <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].revenue} r="5" fill={data.datasets[0].color} stroke="#1e293b" strokeWidth="2" />
                                     <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].newLeads} r="5" fill={data.datasets[1].color} stroke="#1e293b" strokeWidth="2" />
                                     <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].churn} r="5" fill={data.datasets[2].color} stroke="#1e293b" strokeWidth="2" />
+                                    <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].pipeline} r="5" fill={data.datasets[3].color} stroke="#1e293b" strokeWidth="2" />
                                 </motion.g>
                             )}
                             </AnimatePresence>
@@ -382,7 +389,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ds.color }}/>
                                                 <span className="text-slate-400">{ds.label}:</span>
                                             </div>
-                                            <span className="font-semibold text-white">{ds.label === 'Receita' ? currencyFormatter.format(ds.data[hoveredIndex]) : ds.data[hoveredIndex]}</span>
+                                            <span className="font-semibold text-white">{(ds.label === 'Receita' || ds.label === 'Pipeline') ? currencyFormatter.format(ds.data[hoveredIndex]) : ds.data[hoveredIndex]}</span>
                                         </div>
                                     ))}
                                 </div>
