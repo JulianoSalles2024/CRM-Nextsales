@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2, Settings, Download, LayoutGrid, List, Search } from 'lucide-react';
+import { SlidersHorizontal, Columns, ChevronDown, Plus, Check, Trash2, Settings, Download, LayoutGrid, List, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
@@ -10,8 +10,6 @@ import type { CardDisplaySettings, Board, Id } from '@/types';
 interface PipelineHeaderProps {
     cardDisplaySettings: CardDisplaySettings;
     onUpdateCardSettings: (newSettings: CardDisplaySettings) => void;
-    isPlaybookActionEnabled: boolean;
-    onApplyPlaybookClick: () => void;
     boards: Board[];
     activeBoardId: Id;
     onSelectBoard: (boardId: Id) => void;
@@ -28,8 +26,6 @@ interface PipelineHeaderProps {
 const PipelineHeader: React.FC<PipelineHeaderProps> = ({ 
     cardDisplaySettings, 
     onUpdateCardSettings, 
-    isPlaybookActionEnabled, 
-    onApplyPlaybookClick,
     boards,
     activeBoardId,
     onSelectBoard,
@@ -180,15 +176,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-                <button
-                    onClick={onApplyPlaybookClick}
-                    disabled={!isPlaybookActionEnabled}
-                    className="flex items-center gap-2 text-sm text-white bg-gradient-to-r from-sky-500 to-blue-500 px-3 py-1.5 rounded-md font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <BookOpen className="w-4 h-4" />
-                    <span>Aplicar Playbook</span>
-                </button>
-                 <div className="relative">
+                <div className="relative">
                     <button
                         onClick={() => setCustomizeOpen(prev => !prev)}
                         className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-md transition-colors"

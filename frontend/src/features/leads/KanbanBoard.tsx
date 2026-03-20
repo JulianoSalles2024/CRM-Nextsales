@@ -37,8 +37,6 @@ interface KanbanBoardProps {
     onToggleLeadMinimize: (leadId: Id) => void;
     minimizedColumns: Id[];
     onToggleColumnMinimize: (columnId: Id) => void;
-    isPlaybookActionEnabled: boolean;
-    onApplyPlaybookClick: () => void;
     boards: Board[];
     activeBoardId: Id;
     onSelectBoard: (boardId: Id) => void;
@@ -63,8 +61,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     onToggleLeadMinimize,
     minimizedColumns,
     onToggleColumnMinimize,
-    isPlaybookActionEnabled,
-    onApplyPlaybookClick,
     boards,
     activeBoardId,
     onSelectBoard,
@@ -131,8 +127,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 <PipelineHeader 
                     cardDisplaySettings={cardDisplaySettings} 
                     onUpdateCardSettings={onUpdateCardSettings}
-                    isPlaybookActionEnabled={isPlaybookActionEnabled}
-                    onApplyPlaybookClick={onApplyPlaybookClick}
                     boards={boards}
                     activeBoardId={activeBoardId}
                     onSelectBoard={onSelectBoard}
