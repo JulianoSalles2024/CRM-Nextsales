@@ -344,37 +344,37 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
 
             {/* Tabs + Role Filter */}
             <div className="flex items-center justify-between gap-6">
-                <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
-                    <button
-                        onClick={() => { setActiveTab('active'); setCurrentPage(1); }}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'active' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
-                    >
-                        Ativos{activeMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({activeMembers.length})</span>}
-                    </button>
-                    <button
-                        onClick={() => { setActiveTab('archived'); setCurrentPage(1); }}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'archived' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
-                    >
-                        Arquivados{archivedMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({archivedMembers.length})</span>}
-                    </button>
-                    <button
-                        onClick={() => { setActiveTab('goals'); setCurrentPage(1); }}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                            activeTab === 'goals' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'
-                        }`}
-                    >
-                        Metas
-                    </button>
+                <div className="flex gap-1">
+                    {([
+                        { v: 'active',   l: 'Ativos',     count: activeMembers.length    },
+                        { v: 'archived', l: 'Arquivados',  count: archivedMembers.length  },
+                        { v: 'goals',    l: 'Metas',       count: 0                       },
+                    ] as { v: 'active' | 'archived' | 'goals'; l: string; count: number }[]).map(({ v, l, count }) => (
+                        <button
+                            key={v}
+                            onClick={() => { setActiveTab(v); setCurrentPage(1); }}
+                            className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
+                                activeTab === v
+                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                    : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                            }`}
+                        >
+                            {l}
+                            {count > 0 && <span className="text-xs opacity-60">({count})</span>}
+                        </button>
+                    ))}
                 </div>
 
                 {activeTab === 'active' && (
-                    <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
+                    <div className="flex gap-1">
                         {(['all', 'admin', 'seller'] as const).map(filter => (
                             <button
                                 key={filter}
                                 onClick={() => { setRoleFilter(filter); setCurrentPage(1); }}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                                    roleFilter === filter ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'
+                                className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
+                                    roleFilter === filter
+                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                        : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
                                 }`}
                             >
                                 {filter === 'all' ? 'Todos' : filter === 'admin' ? 'Admin' : 'Vendedores'}
