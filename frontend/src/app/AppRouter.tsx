@@ -238,7 +238,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                     onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus}
                />;
     case 'Relatórios':
-        return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} boards={boards} />;
+        return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} boards={boards} users={users} />;
     case 'Omnichannel':
       return <InboxPage />;
     case 'Agentes':

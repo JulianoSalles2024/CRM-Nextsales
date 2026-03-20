@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { Lead, ColumnData, Task, Activity } from '@/types';
+import { Lead, ColumnData, Task, Activity, User } from '@/types';
 import type { Board } from '@/types';
 import { RefreshCw, Download, Users, Target, DollarSign, AlertTriangle, Layers } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -13,6 +13,7 @@ interface ReportsPageProps {
     tasks: Task[];
     activities: Activity[];
     boards: Board[];
+    users: User[];
 }
 
 interface ReportKpiCardProps {
@@ -35,7 +36,7 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
 );
 
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities, boards }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities, boards, users }) => {
     const [timeRange, setTimeRange] = useState<'30d' | '365d'>('30d');
     const [chartViewMode, setChartViewMode] = useState<'day' | 'week' | 'month'>('week');
     const [selectedBoardId, setSelectedBoardId] = useState<'all' | string>('all');
@@ -486,6 +487,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Estágio</th>
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Probabilidade</th>
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Risco de Churn</th>
+                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Dono</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
@@ -529,11 +531,14 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                             );
                                         })()}
                                     </td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-300">
+                                        {users.find(u => u.id === lead.ownerId)?.name ?? '—'}
+                                    </td>
                                 </tr>
                             ))}
                              {reportData.topLeads.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-10 text-slate-500">
+                                    <td colSpan={6} className="text-center py-10 text-slate-500">
                                         Nenhum lead encontrado para este período.
                                     </td>
                                 </tr>
