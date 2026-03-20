@@ -86,25 +86,24 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
             </div>
              <div className="flex items-center gap-4 p-2 min-h-[52px]">
                 {/* Status Filter */}
-                <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
-                    <button
-                        onClick={() => onStatusFilterChange('all')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${statusFilter === 'all' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
-                    >
-                        Todos
-                    </button>
-                    <button
-                        onClick={() => onStatusFilterChange('Ganho')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${statusFilter === 'Ganho' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
-                    >
-                        Ganhos
-                    </button>
-                    <button
-                        onClick={() => onStatusFilterChange('Perdido')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${statusFilter === 'Perdido' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
-                    >
-                        Perdidos
-                    </button>
+                <div className="flex gap-1">
+                    {([
+                        { v: 'all',     l: 'Todos'    },
+                        { v: 'Ganho',   l: 'Ganhos'   },
+                        { v: 'Perdido', l: 'Perdidos'  },
+                    ] as { v: 'all' | 'Ganho' | 'Perdido'; l: string }[]).map(({ v, l }) => (
+                        <button
+                            key={v}
+                            onClick={() => onStatusFilterChange(v)}
+                            className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
+                                statusFilter === v
+                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                    : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                            }`}
+                        >
+                            {l}
+                        </button>
+                    ))}
                 </div>
 
                 <div className="w-px h-6 bg-zinc-700"></div>
