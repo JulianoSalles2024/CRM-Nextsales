@@ -51,7 +51,7 @@ export default async function handler(req: any, res: any) {
     const ctx = await requireAuth(req);
 
     // ── 2. Rate limiting — 10 req/min (geração é pesada) ──────────────────
-    if (isRateLimited(ctx.userId)) {
+    if (await isRateLimited(ctx.userId)) {
       return res.status(429).json({ error: 'Limite de requisições atingido. Tente novamente em 1 minuto.' });
     }
 
