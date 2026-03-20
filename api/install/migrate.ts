@@ -106,7 +106,7 @@ async function recordVersion(
   await runSql(
     projectRef,
     patToken,
-    `insert into schema_migrations (version) values ('${version}') on conflict (version) do nothing`,
+    `insert into schema_migrations (version) values ($$${version.replace(/\$/g, '')}$$) on conflict (version) do nothing`,
   );
 }
 

@@ -2,8 +2,6 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { supabase } from '@/src/lib/supabase';
 
-const WEBHOOK_URL = import.meta.env.VITE_N8N_OUTBOUND_WEBHOOK_URL as string;
-
 export function useSendMessage() {
   const { user, companyId } = useAuth();
   const [isSending, setIsSending] = useState(false);
@@ -17,7 +15,6 @@ export function useSendMessage() {
     contactIdentifier: string,
     channelConnectionId: string,
   ): Promise<void> => {
-    if (!WEBHOOK_URL) throw new Error('Webhook URL não configurada.');
     if (!companyId || !user) throw new Error('Sessão expirada. Faça login novamente.');
 
     // Resolve the Evolution API instance name from the channel_connection record
@@ -33,15 +30,21 @@ export function useSendMessage() {
     setSendError(null);
 
     try {
-      const res = await fetch(WEBHOOK_URL, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('Sessão expirada. Faça login novamente.');
+
+      // Chama o proxy backend — URL do n8n nunca exposta ao browser
+      const res = await fetch('/api/messages/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           conversationId,
-          companyId,
           contactIdentifier,
           content,
-          agentId: user.id,
           instanceName,
         }),
       });
