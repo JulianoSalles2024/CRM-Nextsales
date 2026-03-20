@@ -182,8 +182,13 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
         <div className="flex flex-col gap-6 h-full">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Dashboard de Grupos</h1>
-                    <p className="text-slate-400">Visão geral da saúde e performance de suas comunidades</p>
+                    <div className="flex items-center gap-1 mb-2">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                            <Users className="w-4 h-4 flex-shrink-0" />
+                            <span>Grupos</span>
+                        </button>
+                    </div>
+                    <p className="text-slate-400 text-sm">Visão geral da saúde e performance de suas comunidades</p>
                 </div>
                 <button onClick={onAddGroup} className="flex items-center justify-center md:justify-start gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                     <PlusCircle className="w-4 h-4" />

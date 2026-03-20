@@ -105,7 +105,7 @@ export function useAppState() {
     const { groups, createGroup, updateGroup: updateGroupInDb, deleteGroup: deleteGroupInDb } = useGroups(companyId);
     const { groupAnalyses, createOrUpdateAnalysis: createOrUpdateAnalysisInDb, deleteAnalysis: deleteAnalysisInDb } = useGroupAnalyses(companyId);
     const { tags, createTag, updateTag: updateTagInDb, deleteTag } = useTags(companyId);
-    const { playbooks, replacePlaybooks } = usePlaybooks(companyId);
+    const { playbooks, replacePlaybooks } = usePlaybooks(companyId, authUser?.id ?? null);
 
     // --- NOTIFICATIONS (Supabase) ---
     const { unreadCount: notifUnreadCount } = useNotifications(authUser?.id ?? null);
@@ -116,6 +116,7 @@ export function useAppState() {
         if (PATH_VIEWS[path]) return PATH_VIEWS[path];
         if (path.startsWith('/painel360/')) return 'Painel360';
         if (path.startsWith('/configuracoes/')) return 'Configurações';
+        if (path.startsWith('/agentes/')) return 'Agentes';
         return 'Inbox';
     });
     const [inboxMode, setInboxMode] = useState<'standard' | 'analysis'>('standard');

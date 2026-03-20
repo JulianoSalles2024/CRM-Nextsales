@@ -45,8 +45,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, onToggle, onArchive
   return (
     <div
       className={`relative group bg-[#0B1220] border rounded-xl overflow-hidden cursor-pointer transition-all duration-200
-        hover:border-white/15 hover:-translate-y-0.5 hover:shadow-lg
-        ${agent.is_active ? 'border-white/8' : 'border-white/4 opacity-60'}`}
+        hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg
+        ${agent.is_active ? 'border-white/5' : 'border-white/5 opacity-60'}`}
       onClick={() => onClick(agent)}
     >
       {/* Top accent bar */}

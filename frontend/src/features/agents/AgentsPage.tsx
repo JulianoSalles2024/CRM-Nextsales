@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Zap, LayoutGrid, TrendingUp, BookOpen, Bot,
 } from 'lucide-react';
@@ -11,6 +12,20 @@ import type { AIAgent } from './hooks/useAgents';
 
 type Tab = 'comando' | 'agentes' | 'playbooks' | 'analytics';
 
+const TAB_PATHS: Record<Tab, string> = {
+  comando:   '/agentes/central-de-comando',
+  agentes:   '/agentes/meus-agentes',
+  playbooks: '/agentes/portfolio',
+  analytics: '/agentes/analytics',
+};
+
+const PATH_TAB: Record<string, Tab> = {
+  '/agentes/central-de-comando': 'comando',
+  '/agentes/meus-agentes':       'agentes',
+  '/agentes/portfolio':          'playbooks',
+  '/agentes/analytics':          'analytics',
+};
+
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'comando',   label: 'Central de Comando', icon: Zap },
   { id: 'agentes',   label: 'Meus Agentes',        icon: Bot },
@@ -19,8 +34,16 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export const AgentsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('agentes');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<Tab>(
+    () => PATH_TAB[location.pathname] ?? 'agentes'
+  );
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  useEffect(() => {
+    navigate(TAB_PATHS[activeTab], { replace: true });
+  }, [activeTab]);
   const [editingAgent, setEditingAgent] = useState<AIAgent | null>(null);
 
   const { agents, loading, createAgent, updateAgent, toggleActive, archiveAgent } = useAgents();
@@ -43,16 +66,16 @@ export const AgentsPage: React.FC = () => {
     <div className="flex flex-col h-full min-h-0 bg-[#060d18]">
       {/* Page header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0B1220]/80 backdrop-blur-sm flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-            <Zap className="w-4 h-4 text-blue-400" />
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+              <Zap className="w-4 h-4 flex-shrink-0" />
+              <span>Exército Comercial de IA</span>
+            </button>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-white">Exército Comercial de IA</h1>
-            <p className="text-xs text-slate-500">
-              {agents.filter(a => a.is_active).length} agentes ativos de {agents.length} total
-            </p>
-          </div>
+          <p className="text-xs text-slate-500 pl-1">
+            {agents.filter(a => a.is_active).length} agentes ativos de {agents.length} total
+          </p>
         </div>
 
         {/* Active agents pulse indicator */}

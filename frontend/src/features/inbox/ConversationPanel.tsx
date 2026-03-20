@@ -186,9 +186,17 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-600 bg-[#080E1A]">
-        <MessageCircle className="w-12 h-12" />
-        <p className="text-sm">Selecione uma conversa</p>
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#080E1A]">
+        <div className="relative">
+          <div className="w-20 h-20 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+            <MessageCircle className="w-10 h-10 text-blue-500/40" />
+          </div>
+          <div className="absolute inset-0 rounded-2xl bg-blue-500/5 blur-xl pointer-events-none" />
+        </div>
+        <div className="text-center">
+          <p className="text-slate-400 font-medium text-sm">Nenhuma conversa selecionada</p>
+          <p className="text-slate-600 text-xs mt-1">Selecione uma conversa ao lado para começar</p>
+        </div>
       </div>
     );
   }
@@ -197,12 +205,26 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
   const statusLabel = STATUS_LABEL[conversation.status] ?? conversation.status;
   const statusColor = STATUS_COLOR[conversation.status] ?? STATUS_COLOR.open;
 
+  const AVATAR_GRADIENTS = [
+    'from-blue-500 to-cyan-400',
+    'from-violet-500 to-purple-400',
+    'from-emerald-500 to-teal-400',
+    'from-orange-500 to-amber-400',
+    'from-rose-500 to-pink-400',
+    'from-indigo-500 to-blue-400',
+    'from-teal-500 to-emerald-400',
+    'from-fuchsia-500 to-violet-400',
+  ];
+  const avatarGradient = AVATAR_GRADIENTS[
+    ((displayName.charCodeAt(0) || 0) + (displayName.charCodeAt(1) || 0)) % AVATAR_GRADIENTS.length
+  ];
+
   return (
     <div className="flex-1 flex flex-col bg-[#080E1A] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-[#0B1220] flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg`}>
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div>

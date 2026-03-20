@@ -12,11 +12,7 @@ interface AIToolCardProps {
 export const AIToolCard: React.FC<AIToolCardProps> = ({ tool, onToggle, onEditPrompt, onTest }) => {
   return (
     <div
-      className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-white/10 transition-all hover:bg-white/5"
-      style={{
-        background: 'rgba(255, 255, 255, 0.02)',
-        backdropFilter: 'blur(8px)',
-      }}
+      className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900/40 transition-all hover:bg-slate-800/50"
     >
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-medium text-white">{tool.name}</h3>

@@ -39,23 +39,23 @@ export const AgentsList: React.FC<Props> = ({
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex items-center gap-2">
         {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
           <input
             type="text"
             placeholder="Buscar agente..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[#0B1220] border border-white/8 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+            className="w-full bg-[#0B1220] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
           />
         </div>
 
         {/* Status filter */}
-        <div className="flex items-center bg-[#0B1220] border border-white/8 rounded-lg p-0.5 gap-0.5 self-start">
+        <div className="flex items-center bg-[#0B1220] border border-white/10 rounded-lg p-0.5 gap-0.5">
           {[
             { v: 'all', l: 'Todos' },
             { v: 'active', l: 'Ativos' },
@@ -64,7 +64,7 @@ export const AgentsList: React.FC<Props> = ({
             <button
               key={opt.v}
               onClick={() => setStatusFilter(opt.v as typeof statusFilter)}
-              className={`px-3 py-1.5 text-xs rounded-md transition-all ${
+              className={`px-2.5 py-1 text-xs rounded-md transition-all ${
                 statusFilter === opt.v ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -76,15 +76,15 @@ export const AgentsList: React.FC<Props> = ({
         {/* Create button */}
         <button
           onClick={onCreateAgent}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors self-start"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors ml-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           Novo Agente
         </button>
       </div>
 
       {/* Function type pills */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {FUNCTION_FILTERS.map(f => (
           <button
             key={f.value}
@@ -92,7 +92,7 @@ export const AgentsList: React.FC<Props> = ({
             className={`px-3 py-1 text-xs rounded-full border transition-all ${
               fnFilter === f.value
                 ? 'border-blue-500/50 bg-blue-500/10 text-blue-400'
-                : 'border-white/8 text-slate-500 hover:text-white hover:border-white/15'
+                : 'border-white/10 text-slate-500 hover:text-white hover:border-white/15'
             }`}
           >
             {f.label}

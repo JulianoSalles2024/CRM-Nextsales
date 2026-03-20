@@ -89,7 +89,7 @@ const ConnCard: React.FC<ConnCardProps> = ({
       transition={{ duration: 0.25, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
       className={`
         relative flex flex-col rounded-2xl overflow-hidden
-        bg-gradient-to-b from-[#0d1424] to-[#090e1a]
+        bg-slate-900/40
         border shadow-lg ${color.glow} group
         transition-all duration-500
         ${flash ? 'border-emerald-500/50 shadow-emerald-500/15' : 'border-slate-800/50 hover:border-slate-700/60'}

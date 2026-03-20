@@ -196,6 +196,14 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto py-10 px-6 space-y-6">
 
+      {/* ── Tab header ─────────────────────────────────────── */}
+      <div className="flex items-center gap-1">
+        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+          <User className="w-4 h-4 flex-shrink-0" />
+          <span>Meu Perfil</span>
+        </button>
+      </div>
+
       {/* ── Card 1: User Info ──────────────────────────────── */}
       <FlatCard className="relative rounded-2xl overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />

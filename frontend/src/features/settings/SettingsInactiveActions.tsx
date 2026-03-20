@@ -236,7 +236,7 @@ export const SettingsInactiveActions: React.FC = () => {
       <FlatCard className="p-0">
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between gap-4">
+        <div className="px-6 py-5 border-b border-slate-800 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-lg font-semibold text-white">Follow-up Automático por Inatividade</h2>
@@ -322,7 +322,7 @@ export const SettingsInactiveActions: React.FC = () => {
       <FlatCard className="p-0">
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/10 flex items-start justify-between gap-4">
+        <div className="px-6 py-5 border-b border-slate-800 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-lg font-semibold text-white">Encerramento Automático de Conversas</h2>

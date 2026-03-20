@@ -327,7 +327,7 @@ const BoardsAISettings: React.FC<{ boards: Board[] }> = ({ boards }) => {
 
                 <div className="grid grid-cols-2 gap-2">
                     {boards.map(board => (
-                        <div key={board.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors">
+                        <div key={board.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-colors">
                             <div className="flex items-center gap-3">
                                 <Columns className="w-4 h-4 text-slate-500 shrink-0" />
                                 <div>
@@ -461,13 +461,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     return (
         <div className="flex flex-col gap-1">
             <div>
-                <h1 className="text-3xl font-bold text-white tracking-tight">
-  Configurações
-</h1>
-
-<p className="text-slate-400 mt-1">
-  Gerencie suas preferências e configurações da conta
-</p>
+                <div className="flex items-center gap-1 mb-2">
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                        <Settings className="w-4 h-4 flex-shrink-0" />
+                        <span>Configurações</span>
+                    </button>
+                </div>
+                <p className="text-slate-400 text-sm">
+                    Gerencie suas preferências e configurações da conta
+                </p>
             </div>
             <div>
                 <div className="flex border-b border-slate-800 mb-6 overflow-x-auto">

@@ -273,7 +273,7 @@ Projeção mensal:
 
 ## 5. ARQUITETURA DE DADOS
 
-### 5.1 Novas Tabelas
+### 5.1 Tabelas Implementadas (Migration 074 ✅)
 
 ```sql
 -- Agentes comerciais
@@ -399,10 +399,11 @@ CREATE TABLE agent_performance (
 );
 ```
 
-### 5.2 RPCs Principais
+### 5.2 RPCs Implementadas (Migration 075 ✅)
 
 ```sql
 -- Busca fila de leads pendentes para um agente
+-- Atualizado para respeitar max_followups do agente
 get_agent_lead_queue(p_agent_id uuid, p_limit int DEFAULT 20)
 
 -- Upsert de memória comercial
@@ -457,13 +458,14 @@ simulate_revenue(p_company_id uuid, p_config jsonb)
 
 ### Workflows n8n previstos
 
-| ID | Nome | Trigger | Função |
-|---|---|---|---|
-| WF-06 | Agent Router | Cron 5min | Distribui leads pendentes para agentes ativos |
-| WF-07 | Agent Executor | Webhook (chamado pelo WF-06) | Executa um ciclo do agente sobre um lead |
-| WF-08 | Agent Followup | Cron 1h | Verifica agent_lead_memory com next_action_at vencido |
-| WF-09 | Agent Performance | Cron diário 00:05 | Agrega agent_performance do dia anterior |
-| WF-10 | Agent Escalation | Webhook | Notifica humano quando agente escala lead |
+| ID | Nome | Trigger | Função | Status |
+|---|---|---|---|---|
+| WF-01 | Agent Fork | Webhook | Desvia para agente se `ai_agent_id` existir | V13 ✅ |
+| WF-06 | Agent Router | Cron 5min | Distribui leads pendentes para agentes ativos | ✅ |
+| WF-07 | Agent Executor | Webhook (chamado pelo WF-06) | Executa um ciclo do agente sobre um lead | V13 ✅ (V14 ⚠️) |
+| WF-08 | Agent Followup | Cron 1h | Verifica `agent_lead_memory` com `next_action_at` vencido | Importado ⏳ |
+| WF-09 | Agent Performance | Cron diário 00:05 | Agrega `agent_performance` do dia anterior | Pendente ❌ |
+| WF-10 | Agent Escalation | Webhook | Notifica humano quando agente escala lead | Pendente ❌ |
 
 ---
 
@@ -550,12 +552,16 @@ Agente SDR + Follow-up unificado:
 - ✅ Tem meta, histórico e painel de performance
 
 Entregáveis técnicos:
-- [ ] Migrations: `ai_agents`, `agent_playbooks`, `agent_lead_memory`, `agent_runs`, `agent_performance`
-- [ ] Frontend: módulo "Agentes Comerciais" com Central de Comando + Criar Agente (wizard)
-- [ ] Hooks: `useAgents`, `useAgentMemory`, `useAgentPerformance`
-- [ ] WF-06 Agent Router (cron)
-- [ ] WF-07 Agent Executor (webhook)
-- [ ] WF-08 Agent Followup (cron)
+- [x] Migrations: `ai_agents`, `agent_playbooks`, `agent_lead_memory`, `agent_runs`, `agent_performance` (Migration 074 ✅)
+- [x] RPCs: `get_agent_lead_queue`, `upsert_agent_lead_memory`, `aggregate_agent_performance`, `get_agent_ranking` (Migration 075 ✅)
+- [x] Frontend: módulo "Agentes Comerciais" (`features/agents/`)
+  - [x] Central de Comando (`AgentsCommandCenter.tsx`)
+  - [x] Lista de Agentes (`AgentsList.tsx` + `AgentCard.tsx`)
+  - [x] Criar Agente (wizard 6 passos - `AgentWizard.tsx`)
+- [x] n8n: WF-06 Agent Router (cron */5 min ✅)
+- [x] n8n: WF-07 Agent Executor (testado V13 ✅)
+- [/] n8n: WF-08 Agent Followup (importado, aguardando testes ⏳)
+- [x] n8n: WF-01 V13 Agent Fork (integrado ✅)
 
 ### FASE 2 — Múltiplos Tipos de Agente
 - Agente Follow-up dedicado (reativação de leads frios)
@@ -691,11 +697,11 @@ useAgentPlaybooks()
 
 ## 15. CHECKLIST DE PRÉ-REQUISITOS (antes de iniciar)
 
-- [ ] Módulo Omnichannel concluído e estável ✅ (em andamento)
-- [ ] WF-05 AI Agent testado end-to-end (base da engine que será evoluída)
-- [ ] Chave OpenAI configurada e funcionando
-- [ ] Evolution API estável (WF-01 V5 + mídia OK)
-- [ ] Decisão: canal inicial do Fase 1 será WhatsApp (via Evolution API)
+- [x] Módulo Omnichannel concluído e estável ✅
+- [x] WF-05 AI Agent testado end-to-end (base da engine) ✅
+- [x] Chave OpenAI configurada e funcionando ✅
+- [x] Evolution API estável ✅
+- [x] Decisão: canal inicial do Fase 1 será WhatsApp (via Evolution API) ✅
 
 ---
 

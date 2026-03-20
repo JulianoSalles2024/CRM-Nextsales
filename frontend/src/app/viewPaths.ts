@@ -18,6 +18,7 @@ export const VIEW_PATHS: Record<string, string> = {
     'Playbooks': '/playbooks',
     'Perfil': '/perfil',
     'Dashboard': '/dashboard',
+    'Agentes': '/agentes',
 };
 
 export const PATH_VIEWS: Record<string, string> = Object.fromEntries(

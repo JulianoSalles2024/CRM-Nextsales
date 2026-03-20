@@ -21,7 +21,7 @@ function mapRow(row: DbPlaybook): Playbook {
   };
 }
 
-export function usePlaybooks(companyId: string | null) {
+export function usePlaybooks(companyId: string | null, userId: string | null = null) {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,6 +58,7 @@ export function usePlaybooks(companyId: string | null) {
               name: p.name,
               stages: p.stages,
               steps: p.steps,
+              ...(userId ? { created_by: userId } : {}),
             }));
             const { data: inserted } = await supabase
               .from('playbooks')
@@ -87,13 +88,13 @@ export function usePlaybooks(companyId: string | null) {
       if (!companyId) return;
       const { data: inserted, error } = await supabase
         .from('playbooks')
-        .insert({ company_id: companyId, name: data.name, stages: data.stages, steps: data.steps })
+        .insert({ company_id: companyId, name: data.name, stages: data.stages, steps: data.steps, ...(userId ? { created_by: userId } : {}) })
         .select('*')
         .single();
       if (error) { console.error('createPlaybook error:', error); return; }
       setPlaybooks(prev => [...prev, mapRow(inserted as DbPlaybook)]);
     },
-    [companyId],
+    [companyId, userId],
   );
 
   const updatePlaybook = useCallback(

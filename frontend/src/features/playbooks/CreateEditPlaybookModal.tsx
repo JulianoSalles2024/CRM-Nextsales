@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2, Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
 import { Playbook, PlaybookStep, ColumnData, Task, Id } from '@/types';
 import { ui } from '@/src/lib/uiStyles';
+import { supabase } from '@/src/lib/supabase';
 
 interface CreateEditPlaybookModalProps {
     playbook: Playbook | null;
@@ -98,6 +99,9 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({
         }
         setAiLoading(true);
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) throw new Error('Usuário não autenticado.');
+
             const body =
                 aiMode === 'prompt'
                     ? { mode: 'prompt', prompt: aiPrompt, stageNames: pipelineColumns.map(c => c.title) }
@@ -105,7 +109,10 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({
 
             const res = await fetch('/api/ai/generate-playbook', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                },
                 body: JSON.stringify(body),
             });
             const data = await res.json();

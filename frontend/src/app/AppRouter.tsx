@@ -4,6 +4,7 @@ import { ProfileView } from '@/src/features/profile';
 import KanbanBoard from '@/src/features/leads/KanbanBoard';
 import Painel360 from '@/src/features/dashboard/Painel360';
 import Dashboard from '@/src/features/dashboard/Dashboard';
+import DashboardPage from '@/src/features/dashboard/DashboardPage';
 import SettingsPage from '@/src/features/settings/SettingsPage';
 import ActivitiesView from '@/src/features/tasks/ActivitiesView';
 import CalendarPage from '@/src/features/tasks/CalendarPage';
@@ -131,8 +132,11 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
           onUpdateTaskStatus={handleUpdateTaskStatus}
       />;
     }
-    case 'Dashboard':
-      return <Dashboard
+    case 'Dashboard': {
+      const isAdmin = currentUserRole === 'admin';
+      const inboxLeads = isAdmin ? leads : leads.filter((l: any) => l.ownerId === localUser.id);
+      const inboxTasks = isAdmin ? tasks : tasks.filter((t: any) => t.userId === localUser.id);
+      return <DashboardPage
                   leads={leads}
                   columns={columns}
                   activities={activities}
@@ -143,7 +147,15 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   onAnalyzePortfolio={handleStartAnalysis}
                   showNotification={showNotification}
                   onExportReport={() => handleExportPDF(leads)}
+                  inboxMode={inboxMode}
+                  inboxLeads={inboxLeads}
+                  inboxTasks={inboxTasks}
+                  currentUserRole={currentUserRole === 'admin' ? 'admin' : 'seller'}
+                  userId={localUser.id}
+                  onOpenLead={setSelectedLead}
+                  onUpdateTaskStatus={handleUpdateTaskStatus}
              />;
+    }
     case 'Pipeline':
       return <KanbanBoard
           columns={columns}

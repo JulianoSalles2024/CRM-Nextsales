@@ -59,7 +59,7 @@ export const AIProvidersPage: React.FC = () => {
       </div>
 
       {/* Progresso de Integrações */}
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+      <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Progresso de Integrações</p>
         <div className="flex items-center gap-5 mb-2">
           {providers.map(p => {
@@ -102,7 +102,7 @@ export const AIProvidersPage: React.FC = () => {
       </div>
 
       {/* Nota de prioridade */}
-      <div className="p-3 rounded-xl border border-white/10 bg-white/5 flex gap-2.5 items-start">
+      <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex gap-2.5 items-start">
         <Info className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-slate-500">
           Caso múltiplos provedores estejam conectados, a prioridade segue a ordem: Gemini {'>'} OpenAI {'>'} Anthropic.

@@ -119,7 +119,7 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
                           <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_COLOR[computedStatus]}`} />
                           {badge.label}
                         </span>
-                        <h3 className="font-bold text-slate-900 dark:text-white text-md leading-tight truncate">{lead.name}</h3>
+                        <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-tight truncate">{lead.name}</h3>
                         {isMinimized && lead.activePlaybook && (
                             <div title={lead.activePlaybook.playbookName} className="flex-shrink-0">
                                 <BookOpen className="w-4 h-4 text-blue-500" />

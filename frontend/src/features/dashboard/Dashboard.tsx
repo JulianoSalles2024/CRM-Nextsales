@@ -20,6 +20,8 @@ interface DashboardProps {
     onAnalyzePortfolio?: () => void;
     showNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
     onExportReport?: () => void;
+    selectedBoardId: 'all' | string;
+    selectedPeriod: string;
 }
 
 const PERIOD_OPTIONS = [
@@ -75,9 +77,7 @@ function getDateRange(period: string): { start: Date | null; end: Date | null } 
     }
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, users, boards, onNavigate, onAnalyzePortfolio, showNotification, onExportReport }) => {
-    const [selectedBoardId, setSelectedBoardId] = useState<'all' | string>('all');
-    const [selectedPeriod, setSelectedPeriod] = useState('Este Mês');
+const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, users, boards, onNavigate, onAnalyzePortfolio, showNotification, onExportReport, selectedBoardId, selectedPeriod }) => {
     const [chartViewMode, setChartViewMode] = useState<'day' | 'week' | 'month'>('week');
 
     const activeColumns = useMemo(() => {
@@ -461,41 +461,6 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
 
     return (
         <div className="flex flex-col gap-4 pb-10">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Visão Geral</h1>
-                    <p className="text-slate-400 mt-1">O pulso do seu negócio em tempo real.</p>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
-                        <Layers className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <select
-                            value={selectedBoardId}
-                            onChange={e => setSelectedBoardId(e.target.value)}
-                            className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer"
-                        >
-                            <option value="all">Geral (todos os pipelines)</option>
-                            {boards.map(b => (
-                                <option key={b.id} value={b.id}>{b.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
-                        <CalendarDays className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <select
-                            value={selectedPeriod}
-                            onChange={e => setSelectedPeriod(e.target.value)}
-                            className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer"
-                        >
-                            {PERIOD_OPTIONS.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </div>
-
             {/* Main KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KpiCard

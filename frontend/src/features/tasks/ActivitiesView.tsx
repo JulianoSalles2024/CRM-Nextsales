@@ -25,8 +25,13 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({ tasks, leads, onEditTas
         <div className="flex flex-col gap-6">
             <div className="flex items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Tarefas</h1>
-                    <p className="text-zinc-400">Gerencie suas tarefas e próximos passos</p>
+                    <div className="flex items-center gap-1 mb-2">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                            <ClipboardList className="w-4 h-4 flex-shrink-0" />
+                            <span>Tarefas</span>
+                        </button>
+                    </div>
+                    <p className="text-zinc-400 text-sm">Gerencie suas tarefas e próximos passos</p>
                 </div>
             </div>
             <div className="space-y-8">

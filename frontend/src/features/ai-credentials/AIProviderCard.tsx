@@ -65,8 +65,7 @@ export const AIProviderCard: React.FC<AIProviderCardProps> = ({
 
   return (
     <div
-      className={`rounded-2xl border transition-all ${credential.status === 'connected' ? 'border-emerald-500/20' : 'border-white/10'}`}
-      style={{ background: 'rgba(255,255,255,0.03)' }}
+      className={`rounded-2xl border transition-all bg-slate-900/40 ${credential.status === 'connected' ? 'border-emerald-500/20' : 'border-slate-800'}`}
     >
       {/* Header — sempre visível */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">

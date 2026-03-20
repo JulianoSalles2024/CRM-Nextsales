@@ -597,13 +597,15 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
         <div className="flex flex-col h-full space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">
-  Painel 360
-</h1>
-
-<p className="text-slate-400 mt-1">
-  Visão completa de performance por vendedor.
-</p>
+                    <div className="flex items-center gap-1 mb-2">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                            <User className="w-4 h-4 flex-shrink-0" />
+                            <span>Painel 360</span>
+                        </button>
+                    </div>
+                    <p className="text-slate-400 text-sm">
+                        Visão completa de performance por vendedor.
+                    </p>
                 </div>
             </div>
 

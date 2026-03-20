@@ -114,11 +114,7 @@ export const AIHubView: React.FC = () => {
 
       {/* Tools Grid */}
       <div
-        className="p-4 rounded-xl border border-white/10"
-        style={{
-          background: 'rgba(255, 255, 255, 0.04)',
-          backdropFilter: 'blur(12px)',
-        }}
+        className="p-4 rounded-xl border border-slate-800 bg-slate-900/40"
       >
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-sky-500" />

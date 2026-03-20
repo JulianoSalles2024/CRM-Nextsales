@@ -28,11 +28,16 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 }) => (
   <div className="flex flex-col w-96 flex-shrink-0 border-r border-slate-800 bg-[#0B1220]">
     {/* Header */}
-    <div className="px-4 py-4 border-b border-slate-800">
+    <div className="px-4 py-4 border-b border-slate-800 flex items-center justify-between">
       <h2 className="text-base font-semibold text-white flex items-center gap-2">
         <MessageCircle className="w-5 h-5 text-blue-400" />
         Conversas
       </h2>
+      {conversations.length > 0 && (
+        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+          {conversations.length}
+        </span>
+      )}
     </div>
 
     <InboxSearch value={search} onChange={onSearchChange} />

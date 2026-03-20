@@ -352,12 +352,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         <div className="flex flex-col gap-6">
              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">
-  Relatórios
-</h1>
-<p className="text-slate-400 mt-1">
-  Análise detalhada de desempenho e métricas
-</p>
+                    <div className="flex items-center gap-1 mb-2">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                            <Target className="w-4 h-4 flex-shrink-0" />
+                            <span>Relatórios</span>
+                        </button>
+                    </div>
+                    <p className="text-slate-400 text-sm">
+                        Análise detalhada de desempenho e métricas
+                    </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Pipeline filter */}
@@ -390,7 +393,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 <FlatCard className="p-5 flex justify-between items-center transition-all duration-200 ease-in-out hover:bg-slate-800/50 hover:-translate-y-1 hover:shadow-lg">
                     <div>
                         <p className="text-sm text-slate-400">Churn</p>
-                        <p className="text-sm text-slate-300 mt-2">Perdas: <span className="font-bold text-white">{reportData.encerradoCount}</span></p>
+                        <p className="text-2xl font-bold text-white mt-1">{reportData.encerradoCount}</p>
                     </div>
                     <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444420' }}>
                         <AlertTriangle className="w-6 h-6" style={{ color: '#ef4444' }} />

@@ -53,10 +53,13 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                 <div className="px-6 py-4 border-b border-slate-800">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h2 className="text-3xl font-bold text-white">
-                                Playbooks de Cadência
-                            </h2>
-                            <p className="text-sm text-slate-400 mt-1">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
+                            <div className="flex items-center gap-1 mb-2">
+                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                                    <FileText className="w-4 h-4 flex-shrink-0" />
+                                    <span>Playbooks</span>
+                                </button>
+                            </div>
+                            <p className="text-sm text-slate-400">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
                         </div>
                         <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                             <PlusCircle className="w-4 h-4" />
