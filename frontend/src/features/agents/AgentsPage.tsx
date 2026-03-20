@@ -9,6 +9,8 @@ import { AgentsCommandCenter } from './AgentsCommandCenter';
 import { AgentsList } from './AgentsList';
 import { AgentWizard } from './AgentWizard';
 import { AgentDetail } from './AgentDetail';
+import { AgentAnalytics } from './AgentAnalytics';
+import { useAuth } from '@/src/features/auth/AuthContext';
 import type { AIAgent } from './hooks/useAgents';
 
 type Tab = 'comando' | 'agentes' | 'playbooks' | 'analytics';
@@ -89,6 +91,7 @@ const TabBar: React.FC<{ activeTab: Tab; onTabChange: (t: Tab) => void }> = ({
 export const AgentsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { companyId } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>(
     () => PATH_TAB[location.pathname] ?? 'agentes'
   );
@@ -224,11 +227,7 @@ export const AgentsPage: React.FC = () => {
         )}
 
         {activeTab === 'analytics' && (
-          <div className="flex flex-col items-center py-20 text-slate-600">
-            <TrendingUp className="w-10 h-10 mb-3" />
-            <p className="text-sm text-slate-500 font-medium">Analytics avançado em breve</p>
-            <p className="text-xs text-slate-600 mt-1">Gráficos diários, funil por agente e análise de ROI</p>
-          </div>
+          <AgentAnalytics companyId={companyId} />
         )}
       </div>
 
