@@ -21,7 +21,7 @@ const CommunityPage: React.FC = () => {
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const { posts, categories, loading, createPost, refetch } = usePosts(selectedCategory, search, sortMode);
+  const { posts, categories, loading, createPost, refetch } = usePosts(selectedCategory, search, sortMode, userId);
   const { toggleVote } = useVotes(userId);
 
   const sortTabs: { key: SortMode; label: string; icon: React.ElementType }[] = [

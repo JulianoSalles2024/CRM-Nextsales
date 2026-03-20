@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import type { CommunityPost, CommunityCategory, SortMode } from '../community.types';
 
-export function usePosts(categoryId: string | null, searchQuery: string, sortMode: SortMode) {
+export function usePosts(categoryId: string | null, searchQuery: string, sortMode: SortMode, userId?: string | null) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [categories, setCategories] = useState<CommunityCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,7 @@ export function usePosts(categoryId: string | null, searchQuery: string, sortMod
       content,
       category_id: catId,
       hide_company: hideCompany,
+      ...(userId ? { author_id: userId } : {}),
     });
     if (!error) fetchPosts();
     return { error };
