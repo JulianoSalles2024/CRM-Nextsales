@@ -417,16 +417,15 @@ const GlobalSales360: React.FC = () => {
 
                     {/* Period filter */}
                     <div className="flex flex-col gap-2 items-end">
-                        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
-                            <Calendar className="w-4 h-4 text-slate-500 ml-2" />
+                        <div className="flex items-center gap-1">
                             {(['hoje', 'semana', 'mes', 'ano', 'custom'] as Period[]).map(p => (
                                 <button
                                     key={p}
                                     onClick={() => setPeriod(p)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
                                         period === p
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                            : 'text-slate-400 hover:text-white'
+                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                            : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
                                     }`}
                                 >
                                     {periodLabels[p]}
@@ -434,7 +433,7 @@ const GlobalSales360: React.FC = () => {
                             ))}
                             <button
                                 onClick={fetchData}
-                                className="ml-1 p-1.5 text-slate-600 hover:text-slate-400 transition-colors"
+                                className="ml-1 p-2 text-slate-600 hover:text-slate-400 transition-colors"
                                 title="Atualizar"
                             >
                                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
