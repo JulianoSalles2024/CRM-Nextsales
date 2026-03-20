@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bot } from 'lucide-react';
+import { LogOut, Sun, Moon, Bot, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User } from '@/types';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -13,6 +13,7 @@ interface HeaderProps {
   unreadCount?: number;
   onOpenSdrBot: () => void;
   activeView: string;
+  onNavigate: (view: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -23,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({
   unreadCount,
   onOpenSdrBot,
   activeView,
+  onNavigate,
 }) => {
   const [isUserMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -104,6 +106,13 @@ const Header: React.FC<HeaderProps> = ({
                   <p className="text-xs text-slate-500 truncate">{currentUser.email}</p>
                 </div>
                 <div className="p-1">
+                  <button
+                    onClick={() => { onNavigate('Meu Perfil'); setUserMenuOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
+                  >
+                    <UserIcon className="w-4 h-4" />
+                    <span>Meu Perfil</span>
+                  </button>
                   <button
                     onClick={onLogout}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"

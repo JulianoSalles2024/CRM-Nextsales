@@ -4,7 +4,6 @@ import {
   Columns,
   Users,
   Users2,
-  User as UserIcon,
   ClipboardList,
   Calendar,
   BarChart,
@@ -102,12 +101,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // ✅ Secondary nav
   const secondaryNavItems = [
-    { icon: UserIcon, label: 'Meu Perfil' },
-
     // { icon: Calendar, label: 'Calendário' },   // ❌ COMENTADO
     // { icon: Bell, label: 'Notificações' },    // ❌ COMENTADO
 
-    // { icon: HelpCircle, label: 'Dúvidas' }, // Disabled
+    { icon: LifeBuoy, label: 'Suporte' },
+    { icon: Users2, label: 'Comunidade' },
     { icon: Settings, label: 'Configurações' },
   ];
 
@@ -122,9 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: BarChart, label: 'Relatórios' },
     { icon: InboxIcon, label: 'Omnichannel' },
     { icon: Bot, label: 'Agentes' },
-    { icon: LifeBuoy, label: 'Suporte' },
     { icon: MessageSquare, label: 'Chat' },
-    { icon: Users2, label: 'Comunidade' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter((item) => {
     if (!isChatEnabled && item.label === 'Chat') return false;
@@ -196,6 +192,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 isActive={activeView === item.label}
                 onClick={() => onNavigate(item.label)}
                 isCollapsed={isCollapsed}
+                badge={
+                  item.label === 'Suporte' && currentUserRole === 'admin' ? supportTicketCount : undefined
+                }
               />
             </li>
           ))}

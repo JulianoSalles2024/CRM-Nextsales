@@ -195,6 +195,7 @@ export default function RootLayout() {
                     unreadCount={ctx.unreadCount}
                     onOpenSdrBot={ctx.handleOpenSdrBot}
                     activeView={ctx.activeView}
+                    onNavigate={ctx.setActiveView}
                 />
 
                 {/* Banner WhatsApp — aparece para quem ainda não conectou */}
