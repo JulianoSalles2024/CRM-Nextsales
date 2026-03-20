@@ -76,10 +76,53 @@ interface AgentDetailProps {
   onClose: () => void;
 }
 
+const PAGE_SIZE = 8;
+
+function Paginator({ page, total, onPage }: { page: number; total: number; onPage: (p: number) => void }) {
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (pages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-1 mt-3">
+      <button
+        onClick={() => onPage(page - 1)}
+        disabled={page === 1}
+        className="px-2 py-1 rounded text-xs text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        ‹
+      </button>
+      {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
+        <button
+          key={p}
+          onClick={() => onPage(p)}
+          className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
+            p === page
+              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+              : 'text-slate-500 hover:text-white hover:bg-white/5'
+          }`}
+        >
+          {p}
+        </button>
+      ))}
+      <button
+        onClick={() => onPage(page + 1)}
+        disabled={page === pages}
+        className="px-2 py-1 rounded text-xs text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        ›
+      </button>
+    </div>
+  );
+}
+
 export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
   const meta = FUNCTION_META[agent.function_type];
   const FnIcon = meta.icon;
   const { queue, runs, perf, loading, refetch } = useAgentDetail(agent.id);
+  const [queuePage, setQueuePage] = React.useState(1);
+  const [runsPage, setRunsPage] = React.useState(1);
+
+  const pagedQueue = queue.slice((queuePage - 1) * PAGE_SIZE, queuePage * PAGE_SIZE);
+  const pagedRuns  = runs.slice((runsPage  - 1) * PAGE_SIZE, runsPage  * PAGE_SIZE);
 
   const initials = agent.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -186,7 +229,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
               </div>
             ) : (
               <div className="space-y-2">
-                {queue.map((item) => {
+                {pagedQueue.map((item) => {
                   const interest = item.interest_level
                     ? INTEREST_CONFIG[item.interest_level as keyof typeof INTEREST_CONFIG]
                     : null;
@@ -227,6 +270,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
                 })}
               </div>
             )}
+            <Paginator page={queuePage} total={queue.length} onPage={setQueuePage} />
           </div>
 
           {/* Recent Runs */}
@@ -251,7 +295,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
               </div>
             ) : (
               <div className="space-y-1.5">
-                {runs.map((run) => {
+                {pagedRuns.map((run) => {
                   const outcome = run.outcome
                     ? OUTCOME_CONFIG[run.outcome] ?? { label: run.outcome, color: 'text-slate-400' }
                     : null;
@@ -288,6 +332,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
                 })}
               </div>
             )}
+            <Paginator page={runsPage} total={runs.length} onPage={setRunsPage} />
           </div>
         </div>
       </div>
