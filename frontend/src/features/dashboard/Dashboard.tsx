@@ -250,13 +250,13 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         const brlCompact = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
         const brlFull    = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
-        const totals = data.datasets.map(ds => ds.data.reduce((a, b) => a + b, 0));
+        const totalsMap = Object.fromEntries(data.datasets.map(ds => [ds.label, ds.data.reduce((a, b) => a + b, 0)]));
 
         const SERIES = [
+            { key: 'pipeline', color: '#eab308', label: 'Pipeline',    gradId: 'td-pipe', value: (i: number) => brlFull.format(data.datasets[3].data[i]) },
             { key: 'revenue',  color: '#22c55e', label: 'Receita',     gradId: 'td-rev',  value: (i: number) => brlFull.format(data.datasets[0].data[i]) },
             { key: 'newLeads', color: '#3b82f6', label: 'Novos Leads', gradId: 'td-nl',   value: (i: number) => String(data.datasets[1].data[i]) },
             { key: 'churn',    color: '#f43f5e', label: 'Churn',       gradId: 'td-ch',   value: (i: number) => String(data.datasets[2].data[i]) },
-            { key: 'pipeline', color: '#eab308', label: 'Pipeline',    gradId: 'td-pipe', value: (i: number) => brlFull.format(data.datasets[3].data[i]) },
         ] as const;
 
         const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -284,7 +284,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             <div className="flex flex-col leading-none gap-0.5">
                                 <span className="text-[10px] text-slate-500 uppercase tracking-widest">{s.label}</span>
                                 <span className="text-xs font-bold text-slate-200 tabular-nums">
-                                    {(s.key === 'revenue' || s.key === 'pipeline') ? brlCompact.format(totals[i]) : totals[i]}
+                                    {(s.key === 'revenue' || s.key === 'pipeline') ? brlCompact.format(totalsMap[s.label]) : totalsMap[s.label]}
                                 </span>
                             </div>
                         </div>
