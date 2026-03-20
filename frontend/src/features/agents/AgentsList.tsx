@@ -102,18 +102,6 @@ export const AgentsList: React.FC<Props> = ({
         ))}
       </div>
 
-      {/* Stats summary */}
-      <div className="flex items-center gap-4 text-xs text-slate-500">
-        <span className="flex items-center gap-1">
-          <Users className="w-3 h-3" />
-          {agents.length} agentes no total
-        </span>
-        <span className="text-slate-700">•</span>
-        <span className="text-emerald-500">{agents.filter(a => a.is_active).length} ativos</span>
-        <span className="text-slate-700">•</span>
-        <span>{filtered.length} exibidos</span>
-      </div>
-
       {/* Grid */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

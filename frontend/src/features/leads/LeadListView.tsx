@@ -394,11 +394,13 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                                 <VercelAvatar name={lead.name ?? '?'} size={36} />
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-semibold text-white truncate leading-snug">{lead.name}</div>
-                                                    <div className="text-xs text-slate-500 truncate leading-snug mt-0.5">{lead.email || lead.company || '—'}</div>
+                                                    {listDisplaySettings.showEmail && (
+                                                        <div className="text-xs text-slate-500 truncate leading-snug mt-0.5">{lead.email || lead.company || '—'}</div>
+                                                    )}
                                                     {listDisplaySettings.showPhone && lead.phone && (
                                                         <div className="text-xs text-slate-600 truncate leading-snug mt-0.5">{lead.phone}</div>
                                                     )}
-                                                    {currentUserRole !== 'admin' && listDisplaySettings.showTags && lead.tags.length > 0 && (
+                                                    {listDisplaySettings.showTags && lead.tags.length > 0 && (
                                                         <div className="flex flex-wrap gap-1 mt-1.5">
                                                             {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
                                                         </div>
@@ -410,7 +412,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         {/* ── Bloco 2: Status + Valor ─────────────────────── */}
                                         <td className="px-4 py-4 whitespace-nowrap align-top">
                                             <div className="flex flex-col gap-2">
-                                                {(() => {
+                                                {listDisplaySettings.showStatus && (() => {
                                                     const s = getLeadComputedStatus(lead, columnTypeMap[lead.columnId]);
                                                     const b = STATUS_BADGE[s];
                                                     return (
@@ -420,9 +422,11 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                                         </span>
                                                     );
                                                 })()}
-                                                <span className="text-sm font-bold text-emerald-400 tabular-nums">
-                                                    {currencyFormatter.format(lead.value)}
-                                                </span>
+                                                {listDisplaySettings.showValue && (
+                                                    <span className="text-sm font-bold text-emerald-400 tabular-nums">
+                                                        {currencyFormatter.format(lead.value)}
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
 
@@ -452,14 +456,18 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         {/* ── Bloco 4: Criação + Última atividade ─────────── */}
                                         <td className="px-4 py-4 whitespace-nowrap align-top">
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-xs text-slate-400 tabular-nums leading-snug">
-                                                    {formatDate(lead.createdAt)}
-                                                </span>
-                                                <span className="text-xs text-slate-500 leading-snug">
-                                                    {lead.lastActivityTimestamp
-                                                        ? `${getActivityLabel(lead.lastActivityType)} — ${formatRelativeTime(lead.lastActivityTimestamp)}`
-                                                        : 'Sem atividade'}
-                                                </span>
+                                                {listDisplaySettings.showCreatedAt && (
+                                                    <span className="text-xs text-slate-400 tabular-nums leading-snug">
+                                                        {formatDate(lead.createdAt)}
+                                                    </span>
+                                                )}
+                                                {listDisplaySettings.showLastActivity && (
+                                                    <span className="text-xs text-slate-500 leading-snug">
+                                                        {lead.lastActivityTimestamp
+                                                            ? `${getActivityLabel(lead.lastActivityType)} — ${formatRelativeTime(lead.lastActivityTimestamp)}`
+                                                            : 'Sem atividade'}
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
 

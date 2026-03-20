@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     ArrowLeft, DollarSign, TrendingUp, TrendingDown, Building2,
     Briefcase, Clock, Target, Star, AlertTriangle,
@@ -235,6 +235,22 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
     const [profile, setProfile] = useState<SellerProfileData | null>(null);
     const [teamSales, setTeamSales] = useState<{ seller_id: string; valor: number }[]>([]);
     const [activeTab, setActiveTab] = useState<'individual' | 'team'>('individual');
+    const tabBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const [tabPill, setTabPill] = useState({ left: 0, width: 0 });
+    useEffect(() => {
+        const idx = activeTab === 'individual' ? 0 : 1;
+        const el = tabBtnRefs.current[idx];
+        if (el) setTabPill({ left: el.offsetLeft, width: el.offsetWidth });
+    }, [activeTab]);
+
+    const PERIODS: Period[] = ['hoje', 'semana', 'mes', 'ano', 'custom'];
+    const periodBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const [periodPill, setPeriodPill] = useState({ left: 0, width: 0 });
+    useEffect(() => {
+        const idx = PERIODS.indexOf(period);
+        const el = periodBtnRefs.current[idx];
+        if (el) setPeriodPill({ left: el.offsetLeft, width: el.offsetWidth });
+    }, [period]);
     const [individualWonLeads, setIndividualWonLeads] = useState<{ value: number }[]>([]);
     const [prevIndividualWonLeads, setPrevIndividualWonLeads] = useState<{ value: number }[]>([]);
     const [teamWonLeads, setTeamWonLeads] = useState<{ value: number }[]>([]);
@@ -565,16 +581,22 @@ sales.forEach(s => {
                 Voltar à lista
             </button>
 
-            {/* ── Abas Individual / Time ── */}
-            <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 w-fit">
-                {(['individual', 'team'] as const).map(tab => (
+            {/* ── Abas Individual / Global ── */}
+            <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1 w-fit">
+                {/* sliding pill */}
+                <div
+                    className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                    style={{ left: tabPill.left, width: tabPill.width }}
+                />
+                {(['individual', 'team'] as const).map((tab, i) => (
                     <button
                         key={tab}
+                        ref={el => { tabBtnRefs.current[i] = el; }}
                         onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        className={`relative z-10 px-4 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
                             activeTab === tab
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                : 'text-slate-400 hover:text-white'
+                                ? 'text-blue-400'
+                                : 'text-slate-500 hover:text-slate-300'
                         }`}
                     >
                         {tab === 'individual' ? 'Individual' : 'Global'}
@@ -605,24 +627,30 @@ sales.forEach(s => {
 
                     {/* Period filter */}
                     <div className="flex flex-col gap-2 items-end">
-                        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1">
-                            <Calendar className="w-4 h-4 text-slate-500 ml-2" />
-                            {(['hoje', 'semana', 'mes', 'ano', 'custom'] as Period[]).map(p => (
-                                <button
-                                    key={p}
-                                    onClick={() => setPeriod(p)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                        period === p
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                            : 'text-slate-400 hover:text-white'
-                                    }`}
-                                >
-                                    {periodLabels[p]}
-                                </button>
-                            ))}
+                        <div className="flex items-center gap-1">
+                            <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+                                <div
+                                    className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                                    style={{ left: periodPill.left, width: periodPill.width }}
+                                />
+                                {PERIODS.map((p, i) => (
+                                    <button
+                                        key={p}
+                                        ref={el => { periodBtnRefs.current[i] = el; }}
+                                        onClick={() => setPeriod(p)}
+                                        className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
+                                            period === p
+                                                ? 'text-blue-400'
+                                                : 'text-slate-500 hover:text-slate-300'
+                                        }`}
+                                    >
+                                        {periodLabels[p]}
+                                    </button>
+                                ))}
+                            </div>
                             <button
                                 onClick={fetchData}
-                                className="ml-1 p-1.5 text-slate-600 hover:text-slate-400 transition-colors"
+                                className="p-1.5 text-slate-600 hover:text-slate-400 transition-colors"
                                 title="Atualizar"
                             >
                                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

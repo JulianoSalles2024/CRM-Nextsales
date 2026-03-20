@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Zap, LayoutGrid, TrendingUp, BookOpen, Bot,
+  Zap, LayoutGrid, TrendingUp, BookOpen, Bot, Users,
 } from 'lucide-react';
 import { useAgents } from './hooks/useAgents';
 import { useAgentPlaybooks } from './hooks/useAgentPlaybooks';
@@ -127,9 +127,16 @@ export const AgentsPage: React.FC = () => {
               <span>Exército Comercial de IA</span>
             </button>
           </div>
-          <p className="text-xs text-slate-500 pl-1">
-            {agents.filter(a => a.is_active).length} agentes ativos de {agents.length} total
-          </p>
+          <div className="flex items-center gap-4 text-xs text-slate-500 pl-1">
+            <span className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {agents.length} agentes no total
+            </span>
+            <span className="text-slate-700">•</span>
+            <span className="text-emerald-500">{agents.filter(a => a.is_active).length} ativos</span>
+            <span className="text-slate-700">•</span>
+            <span>{agents.length} exibidos</span>
+          </div>
         </div>
 
         {/* Active agents pulse indicator */}

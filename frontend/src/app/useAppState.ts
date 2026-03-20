@@ -114,7 +114,7 @@ export function useAppState() {
     const [activeView, setActiveView] = useState<string>(() => {
         const path = window.location.pathname;
         if (PATH_VIEWS[path]) return PATH_VIEWS[path];
-        if (path.startsWith('/painel360/')) return 'Painel360';
+        if (path.startsWith('/painel360/')) return 'Painel 360';
         if (path.startsWith('/configuracoes/')) return 'Configurações';
         if (path.startsWith('/agentes/')) return 'Agentes';
         return 'Inbox';

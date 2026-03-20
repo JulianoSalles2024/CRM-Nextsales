@@ -8,7 +8,7 @@ export const VIEW_PATHS: Record<string, string> = {
     'Calendário': '/calendario',
     'Relatórios': '/relatorios',
     'Grupos': '/grupos',
-    'Painel360': '/painel360',
+    'Painel 360': '/painel360',
     'Recuperação': '/recuperacao',
     'Conversas': '/conversas',
     'Omnichannel': '/omnichannel',
