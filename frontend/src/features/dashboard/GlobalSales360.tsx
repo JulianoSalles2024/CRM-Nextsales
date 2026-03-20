@@ -417,23 +417,31 @@ const GlobalSales360: React.FC = () => {
 
                     {/* Period filter */}
                     <div className="flex flex-col gap-2 items-end">
-                        <div className="flex items-center gap-1">
-                            {(['hoje', 'semana', 'mes', 'ano', 'custom'] as Period[]).map(p => (
-                                <button
-                                    key={p}
-                                    onClick={() => setPeriod(p)}
-                                    className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
-                                        period === p
-                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                            : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                                    }`}
-                                >
-                                    {periodLabels[p]}
-                                </button>
-                            ))}
+                        <div className="flex items-center gap-2">
+                            <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+                                {/* sliding pill */}
+                                <div
+                                    className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
+                                    style={{
+                                        width: 'calc(20% - 2px)',
+                                        left: `calc(${(['hoje','semana','mes','ano','custom'] as Period[]).indexOf(period)} * 20% + 4px)`,
+                                    }}
+                                />
+                                {(['hoje', 'semana', 'mes', 'ano', 'custom'] as Period[]).map(p => (
+                                    <button
+                                        key={p}
+                                        onClick={() => setPeriod(p)}
+                                        className={`relative z-10 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 text-center ${
+                                            period === p ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                                        }`}
+                                    >
+                                        {periodLabels[p]}
+                                    </button>
+                                ))}
+                            </div>
                             <button
                                 onClick={fetchData}
-                                className="ml-1 p-2 text-slate-600 hover:text-slate-400 transition-colors"
+                                className="p-2 text-slate-600 hover:text-slate-400 transition-colors"
                                 title="Atualizar"
                             >
                                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
