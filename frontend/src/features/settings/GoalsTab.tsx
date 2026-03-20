@@ -257,22 +257,20 @@ const GoalsTab: React.FC = () => {
             </div>
 
             {/* Scope Sub-tabs */}
-            <div className="flex">
-                <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
-                    {(['global', 'seller'] as const).map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setScopeTab(tab)}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                                scopeTab === tab
-                                    ? 'bg-slate-700 text-white'
-                                    : 'text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            {tab === 'global' ? 'Globais' : 'Por Vendedor'}
-                        </button>
-                    ))}
-                </div>
+            <div className="flex gap-1">
+                {(['global', 'seller'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setScopeTab(tab)}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
+                            scopeTab === tab
+                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                        }`}
+                    >
+                        {tab === 'global' ? 'Globais' : 'Por Vendedor'}
+                    </button>
+                ))}
             </div>
 
             {/* Content */}
