@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, CheckCircle2, XCircle, Clock, Copy2, RefreshCw,
@@ -134,6 +134,17 @@ const EventosTab: React.FC<EventosTabProps> = ({ showNotification }) => {
   const { events, loading, refetch } = useWebhookEvents(companyId);
   const [filter, setFilter] = useState<WebhookEvent['status'] | 'all'>('all');
 
+  // Sliding pill
+  const pillContainerRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const idx = STATUS_FILTERS.findIndex(f => f.value === filter);
+    const btn = btnRefs.current[idx];
+    if (btn) setPillStyle({ left: btn.offsetLeft, width: btn.offsetWidth });
+  }, [filter]);
+
   const filtered = filter === 'all' ? events : events.filter(e => e.status === filter);
 
   const counts = {
@@ -155,7 +166,7 @@ const EventosTab: React.FC<EventosTabProps> = ({ showNotification }) => {
         </div>
         <button
           onClick={() => { refetch(); showNotification('Lista atualizada.', 'info'); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/8 border border-white/8 text-slate-300 transition-all"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-300 transition-all duration-200"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Atualizar
@@ -177,16 +188,25 @@ const EventosTab: React.FC<EventosTabProps> = ({ showNotification }) => {
         ))}
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1 p-1 bg-[#0B1220] border border-white/5 rounded-xl w-fit">
-        {STATUS_FILTERS.map(({ value, label }) => (
+      {/* Filter tabs — sliding pill */}
+      <div
+        ref={pillContainerRef}
+        className="relative flex items-center gap-1 p-1 bg-slate-900/60 border border-blue-500/10 rounded-xl w-fit"
+      >
+        {/* animated pill */}
+        <span
+          className="absolute top-1 bottom-1 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-all duration-300 pointer-events-none"
+          style={{ left: pillStyle.left, width: pillStyle.width }}
+        />
+        {STATUS_FILTERS.map(({ value, label }, i) => (
           <button
             key={value}
+            ref={el => { btnRefs.current[i] = el; }}
             onClick={() => setFilter(value)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ${
               filter === value
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'text-blue-400'
+                : 'text-slate-500 hover:text-white'
             }`}
           >
             {label}
