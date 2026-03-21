@@ -3,11 +3,28 @@ import { supabaseAdmin } from '../_lib/supabase.js';
 import { requireAuth, requireRole } from '../_lib/auth.js';
 import { AppError, apiError } from '../_lib/errors.js';
 
+// Handles both /api/api-keys (list/create) and /api/api-keys/:id (delete)
 export default async function handler(req: any, res: any) {
   try {
     const ctx = await requireAuth(req);
     requireRole(ctx, 'admin');
     const { companyId } = ctx;
+
+    // Detect if there's an id segment: /api/api-keys/some-id
+    const segments = (req.url as string).split('/').filter(Boolean);
+    const id = segments[segments.length - 1] !== 'api-keys' ? segments[segments.length - 1] : null;
+
+    // ── DELETE /api/api-keys/:id ────────────────────────────────
+    if (req.method === 'DELETE' && id) {
+      const { error } = await supabaseAdmin
+        .from('api_keys')
+        .delete()
+        .eq('id', id)
+        .eq('company_id', companyId);
+
+      if (error) throw new AppError(500, 'Erro ao revogar chave.');
+      return res.status(204).end();
+    }
 
     // ── GET /api/api-keys — list ────────────────────────────────
     if (req.method === 'GET') {
@@ -26,7 +43,6 @@ export default async function handler(req: any, res: any) {
       const { name } = req.body ?? {};
       if (!name?.trim()) throw new AppError(400, 'Nome é obrigatório.');
 
-      // Generate: sk_live_ + 64 hex chars (256 bits of entropy)
       const raw     = `sk_live_${randomBytes(32).toString('hex')}`;
       const hash    = createHash('sha256').update(raw).digest('hex');
       const preview = `${raw.slice(0, 16)}...${raw.slice(-4)}`;
@@ -38,11 +54,10 @@ export default async function handler(req: any, res: any) {
         .single();
 
       if (error) throw new AppError(500, 'Erro ao criar chave.');
-      // 'key' (plain text) returned ONCE — never stored
       return res.status(201).json({ key: raw, ...data });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Método não permitido.' });
   } catch (err) {
     return apiError(res, err);
   }
