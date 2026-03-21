@@ -9,9 +9,9 @@ import { deliverWebhooks } from '../_lib/deliverWebhooks.js';
 // /api/v1/leads/:id/stage          → leadStage()
 // /api/v1/deliver                  → deliver()  ← Supabase DB webhook
 export default async function handler(req: any, res: any) {
-  const segments: string[] = Array.isArray(req.query.path)
-    ? req.query.path
-    : [req.query.path].filter(Boolean);
+  // Parse path from URL directly — mais confiável que req.query.path no Vercel
+  const rawPath = (req.url as string).split('?')[0];
+  const segments = rawPath.replace(/^\/api\/v1\/?/, '').split('/').filter(Boolean);
 
   const [resource, id, action] = segments;
 
