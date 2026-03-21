@@ -36,6 +36,7 @@ app.all("/api/channels/:action", (req, res) => {
   return channelsHandler(req as any, res as any);
 });
 app.all("/api/api-keys", (req, res) => apiKeysHandler(req as any, res as any));
+app.all("/api/api-keys/:id", (req, res) => apiKeysHandler(req as any, res as any));
 
 // Production: serve frontend estático
 if (process.env.NODE_ENV === "production") {

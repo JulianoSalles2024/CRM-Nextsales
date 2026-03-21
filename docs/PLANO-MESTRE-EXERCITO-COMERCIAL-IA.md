@@ -460,12 +460,12 @@ simulate_revenue(p_company_id uuid, p_config jsonb)
 
 | ID | Nome | Trigger | Função | Status |
 |---|---|---|---|---|
-| WF-01 | Agent Fork | Webhook | Desvia para agente se `ai_agent_id` existir | V13 ✅ |
-| WF-06 | Agent Router | Cron 5min | Distribui leads pendentes para agentes ativos | ✅ |
-| WF-07 | Agent Executor | Webhook (chamado pelo WF-06) | Executa um ciclo do agente sobre um lead | V13 ✅ (V14 ⚠️) |
-| WF-08 | Agent Followup | Cron 1h | Verifica `agent_lead_memory` com `next_action_at` vencido | Importado ⏳ |
-| WF-09 | Agent Performance | Cron diário 00:05 | Agrega `agent_performance` do dia anterior | Pendente ❌ |
-| WF-10 | Agent Escalation | Webhook | Notifica humano quando agente escala lead | Pendente ❌ |
+| WF-01 | Recepção WhatsApp | Webhook | Roteamento inteligente (WF-05 ou WF-07) | ✅ Testado |
+| WF-04 | Auto-close | Cron 5min | Encerra conversas inativas (thresholds usuário) | ✅ Ajustado |
+| WF-05 | Agente IA Pipeline | Webhook | Fallback para leads sem agente atribuído | ✅ Ativo |
+| WF-06 | Agent Router | Cron 5min | Distribui leads pendentes para agentes ativos | ✅ Testado |
+| WF-07 | Agent Executor | Webhook | IA, resposta WhatsApp e avanço de pipeline | ✅ Testado |
+| WF-08 | Agent Followup | Cron 1h | Envia follow-up quando `next_action_at` vence | ✅ Testado |
 
 ---
 
@@ -520,19 +520,25 @@ A operação perfeita é **IA até o ponto certo + humano no momento certo**.
 - Negociação complexa (desconto, contrato customizado)
 - Número de follow-ups atingiu limite
 
-### Fluxo de Escalada
+### Fluxo de Escalada e Human Takeover ✅
 ```
-Agente detecta gatilho
+Agente detecta gatilho ou humano assume conversa
+    ↓
+Status da conversa muda para 'waiting' ou 'in_progress'
+    ↓
+WF-07 verifica status (HTTP - Get Conv Status)
+    ↓
+Se status = 'in_progress', IA interrompe execução imediatamente
     ↓
 Pausa automática do agente para este lead
     ↓
-Notificação push para vendedor humano (Inbox)
+Notificação push + Badge âmbar na Sidebar (Realtime)
     ↓
-Vendedor abre a conversa (histórico completo visível)
+Destaque "IA escalou → você" no ConversationItem
     ↓
-Humano assume
+Humano assume (histórico completo visível)
     ↓
-Pode "devolver para agente" quando resolver
+Pode "Voltar para Agente" para retomar automação
 ```
 
 ---
@@ -554,14 +560,12 @@ Agente SDR + Follow-up unificado:
 Entregáveis técnicos:
 - [x] Migrations: `ai_agents`, `agent_playbooks`, `agent_lead_memory`, `agent_runs`, `agent_performance` (Migration 074 ✅)
 - [x] RPCs: `get_agent_lead_queue`, `upsert_agent_lead_memory`, `aggregate_agent_performance`, `get_agent_ranking` (Migration 075 ✅)
-- [x] Frontend: módulo "Agentes Comerciais" (`features/agents/`)
-  - [x] Central de Comando (`AgentsCommandCenter.tsx`)
-  - [x] Lista de Agentes (`AgentsList.tsx` + `AgentCard.tsx`)
-  - [x] Criar Agente (wizard 6 passos - `AgentWizard.tsx`)
+- [x] Fixes Database: Correção de Leads órfãos e Links (Migrations 076 e 077 ✅)
 - [x] n8n: WF-06 Agent Router (cron */5 min ✅)
 - [x] n8n: WF-07 Agent Executor (testado V13 ✅)
-- [/] n8n: WF-08 Agent Followup (importado, aguardando testes ⏳)
-- [x] n8n: WF-01 V13 Agent Fork (integrado ✅)
+- [x] n8n: WF-08 Agent Followup (testado end-to-end ✅)
+- [x] n8n: WF-04 Auto-close (ajustado para 5 min ✅)
+- [x] n8n: WF-01 V13 Agent Fork/Recepção (integrado ✅)
 
 ### FASE 2 — Múltiplos Tipos de Agente
 - Agente Follow-up dedicado (reativação de leads frios)
