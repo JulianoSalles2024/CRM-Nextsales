@@ -25,6 +25,8 @@
 - [Exército Comercial de IA](#exército-comercial-de-ia)
 - [Automações n8n](#automações-n8n)
 - [Copiloto IA (Zenius)](#copiloto-ia-zenius)
+- [API REST v1 — Integração externa](#api-rest-v1--integração-externa)
+- [Webhooks de saída](#webhooks-de-saída)
 - [API — Endpoints e segurança](#api--endpoints-e-segurança)
 - [Roles e permissões](#roles-e-permissões)
 - [Segurança — Fase 6 Hardening](#segurança--fase-6-hardening)
@@ -52,6 +54,8 @@ O **NextSales** é uma plataforma comercial SaaS voltada para equipes de vendas 
 - 🔮 **Oportunidades Inteligentes** — scoring determinístico com bandas hot/warm/cold/risk/upsell
 - 👥 **Multiusuário RBAC** — admin, vendedor, com permissões distintas e RLS no banco
 - 🔐 **Segurança** — CSP, rate limiting, INSTALL_SECRET, ESM-safe, zero API keys no browser
+- 🔗 **API REST v1** — endpoints públicos autenticados por API Key (`sk_live_*`) para integração com Make, n8n, Zapier e sistemas externos
+- 📤 **Webhooks de saída** — disparo automático de eventos de leads para URLs externas (Make, n8n, etc.)
 - 🎨 **UI/UX premium** — Sliding pill navigation, página de login "Data Convergence" com SVG animado, design system consistente
 
 ---
@@ -211,9 +215,15 @@ CRM-Fity/
 │
 ├── api/                          # Serverless Functions (Vercel) / Express local
 │   ├── _lib/
-│   │   ├── auth.ts               # requireAuth() — valida JWT
+│   │   ├── auth.ts               # requireAuth() — valida JWT Supabase
+│   │   ├── apiKeyAuth.ts         # requireApiKeyAuth() + requireAnyAuth() — sk_live_*
+│   │   ├── deliverWebhooks.ts    # Dispara eventos para URLs externas cadastradas
 │   │   ├── errors.ts             # AppError, apiError()
 │   │   └── rateLimit.ts          # Rate limiter sliding window
+│   ├── v1/
+│   │   └── [...path].ts          # Catch-all: leads CRUD + stage + /deliver (DB webhook)
+│   ├── api-keys/
+│   │   └── index.ts              # GET/POST/DELETE de API Keys (admin)
 │   ├── ai/
 │   │   ├── generate.ts           # Geração de texto (rate limited)
 │   │   ├── credentials.ts        # Credenciais de IA por empresa
@@ -270,6 +280,8 @@ O projeto usa **Supabase** (PostgreSQL) com **Row Level Security (RLS)** ativo e
 | `agent_lead_memory` | Memória comercial de cada lead por agente |
 | `agent_runs` | Log imutável de cada execução do agente |
 | `agent_performance` | Performance diária agregada por agente |
+| `api_keys` | Chaves de API por empresa (`sk_live_*`, armazenadas como hash SHA-256) |
+| `outgoing_webhooks` | Webhooks de saída por empresa — URL + lista de eventos assinados |
 
 ### Migrations
 
@@ -457,6 +469,115 @@ As chaves são armazenadas em `organization_ai_credentials` (isoladas por empres
 
 ---
 
+## API REST v1 — Integração externa
+
+O NextSales expõe uma API REST autenticada por **API Key** (`sk_live_*`) para integração com plataformas externas como Make, n8n, Zapier e sistemas próprios.
+
+### Autenticação
+
+Toda requisição à API v1 deve incluir o header:
+
+```
+Authorization: Bearer sk_live_<sua_chave>
+```
+
+As chaves são geradas em **Configurações → Integrações → API Keys** e armazenadas apenas como hash SHA-256 — o valor completo só é exibido uma vez no momento da criação.
+
+### Endpoints disponíveis
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/leads` | Lista leads da empresa (paginado) |
+| `POST` | `/api/v1/leads` | Cria um novo lead |
+| `GET` | `/api/v1/leads/:id` | Busca lead por ID |
+| `PUT` | `/api/v1/leads/:id` | Atualiza dados do lead |
+| `DELETE` | `/api/v1/leads/:id` | Remove lead (soft delete) |
+| `PATCH` | `/api/v1/leads/:id/stage` | Move lead para outro estágio do Kanban |
+
+### Parâmetros — GET /api/v1/leads
+
+| Parâmetro | Tipo | Descrição |
+|---|---|---|
+| `status` | string | Filtrar por status (`NOVO`, `EM_ANDAMENTO`, etc.) |
+| `board_id` | uuid | Filtrar por pipeline |
+| `owner_id` | uuid | Filtrar por vendedor responsável |
+| `page` | number | Página (padrão: 1) |
+| `limit` | number | Registros por página (máx: 100, padrão: 50) |
+
+### Exemplo — criar lead via Make
+
+```json
+POST https://nextsalescrm.vercel.app/api/v1/leads
+Authorization: Bearer sk_live_...
+Content-Type: application/json
+
+{
+  "name": "João Silva",
+  "email": "joao@empresa.com",
+  "phone": "11999999999",
+  "company_name": "Empresa X",
+  "value": 5000
+}
+```
+
+> A API aceita tanto **JWT Supabase** (usuário logado) quanto **API Key** (`sk_live_*`) — o endpoint `requireAnyAuth` detecta automaticamente pelo prefixo do token.
+
+---
+
+## Webhooks de saída
+
+O NextSales dispara eventos automaticamente para URLs externas sempre que algo acontece com leads. Configure em **Configurações → Integrações → Webhooks**.
+
+### Arquitetura
+
+```
+Ação no CRM (UI ou API)
+        ↓
+Supabase DB Webhook (INSERT/UPDATE/DELETE na tabela leads)
+        ↓
+POST /api/v1/deliver
+        ↓
+deliverWebhooks() — busca webhooks ativos da empresa, filtra por evento
+        ↓
+POST para cada URL cadastrada (timeout 8s, fire-and-forget paralelo)
+```
+
+### Eventos disponíveis
+
+| Evento | Quando dispara |
+|---|---|
+| `lead.created` | Novo lead criado (via UI ou API) |
+| `lead.updated` | Dados do lead alterados |
+| `lead.stage_changed` | Lead movido para outro estágio do Kanban |
+| `lead.converted` | Lead marcado como ganho (`won_at` preenchido) |
+| `lead.lost` | Lead marcado como perdido (`lost_at` preenchido) |
+| `lead.deleted` | Lead removido (hard delete pela UI) |
+
+### Payload padrão
+
+```json
+{
+  "event": "lead.created",
+  "company_id": "uuid-da-empresa",
+  "timestamp": "2026-03-21T10:00:00.000Z",
+  "data": { ...campos do lead... }
+}
+```
+
+### Configuração no Supabase (obrigatória)
+
+Para que os eventos gerados pela UI sejam disparados, configure um **DB Webhook** no Supabase:
+
+1. Acesse **Database → Webhooks → Create a new hook**
+2. Tabela: `leads`
+3. Eventos: ✅ INSERT ✅ UPDATE ✅ DELETE
+4. URL: `https://seu-dominio.vercel.app/api/v1/deliver`
+5. Sem secret (o endpoint não exige autenticação — o `company_id` vem do payload do Supabase)
+
+> Leads criados via `POST /api/v1/leads` também disparam os webhooks diretamente, sem passar pelo Supabase DB Webhook.
+
+---
+
 ## API — Endpoints e segurança
 
 Todos os endpoints da `api/` seguem estas regras:
@@ -468,6 +589,12 @@ Todos os endpoints da `api/` seguem estas regras:
 
 | Endpoint | Método | Auth | Rate limit | Descrição |
 |---|---|---|---|---|
+| `/api/v1/leads` | GET/POST | JWT ou API Key | — | Lista ou cria leads |
+| `/api/v1/leads/:id` | GET/PUT/DELETE | JWT ou API Key | — | Lê, edita ou remove lead |
+| `/api/v1/leads/:id/stage` | PATCH | JWT ou API Key | — | Move lead de estágio |
+| `/api/v1/deliver` | POST | Supabase interno | — | Recebe DB webhook e dispara webhooks de saída |
+| `/api/api-keys` | GET/POST | JWT + admin | — | Lista ou cria API Keys |
+| `/api/api-keys/:id` | DELETE | JWT + admin | — | Revoga API Key |
 | `/api/ai/generate` | POST | JWT | 20/min | Geração de texto via IA (server-side) |
 | `/api/ai/test-connection` | POST | JWT | 20/min | Testa chave de IA |
 | `/api/ai/credentials` | GET | JWT | — | Lista credenciais da empresa |
