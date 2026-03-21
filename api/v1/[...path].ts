@@ -181,31 +181,39 @@ async function handleDeliver(req: any, res: any) {
 
 
   const { type, record, old_record } = req.body ?? {};
-  if (!record?.company_id) return res.status(400).json({ error: 'Payload inválido.' });
+
+  // No evento DELETE do Supabase, record é null — dados ficam em old_record
+  const data       = record ?? old_record;
+  const companyId  = data?.company_id;
+  if (!companyId) return res.status(400).json({ error: 'Payload inválido.' });
 
   if (type === 'INSERT') {
-    await deliverWebhooks(record.company_id, 'lead.created', record);
+    await deliverWebhooks(companyId, 'lead.created', data);
+  }
+
+  if (type === 'DELETE') {
+    await deliverWebhooks(companyId, 'lead.deleted', data);
   }
 
   if (type === 'UPDATE') {
     // Estágio mudou
     if (old_record?.column_id !== record.column_id) {
-      await deliverWebhooks(record.company_id, 'lead.stage_changed', record);
+      await deliverWebhooks(companyId, 'lead.stage_changed', record);
     }
     // Lead ganho (convertido)
     if (!old_record?.won_at && record.won_at) {
-      await deliverWebhooks(record.company_id, 'lead.converted', record);
+      await deliverWebhooks(companyId, 'lead.converted', record);
     }
     // Lead perdido
     if (!old_record?.lost_at && record.lost_at) {
-      await deliverWebhooks(record.company_id, 'lead.lost', record);
+      await deliverWebhooks(companyId, 'lead.lost', record);
     }
-    // Lead deletado (soft delete)
+    // Lead deletado via soft delete
     if (!old_record?.deleted_at && record.deleted_at) {
-      await deliverWebhooks(record.company_id, 'lead.deleted', record);
+      await deliverWebhooks(companyId, 'lead.deleted', record);
     }
     // Atualização geral
-    await deliverWebhooks(record.company_id, 'lead.updated', record);
+    await deliverWebhooks(companyId, 'lead.updated', record);
   }
 
   return res.status(200).json({ ok: true });
