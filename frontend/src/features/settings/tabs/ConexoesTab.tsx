@@ -166,7 +166,7 @@ const ConnCard: React.FC<ConnCardProps> = ({
             onClick={() => onHealthCheck(conn.id)}
             disabled={checking}
             title="Verificar status"
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium bg-white/4 hover:bg-white/8 border border-white/6 text-slate-400 hover:text-slate-200 transition-all disabled:opacity-40 flex-1 justify-center"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white transition-all duration-200 disabled:opacity-40 flex-1 justify-center"
           >
             <RefreshCw className={`w-3 h-3 ${checking ? 'animate-spin' : ''}`} />
             Verificar
@@ -205,7 +205,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, total, perPage, onChange 
       <button
         onClick={() => onChange(page - 1)}
         disabled={page === 1}
-        className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/6 border border-transparent hover:border-white/8 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -217,7 +217,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, total, perPage, onChange 
           className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
             p === page
               ? 'bg-blue-600/80 text-white border border-blue-500/40 shadow-sm shadow-blue-500/20'
-              : 'text-slate-500 hover:text-white hover:bg-white/6 border border-transparent hover:border-white/8'
+              : 'text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'
           }`}
         >
           {p}
@@ -227,7 +227,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, total, perPage, onChange 
       <button
         onClick={() => onChange(page + 1)}
         disabled={page === pages}
-        className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/6 border border-transparent hover:border-white/8 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <ChevronRight className="w-4 h-4" />
       </button>
@@ -441,7 +441,7 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
           <button
             onClick={() => handleHealthCheck()}
             disabled={checkingIds.size > 0 || connections.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/4 hover:bg-white/7 border border-white/6 text-slate-400 hover:text-slate-200 transition-all disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white transition-all duration-200 disabled:opacity-40"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${checkingIds.size > 0 ? 'animate-spin' : ''}`} />
             Verificar todos
