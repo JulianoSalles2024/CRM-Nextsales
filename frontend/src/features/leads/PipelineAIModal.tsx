@@ -342,7 +342,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                   className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px whitespace-nowrap ${
                     activeTab === tab.id
                       ? tab.id === 'cadencia'
-                        ? 'text-violet-400 border-violet-500 bg-violet-500/5'
+                        ? 'text-blue-400 border-blue-500 bg-blue-500/5'
                         : 'text-blue-400 border-blue-500 bg-blue-500/5'
                       : 'text-slate-500 border-transparent hover:text-slate-300'
                   }`}
@@ -500,7 +500,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
               {/* ── Cadência ────────────────────────────────────────── */}
               {activeTab === 'cadencia' && (
                 <div className="space-y-3">
-                  <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3">
+                  <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
                     <p className="text-xs text-slate-300 leading-relaxed">
                       Configure gatilhos para que a IA mova leads automaticamente ao detectar palavras-chave na conversa WhatsApp.
                       Defina também qual playbook é ativado ao entrar em cada estágio.
@@ -545,7 +545,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                               </div>
                               <div className="flex items-center gap-2">
                                 {badgeCount > 0 && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
                                     {badgeCount} {badgeCount === 1 ? 'regra' : 'regras'}
                                   </span>
                                 )}
@@ -562,7 +562,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                 {/* Playbook automático */}
                                 <div>
                                   <div className="flex items-center gap-2 mb-2">
-                                    <BookOpenCheck className="w-3.5 h-3.5 text-violet-400" />
+                                    <BookOpenCheck className="w-3.5 h-3.5 text-blue-400" />
                                     <label className="text-xs font-medium text-slate-300">
                                       Playbook ao entrar neste estágio
                                     </label>
@@ -587,7 +587,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                 {/* Gatilhos de avanço */}
                                 <div>
                                   <div className="flex items-center gap-2 mb-2">
-                                    <GitMerge className="w-3.5 h-3.5 text-violet-400" />
+                                    <GitMerge className="w-3.5 h-3.5 text-blue-400" />
                                     <label className="text-xs font-medium text-slate-300">
                                       Gatilhos para avançar ao próximo estágio
                                     </label>
@@ -599,13 +599,13 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                       {stage.auto_triggers.map((kw) => (
                                         <span
                                           key={kw}
-                                          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs text-violet-300"
+                                          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300"
                                         >
                                           {kw}
                                           <button
                                             type="button"
                                             onClick={() => handleRemoveTrigger(stage.id, kw)}
-                                            className="text-violet-500 hover:text-red-400 transition-colors ml-0.5"
+                                            className="text-blue-500 hover:text-red-400 transition-colors ml-0.5"
                                           >
                                             <X className="w-3 h-3" />
                                           </button>
@@ -636,7 +636,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                       <button
                                         type="button"
                                         onClick={() => handleAddTrigger(stage.id)}
-                                        className="px-3 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 rounded-lg text-violet-300 transition-colors"
+                                        className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-300 transition-colors"
                                       >
                                         <Plus className="w-4 h-4" />
                                       </button>
@@ -666,15 +666,15 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                       disabled={isLastStage}
                                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-colors text-left ${
                                         !stage.requires_approval && !isLastStage
-                                          ? 'border-violet-500/40 bg-violet-500/10'
+                                          ? 'border-blue-500/40 bg-blue-500/10'
                                           : 'border-white/5 bg-transparent opacity-50'
                                       } ${isLastStage ? 'cursor-not-allowed' : 'hover:border-white/10'}`}
                                     >
                                       <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                        !stage.requires_approval && !isLastStage ? 'border-violet-400' : 'border-slate-600'
+                                        !stage.requires_approval && !isLastStage ? 'border-blue-400' : 'border-slate-600'
                                       }`}>
                                         {!stage.requires_approval && !isLastStage && (
-                                          <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                                         )}
                                       </div>
                                       <div>
@@ -726,7 +726,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                     <div className="bg-[#0F172A] border border-white/5 rounded-xl p-4 text-center">
                       <p className="text-xs text-slate-500">
                         Nenhum playbook cadastrado ainda.{' '}
-                        <span className="text-violet-400">Crie playbooks em Configurações → Playbooks</span>{' '}
+                        <span className="text-blue-400">Crie playbooks em Configurações → Playbooks</span>{' '}
                         para associá-los aos estágios.
                       </p>
                     </div>
