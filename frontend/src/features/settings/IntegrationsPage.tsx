@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ui } from '@/src/lib/uiStyles';
 import {
     ToyBrick, KeyRound, Webhook as WebhookIcon, FileCode, Server, Copy, BookOpen, Settings, Eye, EyeOff, RefreshCw,
@@ -65,20 +65,36 @@ const Section: React.FC<{ icon: React.ElementType, title: string, children: Reac
     </div>
 );
 
-const SubTabs: React.FC<{ tabs: {name: string, icon?: React.ElementType}[], activeTab: string, onTabClick: (tab: string) => void }> = ({ tabs, activeTab, onTabClick }) => (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-1 flex items-center gap-1 self-start">
-        {tabs.map(tab => (
-            <button
-                key={tab.name}
-                onClick={() => onTabClick(tab.name)}
-                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors duration-200 ${activeTab === tab.name ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-            >
-                {tab.icon && <tab.icon className="w-4 h-4" />}
-                {tab.name}
-            </button>
-        ))}
-    </div>
-);
+const SubTabs: React.FC<{ tabs: {name: string, icon?: React.ElementType}[], activeTab: string, onTabClick: (tab: string) => void }> = ({ tabs, activeTab, onTabClick }) => {
+    const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
+
+    useEffect(() => {
+        const idx = tabs.findIndex(t => t.name === activeTab);
+        const el = btnRefs.current[idx];
+        if (el) setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
+    }, [activeTab, tabs]);
+
+    return (
+        <div className="relative bg-slate-900/60 border border-blue-500/10 rounded-xl p-1 flex w-fit self-start">
+            <div
+                className="absolute top-1 bottom-1 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-all duration-300 pointer-events-none"
+                style={{ left: pillStyle.left, width: pillStyle.width }}
+            />
+            {tabs.map((tab, idx) => (
+                <button
+                    key={tab.name}
+                    ref={el => { btnRefs.current[idx] = el; }}
+                    onClick={() => onTabClick(tab.name)}
+                    className={`relative z-10 flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.name ? 'text-blue-400' : 'text-slate-500 hover:text-white'}`}
+                >
+                    {tab.icon && <tab.icon className="w-4 h-4" />}
+                    {tab.name}
+                </button>
+            ))}
+        </div>
+    );
+};
 
 
 // --- API Keys Tab ---
@@ -322,11 +338,13 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
     const [saving, setSaving] = useState(false);
 
     const availableEvents: Record<string, string> = {
-        'lead.created': 'Lead Criado',
-        'lead.updated': 'Lead Atualizado',
+        'lead.created':       'Lead Criado',
+        'lead.updated':       'Lead Atualizado',
         'lead.stage_changed': 'Lead Mudou de Estágio',
-        'lead.converted': 'Lead Convertido em Cliente',
-        'contact.created': 'Cliente Criado',
+        'lead.converted':     'Lead Ganho (Convertido)',
+        'lead.lost':          'Lead Perdido',
+        'lead.deleted':       'Lead Deletado',
+        'contact.created':    'Cliente Criado',
         'activity.completed': 'Atividade Concluída',
     };
 

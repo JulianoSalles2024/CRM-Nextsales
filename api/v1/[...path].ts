@@ -186,10 +186,25 @@ async function handleDeliver(req: any, res: any) {
   if (type === 'INSERT') {
     await deliverWebhooks(record.company_id, 'lead.created', record);
   }
+
   if (type === 'UPDATE') {
+    // Estágio mudou
     if (old_record?.column_id !== record.column_id) {
       await deliverWebhooks(record.company_id, 'lead.stage_changed', record);
     }
+    // Lead ganho (convertido)
+    if (!old_record?.won_at && record.won_at) {
+      await deliverWebhooks(record.company_id, 'lead.converted', record);
+    }
+    // Lead perdido
+    if (!old_record?.lost_at && record.lost_at) {
+      await deliverWebhooks(record.company_id, 'lead.lost', record);
+    }
+    // Lead deletado (soft delete)
+    if (!old_record?.deleted_at && record.deleted_at) {
+      await deliverWebhooks(record.company_id, 'lead.deleted', record);
+    }
+    // Atualização geral
     await deliverWebhooks(record.company_id, 'lead.updated', record);
   }
 
