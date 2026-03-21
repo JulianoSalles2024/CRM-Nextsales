@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { User, InviteLink, UserRole } from '@/types';
-import { Users, UserPlus, Copy, Check, Trash2, Shield, Loader2, Ban, RefreshCw, Archive } from 'lucide-react';
+import { Users, UserPlus, Copy, Check, Trash2, Shield, Loader2, Ban, RefreshCw, Archive, CalendarDays } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -16,6 +16,8 @@ interface TeamMember {
     isActive: boolean;
     isArchived: boolean;
     archivedAt?: string;
+    inviteId?: string;
+    inviteExpiresAt?: string | null;
 }
 
 interface Toast {
@@ -97,6 +99,11 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     // Delete state
     const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Extend access state
+    const [extendTarget, setExtendTarget] = useState<TeamMember | null>(null);
+    const [isExtending, setIsExtending] = useState(false);
+
     const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
     const [inviteModalTab, setInviteModalTab] = useState<'create' | 'history'>('create');
     const [sentInvites, setSentInvites] = useState<any[]>([]);
@@ -116,24 +123,41 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
 
     const fetchMembers = useCallback(async () => {
         setIsFetchingUsers(true);
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id, name, email, role, company_id, created_at, is_active, is_archived, archived_at')
-            .eq('company_id', companyId ?? '')
-            .order('created_at', { ascending: true });
+        const [{ data, error }, { data: inviteData }] = await Promise.all([
+            supabase
+                .from('profiles')
+                .select('id, name, email, role, company_id, created_at, is_active, is_archived, archived_at')
+                .eq('company_id', companyId ?? '')
+                .order('created_at', { ascending: true }),
+            supabase
+                .from('invites')
+                .select('id, role, expires_at, used_at')
+                .eq('company_id', companyId ?? ''),
+        ]);
         if (error) {
             console.error('[TeamSettings] fetchMembers error:', error.message, '| code:', error.code);
         } else if (data) {
-            setSupabaseMembers(data.map(p => ({
-                id: p.id,
-                email: p.email ?? '',
-                name: p.name ?? p.email ?? '',
-                role: p.role === 'admin' ? 'Admin' : 'Vendedor',
-                joinedAt: p.created_at,
-                isActive: p.is_active !== false,
-                isArchived: p.is_archived === true,
-                archivedAt: p.archived_at ?? undefined,
-            })));
+            const invites = inviteData ?? [];
+            setSupabaseMembers(data.map(p => {
+                const joinedMs = new Date(p.created_at).getTime();
+                const matched = invites.find((inv: any) =>
+                    inv.used_at &&
+                    inv.role === p.role &&
+                    Math.abs(new Date(inv.used_at).getTime() - joinedMs) < 15000
+                );
+                return {
+                    id: p.id,
+                    email: p.email ?? '',
+                    name: p.name ?? p.email ?? '',
+                    role: p.role === 'admin' ? 'Admin' : 'Vendedor',
+                    joinedAt: p.created_at,
+                    isActive: p.is_active !== false,
+                    isArchived: p.is_archived === true,
+                    archivedAt: p.archived_at ?? undefined,
+                    inviteId: matched?.id ?? undefined,
+                    inviteExpiresAt: matched?.expires_at ?? undefined,
+                };
+            }));
         }
         setIsFetchingUsers(false);
     }, [companyId]);
@@ -231,6 +255,26 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         } else {
             await fetchMembers();
             showToast('Usuário removido com sucesso', 'success');
+        }
+    };
+
+    const handleExtendAccess = async (days: number | null) => {
+        if (!extendTarget?.inviteId) return;
+        setIsExtending(true);
+        const newExpiresAt = days === null ? null : (() => {
+            const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString();
+        })();
+        const { error } = await supabase
+            .from('invites')
+            .update({ expires_at: newExpiresAt })
+            .eq('id', extendTarget.inviteId);
+        setIsExtending(false);
+        setExtendTarget(null);
+        if (error) {
+            showToast(`Erro ao atualizar acesso: ${error.message}`, 'error');
+        } else {
+            await fetchMembers();
+            showToast('Período de acesso atualizado', 'success');
         }
     };
 
@@ -449,6 +493,11 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                 Arquivado
                                             </span>
                                         )}
+                                        {member.inviteExpiresAt && new Date(member.inviteExpiresAt) < new Date() && (
+                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500/15 text-orange-400 uppercase tracking-wider border border-orange-500/20">
+                                                Expirado
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-slate-400">
                                         <span>{member.email}</span>
@@ -460,6 +509,16 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         </span>
                                         <span>•</span>
                                         <span>Desde {formatDate(member.joinedAt)}</span>
+                                        {member.inviteExpiresAt && (
+                                            <>
+                                                <span>•</span>
+                                                <span className={`flex items-center gap-1 ${new Date(member.inviteExpiresAt) < new Date() ? 'text-orange-400' : 'text-slate-500'}`}>
+                                                    <CalendarDays className="w-3 h-3" />
+                                                    {new Date(member.inviteExpiresAt) < new Date() ? 'Expirou em ' : 'Expira em '}
+                                                    {new Date(member.inviteExpiresAt).toLocaleDateString('pt-BR')}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -488,6 +547,16 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         </>
                                     ) : (
                                         <>
+                                            {member.inviteId && (
+                                                <button
+                                                    onClick={() => setExtendTarget(member)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
+                                                    title="Editar período de acesso"
+                                                >
+                                                    <CalendarDays className="w-3.5 h-3.5" />
+                                                    Acesso
+                                                </button>
+                                            )}
                                             {member.isActive ? (
                                                 <button
                                                     onClick={() => setBlockTarget(member)}
@@ -769,6 +838,65 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         : <Trash2 className="w-4 h-4" />
                                     }
                                     {isDeleting ? 'Excluindo...' : 'Excluir'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Extend Access Modal */}
+            <AnimatePresence>
+                {extendTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+                        >
+                            <div className="p-6">
+                                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-4">
+                                    <CalendarDays className="w-6 h-6 text-blue-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white text-center">Editar período de acesso</h3>
+                                <p className="text-sm text-slate-400 text-center mt-1 mb-1">
+                                    <span className="text-white font-medium">{extendTarget.name}</span>
+                                </p>
+                                {extendTarget.inviteExpiresAt && (
+                                    <p className="text-xs text-center mb-4 text-slate-500">
+                                        Acesso atual:{' '}
+                                        <span className={new Date(extendTarget.inviteExpiresAt) < new Date() ? 'text-orange-400' : 'text-slate-300'}>
+                                            {new Date(extendTarget.inviteExpiresAt).toLocaleDateString('pt-BR')}
+                                            {new Date(extendTarget.inviteExpiresAt) < new Date() ? ' (expirado)' : ''}
+                                        </span>
+                                    </p>
+                                )}
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { label: '+30 dias', days: 30 },
+                                        { label: '+90 dias', days: 90 },
+                                        { label: '+1 ano',   days: 365 },
+                                        { label: 'Sem expiração', days: null },
+                                    ].map(({ label, days }) => (
+                                        <button
+                                            key={label}
+                                            onClick={() => handleExtendAccess(days)}
+                                            disabled={isExtending}
+                                            className="py-2.5 rounded-xl text-sm font-medium bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-white transition-all disabled:opacity-50"
+                                        >
+                                            {isExtending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="px-6 pb-6">
+                                <button
+                                    onClick={() => setExtendTarget(null)}
+                                    disabled={isExtending}
+                                    className="w-full py-2.5 rounded-xl text-sm font-medium text-slate-400 border border-slate-700 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                >
+                                    Cancelar
                                 </button>
                             </div>
                         </motion.div>
