@@ -92,7 +92,7 @@ async function handleLeads(req: any, res: any, ctx: any) {
       .select()
       .single();
 
-    if (error) throw new AppError(500, 'Erro ao criar lead.');
+    if (error) throw new AppError(400, error.message);
     deliverWebhooks(ctx.companyId, 'lead.created', data);
     return res.status(201).json({ data });
   }
