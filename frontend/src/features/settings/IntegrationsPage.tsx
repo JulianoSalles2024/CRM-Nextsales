@@ -594,13 +594,13 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
         showNotification(`${subject} copiado!`, 'success');
     };
 
-    const baseUrl = 'https://lxcjwmvclbfqizwtxpxy.supabase.co/functions/v1/api-v1';
-    const quickStartCurl = `curl -X GET "https://.../leads?page=1&limit=20" \\\n -H "Authorization: Bearer YOUR_API_KEY"`;
-    const quickStartResponse = `{\n  "data": [\n    {\n      "id": "uid",\n      "title": "lead Empresa X",\n      "value": 15000,\n      "stage": "uid",\n      "status": "active",\n      "created_at": "2024-01-15T10:30:00Z"\n    }\n  ],\n  "pagination": {\n    "page": 1,\n    "limit": 20,\n    "total": 150,\n    "totalPages": 8\n  }\n}`;
+    const baseUrl = `${window.location.origin}/api/v1`;
+    const quickStartCurl = `curl -X GET "${baseUrl}/leads?page=1&limit=20" \\\n  -H "Authorization: Bearer sk_live_SUA_CHAVE"`;
+    const quickStartResponse = `{\n  "data": [\n    {\n      "id": "uuid",\n      "name": "Empresa X",\n      "value": 15000,\n      "status": "NOVO",\n      "created_at": "2024-01-15T10:30:00Z"\n    }\n  ],\n  "meta": {\n    "total": 150,\n    "page": 1,\n    "limit": 20,\n    "pages": 8\n  }\n}`;
 
-    const exampleCurl = `curl -X GET "https://.../api-v1/leads" \\\n -H "Authorization: Bearer sk_live_SUA_CHAVE"`;
-    const exampleJs = `fetch('https://.../api-v1/leads', {\n  headers: {\n    'Authorization': 'Bearer sk_live_SUA_CHAVE'\n  }\n})`;
-    const examplePy = `import requests\n\nresponse = requests.get(\n    'https://.../api-v1/leads',\n    headers={'Authorization': 'Bearer sk_live_SUA_CHAVE'}\n)`;
+    const exampleCurl = `curl -X GET "${baseUrl}/leads" \\\n  -H "Authorization: Bearer sk_live_SUA_CHAVE"`;
+    const exampleJs = `fetch('${baseUrl}/leads', {\n  headers: {\n    'Authorization': 'Bearer sk_live_SUA_CHAVE'\n  }\n})\n  .then(r => r.json())\n  .then(({ data, meta }) => console.log(data));`;
+    const examplePy = `import requests\n\nresponse = requests.get(\n    '${baseUrl}/leads',\n    headers={'Authorization': 'Bearer sk_live_SUA_CHAVE'}\n)\nleads = response.json()['data']`;
 
     const endpointsData = {
         Leads: { count: 7, endpoints: [{m:'GET',p:'/leads', d:'Listar leads com paginação e filtros'}, {m:'GET',p:'/leads/{id}', d:'Obter detalhes de um lead'}, {m:'POST',p:'/leads', d: 'Criar novo lead'}, {m:'PUT',p:'/leads/{id}', d:'Atualizar lead'}, {m:'PATCH',p:'/leads/{id}/stage', d: 'Mover lead de estágio'}, {m:'PATCH',p:'/leads/{id}/convert', d:'Converter lead em cliente'}, {m:'DELETE',p:'/leads/{id}', d:'Deletar lead'}] },
