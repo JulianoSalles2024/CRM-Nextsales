@@ -1,11 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Activity, MessageSquare, Target, Calendar, DollarSign,
-  AlertTriangle, TrendingUp, Users, Zap, RefreshCw,
+  AlertTriangle, TrendingUp, Users, Zap, RefreshCw, Brain,
 } from 'lucide-react';
 import { useAgentPerformance } from './hooks/useAgentPerformance';
+import { useSupervisorInsights } from './hooks/useSupervisorInsights';
+import { SupervisorIntelligence } from './SupervisorIntelligence';
 import type { AgentRanking, AgentFunctionType } from './hooks/useAgents';
 import type { PerformancePeriod } from './hooks/useAgentPerformance';
+
+type CommandTab = 'central' | 'inteligencia';
+
+const COMMAND_TABS: { id: CommandTab; label: string; icon: React.ElementType }[] = [
+  { id: 'central',      label: 'Central de Comando', icon: Zap },
+  { id: 'inteligencia', label: 'Inteligência',        icon: Brain },
+];
 
 const FUNCTION_COLORS: Record<AgentFunctionType, string> = {
   hunter: '#f97316', sdr: '#60a5fa', closer: '#34d399',
@@ -28,10 +37,27 @@ interface Props {
 
 export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
   const { fetchTodayTotals, fetchRanking, loading } = useAgentPerformance();
+  const { unreadCount } = useSupervisorInsights();
   const [kpis, setKpis] = useState<KpiData | null>(null);
   const [ranking, setRanking] = useState<AgentRanking[]>([]);
   const [period, setPeriod] = useState<PerformancePeriod>('month');
   const [refreshing, setRefreshing] = useState(false);
+  const [commandTab, setCommandTab] = useState<CommandTab>('central');
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pill, setPill] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const idx = COMMAND_TABS.findIndex(t => t.id === commandTab);
+    const el = tabRefs.current[idx];
+    if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [commandTab]);
+
+  useEffect(() => {
+    const idx = COMMAND_TABS.findIndex(t => t.id === commandTab);
+    const el = tabRefs.current[idx];
+    if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const load = async () => {
     setRefreshing(true);
@@ -59,6 +85,40 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
 
   return (
     <div className="space-y-6">
+      {/* Inner tab bar */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+          <div
+            className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+            style={{ left: pill.left, width: pill.width }}
+          />
+          {COMMAND_TABS.map((tab, i) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                ref={el => { tabRefs.current[i] = el; }}
+                onClick={() => setCommandTab(tab.id)}
+                className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
+                  commandTab === tab.id ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                {tab.label}
+                {tab.id === 'inteligencia' && unreadCount > 0 && (
+                  <span className="ml-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {commandTab === 'inteligencia' && <SupervisorIntelligence />}
+
+      {commandTab === 'central' && <>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -206,6 +266,7 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
           })}
         </div>
       </div>
+      </>}
     </div>
   );
 };
