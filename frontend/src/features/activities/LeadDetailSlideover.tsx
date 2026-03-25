@@ -24,7 +24,9 @@ import {
     Edit3,
     Phone,
     Building2,
+    Bot,
 } from 'lucide-react';
+import { useConversationSummaries } from './hooks/useConversationSummaries';
 import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task, PlaybookHistoryEntry, Board } from '@/types';
 import { VercelAvatar } from '@/src/shared/components/VercelAvatar';
 
@@ -77,8 +79,10 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
     allTags,
     onUpdateLead,
 }) => {
-  const [activeTab, setActiveTab] = useState('Timeline');
-  const tabs = ['Timeline', 'Playbook', 'Produtos', 'IA Insights'];
+  const [activeTab, setActiveTab] = useState('Resumo');
+  const tabs = ['Resumo', 'Playbook', 'Produtos', 'IA Insights'];
+  const { summaries, loading: summariesLoading } = useConversationSummaries(lead.id as string);
+  const [resumoSubTab, setResumoSubTab] = useState<'resumos' | 'historico'>('resumos');
   const [newNote, setNewNote] = useState('');
   const [timelinePage, setTimelinePage] = useState(1);
   const TIMELINE_PER_PAGE = 6;
@@ -329,75 +333,122 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
             </div>
 
             <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
-              {activeTab === 'Timeline' && (
-                <div className="space-y-8">
-                  <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-6">
-                    <textarea
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Escreva uma nota..."
-                      className="w-full bg-transparent text-sm text-white placeholder-slate-600 focus:outline-none resize-none min-h-[24px]"
-                    />
-                    <div className="flex justify-end mt-4 pt-4 border-t border-slate-800/50">
-                      <button
-                        onClick={handleAddNoteClick}
-                        className="bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all"
-                      >
-                        <Send className="w-3.5 h-3.5" /> Enviar
-                      </button>
-                    </div>
+              {activeTab === 'Resumo' && (
+                <div className="space-y-5">
+                  {/* Sub-tabs */}
+                  <div className="flex gap-1 p-1 bg-slate-900/60 border border-white/5 rounded-xl w-fit">
+                    <button
+                      onClick={() => setResumoSubTab('resumos')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${resumoSubTab === 'resumos' ? 'bg-sky-500/15 text-sky-400 border border-sky-500/20' : 'text-slate-500 hover:text-white'}`}
+                    >
+                      <Bot className="w-3 h-3" />
+                      Resumos IA
+                    </button>
+                    <button
+                      onClick={() => setResumoSubTab('historico')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${resumoSubTab === 'historico' ? 'bg-sky-500/15 text-sky-400 border border-sky-500/20' : 'text-slate-500 hover:text-white'}`}
+                    >
+                      <Clock className="w-3 h-3" />
+                      Histórico
+                    </button>
                   </div>
 
-                  {(() => {
+                  {/* Sub-tab: Resumos IA */}
+                  {resumoSubTab === 'resumos' && (
+                    <div className="space-y-3">
+                      {summaries.length > 0 ? summaries.map(s => (
+                        <div key={s.id} className="bg-sky-500/5 border border-sky-500/15 rounded-2xl p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-sky-400">
+                              {s.contact_name || s.contact_identifier}
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                              {new Date(s.ai_summary_at).toLocaleString('pt-BR')}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{s.ai_summary}</p>
+                        </div>
+                      )) : (
+                        <div className="text-center py-12 flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center">
+                            <Bot className="w-6 h-6 text-slate-500" />
+                          </div>
+                          <p className="text-slate-500 text-sm">Nenhum resumo gerado ainda.</p>
+                          <p className="text-slate-600 text-xs">Os resumos aparecem aqui após o encerramento de uma conversa.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sub-tab: Histórico */}
+                  {resumoSubTab === 'historico' && (() => {
                     const totalPages = Math.max(1, Math.ceil(activities.length / TIMELINE_PER_PAGE));
                     const page = Math.min(timelinePage, totalPages);
                     const paged = activities.slice((page - 1) * TIMELINE_PER_PAGE, page * TIMELINE_PER_PAGE);
                     return (
-                      <div className="space-y-4">
-                        {activities.length > 0 ? (
-                          <>
-                            <div className="space-y-4">
-                              {paged.map(activity => (
-                                <div key={activity.id} className="flex gap-4">
-                                  <div className="mt-1">
-                                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
-                                      {activity.type === 'note' && <FileText className="w-4 h-4 text-sky-400" />}
-                                      {activity.type === 'status_change' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
-                                      {activity.type === 'email_sent' && <Mail className="w-4 h-4 text-amber-400" />}
+                      <div className="space-y-6">
+                        <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-6">
+                          <textarea
+                            value={newNote}
+                            onChange={(e) => setNewNote(e.target.value)}
+                            placeholder="Escreva uma nota..."
+                            className="w-full bg-transparent text-sm text-white placeholder-slate-600 focus:outline-none resize-none min-h-[24px]"
+                          />
+                          <div className="flex justify-end mt-4 pt-4 border-t border-slate-800/50">
+                            <button
+                              onClick={handleAddNoteClick}
+                              className="bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all"
+                            >
+                              <Send className="w-3.5 h-3.5" /> Enviar
+                            </button>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          {activities.length > 0 ? (
+                            <>
+                              <div className="space-y-4">
+                                {paged.map(activity => (
+                                  <div key={activity.id} className="flex gap-4">
+                                    <div className="mt-1">
+                                      <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
+                                        {activity.type === 'note' && <FileText className="w-4 h-4 text-sky-400" />}
+                                        {activity.type === 'status_change' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
+                                        {activity.type === 'email_sent' && <Mail className="w-4 h-4 text-amber-400" />}
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="text-xs font-bold text-white">{activity.authorName}</span>
+                                        <span className="text-[10px] text-slate-500">{new Date(activity.timestamp).toLocaleString('pt-BR')}</span>
+                                      </div>
+                                      <p className="text-sm text-slate-400">{activity.text}</p>
                                     </div>
                                   </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-bold text-white">{activity.authorName}</span>
-                                      <span className="text-[10px] text-slate-500">{new Date(activity.timestamp).toLocaleString('pt-BR')}</span>
-                                    </div>
-                                    <p className="text-sm text-slate-400">{activity.text}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            {totalPages > 1 && (
-                              <div className="flex items-center justify-center gap-1 pt-4">
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                                  <button
-                                    key={p}
-                                    onClick={() => setTimelinePage(p)}
-                                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${p === page ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
-                                  >
-                                    {p}
-                                  </button>
                                 ))}
                               </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-center py-12 flex flex-col items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center">
-                              <Clock className="w-6 h-6 text-slate-500" />
+                              {totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-1 pt-4">
+                                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                                    <button
+                                      key={p}
+                                      onClick={() => setTimelinePage(p)}
+                                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${p === page ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
+                                    >
+                                      {p}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-center py-12 flex flex-col items-center gap-3">
+                              <div className="w-12 h-12 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center">
+                                <Clock className="w-6 h-6 text-slate-500" />
+                              </div>
+                              <p className="text-slate-500 text-sm">Nenhuma atividade registrada.</p>
                             </div>
-                            <p className="text-slate-500 text-sm">Nenhuma atividade registrada.</p>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     );
                   })()}
