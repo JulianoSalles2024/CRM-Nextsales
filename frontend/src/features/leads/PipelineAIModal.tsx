@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Bot, Zap, LayoutGrid, BookOpen, Code2, Layers, CheckCircle, Loader2, GitMerge, Plus, Trash2, Lock, BookOpenCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -352,7 +352,16 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="p-6 space-y-4"
+                >
 
               {/* ── Automático ─────────────────────────────────────── */}
               {activeTab === 'auto' && (
@@ -798,6 +807,8 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                 </div>
               )}
 
+                </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* Footer */}
