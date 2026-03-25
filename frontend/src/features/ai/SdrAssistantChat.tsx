@@ -8,6 +8,7 @@ import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAIConversations, type AIMessage } from '@/src/hooks/useAIConversations';
 import type { Lead, Task, ColumnData, Activity } from '@/types';
+import type { TeamMember } from '@/src/hooks/useTeamMembers';
 
 interface SdrAssistantChatProps {
     onClose: () => void;
@@ -15,6 +16,7 @@ interface SdrAssistantChatProps {
     tasks: Task[];
     columns: ColumnData[];
     activities: Activity[];
+    members: TeamMember[];
 }
 
 const groupByDate = (conversations: any[]) => {
@@ -41,7 +43,7 @@ const groupByDate = (conversations: any[]) => {
     return groups.filter(g => g.items.length > 0);
 };
 
-const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tasks, columns, activities }) => {
+const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tasks, columns, activities, members }) => {
     const { state } = useAIState();
     const { credentials } = useAIProviders();
     const { currentUserRole, user } = useAuth();
@@ -111,25 +113,79 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
     }, [credentials]);
 
     const getCRMContext = () => {
-        const leadsSummary = leads.slice(0, 50).map(l => ({
-            name: l.name,
-            company: l.company,
-            value: l.value,
-            status: columns.find(c => c.id === l.columnId)?.title || 'Desconhecido',
-            lastActivity: l.lastActivity,
-        }));
+        // Mapa ownerId → nome do vendedor
+        const memberMap: Record<string, string> = {};
+        members.forEach(m => { memberMap[m.id] = m.name; });
+
+        // Equipe de vendas (apenas sellers)
+        const sellers = members.filter(m => m.role === 'Vendedor');
+
+        // Métricas agregadas por vendedor
+        const sellerStats = sellers.map(seller => {
+            const sellerLeads = leads.filter(l => l.ownerId === seller.id);
+            const wonLeads = sellerLeads.filter(l => !!l.wonAt || l.status === 'GANHO');
+            return {
+                name: seller.name,
+                totalLeads: sellerLeads.length,
+                pipelineValue: sellerLeads.reduce((s, l) => s + l.value, 0),
+                wonLeads: wonLeads.length,
+                wonValue: wonLeads.reduce((s, l) => s + l.value, 0),
+            };
+        });
+
+        // Leads recentes por vendedor (até 10 por seller, priorizando os mais recentes)
+        const recentLeads = sellers.flatMap(seller =>
+            leads
+                .filter(l => l.ownerId === seller.id)
+                .sort((a, b) => {
+                    const ta = a.lastActivityTimestamp ?? a.createdAt ?? '';
+                    const tb = b.lastActivityTimestamp ?? b.createdAt ?? '';
+                    return tb.localeCompare(ta);
+                })
+                .slice(0, 10)
+                .map(l => ({
+                    name: l.name,
+                    company: l.company,
+                    ownerName: seller.name,
+                    value: l.value,
+                    status: columns.find(c => c.id === l.columnId)?.title ?? 'Desconhecido',
+                    lastActivity: l.lastActivity ?? null,
+                    wonAt: l.wonAt ?? null,
+                }))
+        );
+
+        // Leads sem dono atribuído (até 20)
+        const unassignedLeads = leads
+            .filter(l => !l.ownerId)
+            .slice(0, 20)
+            .map(l => ({
+                name: l.name,
+                company: l.company,
+                ownerName: 'Sem responsável',
+                value: l.value,
+                status: columns.find(c => c.id === l.columnId)?.title ?? 'Desconhecido',
+                lastActivity: l.lastActivity ?? null,
+            }));
+
         const tasksPending = tasks.filter(t => t.status === 'pending').length;
         const totalValue = leads.reduce((acc, curr) => acc + curr.value, 0);
-        return `
-        CONTEXTO ATUAL DO CRM:
-        - Total de Leads: ${leads.length}
-        - Valor Total em Pipeline: R$ ${totalValue.toFixed(2)}
-        - Tarefas Pendentes: ${tasksPending}
-        - Estágios do Pipeline: ${columns.map(c => c.title).join(', ')}
 
-        AMOSTRA DE LEADS:
-        ${JSON.stringify(leadsSummary)}
-        `;
+        return `
+CONTEXTO ATUAL DO CRM (${new Date().toLocaleDateString('pt-BR')}):
+- Total de Leads: ${leads.length}
+- Valor Total em Pipeline: R$ ${totalValue.toFixed(2)}
+- Tarefas Pendentes: ${tasksPending}
+- Estágios do Pipeline: ${columns.map(c => c.title).join(', ')}
+
+EQUIPE DE VENDAS (${sellers.length} vendedor${sellers.length !== 1 ? 'es' : ''}):
+${JSON.stringify(sellers.map(s => ({ id: s.id, name: s.name })))}
+
+DESEMPENHO POR VENDEDOR:
+${JSON.stringify(sellerStats)}
+
+LEADS RECENTES POR VENDEDOR:
+${JSON.stringify(recentLeads)}
+${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unassignedLeads)}` : ''}`;
     };
 
     const handleNewConversation = async () => {

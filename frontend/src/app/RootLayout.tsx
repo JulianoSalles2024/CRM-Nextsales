@@ -10,6 +10,7 @@ import { useAuth } from '@/src/features/auth/AuthContext';
 import PipelineOnboarding from '@/src/features/onboarding/PipelineOnboarding';
 import WhatsAppConnectModal from '@/src/features/onboarding/WhatsAppConnectModal';
 import { useMyConnection } from '@/src/hooks/useMyConnection';
+import { useTeamMembers } from '@/src/hooks/useTeamMembers';
 
 // Layout components
 import Sidebar from '@/src/app/Sidebar';
@@ -48,6 +49,7 @@ export default function RootLayout() {
         user?.id ?? null,
         companyId ?? null
     );
+    const { members } = useTeamMembers(companyId ?? null);
 
     // Banner: usuário autenticado sem WhatsApp conectado
     const showWhatsAppBanner =
@@ -345,6 +347,7 @@ export default function RootLayout() {
                             tasks={ctx.tasks}
                             columns={ctx.columns}
                             activities={ctx.activities}
+                            members={members}
                         />
                     ) : (
                         <SdrBotModal
