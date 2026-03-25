@@ -119,36 +119,47 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
     if (!conversation || !companyId || !canUpdate) return;
     setIsUpdating(true);
 
-    const updateData: any = { status: newStatus };
+    // Encerramento usa a RPC unificada que faz cleanup completo:
+    // fecha conversa, exaure follow-ups, arquiva memória do agente.
+    // Outros status continuam com PATCH direto (sem efeitos colaterais complexos).
+    if (newStatus === 'resolved') {
+      const userName = localUser?.name ?? user?.email ?? 'atendente';
+      const { error } = await supabase.rpc('close_conversation', {
+        p_conversation_id: conversation.id,
+        p_company_id:      companyId,
+        p_reason:          `Encerrado manualmente por ${userName}`,
+        p_outcome:         'neutral',
+      });
+      if (!error) onStatusChange(conversation.id, newStatus);
+      setIsUpdating(false);
+      return;
+    }
+
     // Note: do NOT clear assignee_id when returning to 'waiting' — RLS blocks
     // sellers from creating rows with assignee_id=null (only admins can do that).
     // The seller stays linked to the conversation; status='waiting' disables the composer.
-
     const { error } = await supabase
       .from('conversations')
-      .update(updateData)
+      .update({ status: newStatus })
       .eq('id', conversation.id)
       .eq('company_id', companyId);
 
     if (!error) {
       const userName = localUser?.name ?? user?.email ?? 'Usuário';
-      const previousStatus = conversation.status;
       const content =
-        newStatus === 'in_progress' && previousStatus === 'resolved'
+        newStatus === 'in_progress' && conversation.status === 'resolved'
           ? `${userName} reabriu a conversa`
           : newStatus === 'in_progress'
           ? `${userName} assumiu o atendimento`
-          : newStatus === 'waiting'
-          ? `${userName} devolveu o atendimento para o agente`
-          : 'Conversa marcada como resolvida';
+          : `${userName} devolveu o atendimento para o agente`;
 
       await supabase.from('messages').insert({
-        company_id: companyId,
+        company_id:      companyId,
         conversation_id: conversation.id,
-        direction: null,
-        sender_type: 'system',
+        direction:       null,
+        sender_type:     'system',
         content,
-        content_type: 'text',
+        content_type:    'text',
       });
 
       onStatusChange(conversation.id, newStatus);
