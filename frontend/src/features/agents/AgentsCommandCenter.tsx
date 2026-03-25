@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity, MessageSquare, Target, Calendar, DollarSign,
   AlertTriangle, TrendingUp, Users, Zap, RefreshCw, Brain,
@@ -115,6 +116,15 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
           })}
         </div>
       </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={commandTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+        >
 
       {commandTab === 'inteligencia' && <SupervisorIntelligence />}
 
@@ -267,6 +277,9 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
         </div>
       </div>
       </>}
+
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

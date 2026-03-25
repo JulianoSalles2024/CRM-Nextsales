@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Zap, LayoutGrid, TrendingUp, Bot, Users,
 } from 'lucide-react';
@@ -150,29 +151,40 @@ export const AgentsPage: React.FC = () => {
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === 'comando' && (
-          <AgentsCommandCenter onSelectAgent={(id) => {
-            const found = agents.find(a => a.id === id);
-            if (found) setSelectedAgent(found);
-          }} />
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+            className="p-6"
+          >
+            {activeTab === 'comando' && (
+              <AgentsCommandCenter onSelectAgent={(id) => {
+                const found = agents.find(a => a.id === id);
+                if (found) setSelectedAgent(found);
+              }} />
+            )}
 
-        {activeTab === 'agentes' && (
-          <AgentsList
-            agents={agents}
-            loading={loading}
-            onCreateAgent={() => { setEditingAgent(null); setWizardOpen(true); }}
-            onToggle={toggleActive}
-            onArchive={archiveAgent}
-            onEdit={handleEditAgent}
-            onSelectAgent={(agent) => setSelectedAgent(agent)}
-          />
-        )}
+            {activeTab === 'agentes' && (
+              <AgentsList
+                agents={agents}
+                loading={loading}
+                onCreateAgent={() => { setEditingAgent(null); setWizardOpen(true); }}
+                onToggle={toggleActive}
+                onArchive={archiveAgent}
+                onEdit={handleEditAgent}
+                onSelectAgent={(agent) => setSelectedAgent(agent)}
+              />
+            )}
 
-        {activeTab === 'analytics' && (
-          <AgentAnalytics companyId={companyId} />
-        )}
+            {activeTab === 'analytics' && (
+              <AgentAnalytics companyId={companyId} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Agent Detail Drawer */}
