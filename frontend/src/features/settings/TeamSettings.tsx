@@ -303,7 +303,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
             const companyId = profile?.company_id ?? null;
             const { data, error } = await supabase
                 .from('invites')
-                .insert({ token, role: roleValue, company_id: companyId, expires_at: expiresAt })
+                .insert({ token, role: roleValue, company_id: companyId, expires_at: expiresAt, email: inviteEmail.trim() || null })
                 .select().single();
             if (error) throw new Error(error.message);
             const newInvite: InviteLink = {

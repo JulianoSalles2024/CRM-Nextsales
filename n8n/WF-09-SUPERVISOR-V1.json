@@ -1,0 +1,532 @@
+{
+  "name": "WF-09-SUPERVISOR-V1",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WF-09 — Supervisor Intelligence V1\n**Exército Comercial de IA — Análise Diária**\n\nRoda todo dia às 02h BRT (05:00 UTC).\nPara cada empresa:\n1. Busca performance dos agentes (últimos 7 dias)\n2. Busca performance dos vendedores (leads + metas)\n3. Manda para OpenAI analisar\n4. Insere insights em `supervisor_insights`\n5. Notifica o admin\n\n**Tabelas lidas:** ai_agents, agent_performance, profiles, leads, goals\n**Tabela escrita:** supervisor_insights, notifications\n**Credenciais:** organization_ai_credentials (openai)",
+        "height": 280,
+        "width": 460,
+        "color": 5
+      },
+      "id": "wf09-note-001",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -200]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 5 * * *"
+            }
+          ]
+        }
+      },
+      "id": "wf09-node-001",
+      "name": "Schedule - Daily 02h BRT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/companies",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "select", "value": "id,name" },
+            { "name": "limit", "value": "50" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wf09-node-002",
+      "name": "HTTP - Get Companies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.all().map(i => i.json);\nconst companies = Array.isArray(raw[0]) ? raw[0] : raw;\nif (!companies || companies.length === 0 || !companies[0].id) return [];\nreturn companies.map(c => ({ json: c }));"
+      },
+      "id": "wf09-node-003",
+      "name": "Code - Flatten Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-companies",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wf09-node-004",
+      "name": "IF - Has Companies",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": { "batchSize": 1, "options": {} },
+      "id": "wf09-node-005",
+      "name": "Loop - Companies",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/organization_ai_credentials",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "organization_id", "value": "=eq.{{ $json.id }}" },
+            { "name": "ai_provider", "value": "=eq.openai" },
+            { "name": "select", "value": "ai_api_key" },
+            { "name": "limit", "value": "1" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wf09-node-006",
+      "name": "HTTP - Get OpenAI Credentials",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-key",
+              "leftValue": "={{ Array.isArray($json) ? $json.length > 0 : !!$json.ai_api_key }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wf09-node-007",
+      "name": "IF - Has OpenAI Key",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1440, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/agent_performance",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "company_id", "value": "=eq.{{ $('Loop - Companies').first().json.id }}" },
+            { "name": "period_date", "value": "=gte.{{ new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0] }}" },
+            { "name": "select", "value": "agent_id,period_date,approaches,responses,qualified,meetings,sales,revenue,escalations" },
+            { "name": "order", "value": "period_date.desc" },
+            { "name": "limit", "value": "200" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "id": "wf09-node-008",
+      "name": "HTTP - Get Agent Performance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, 120]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/ai_agents",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "company_id", "value": "=eq.{{ $('Loop - Companies').first().json.id }}" },
+            { "name": "is_archived", "value": "=eq.false" },
+            { "name": "select", "value": "id,name,function_type,is_active,monthly_goal,goal_metric,avatar_color" },
+            { "name": "limit", "value": "50" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "id": "wf09-node-009",
+      "name": "HTTP - Get Agents Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, 120]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/profiles",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "company_id", "value": "=eq.{{ $('Loop - Companies').first().json.id }}" },
+            { "name": "role", "value": "=eq.seller" },
+            { "name": "is_active", "value": "=eq.true" },
+            { "name": "select", "value": "id,name,avatar_color" },
+            { "name": "limit", "value": "50" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "id": "wf09-node-010",
+      "name": "HTTP - Get Sellers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2160, 120]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/leads",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "company_id", "value": "=eq.{{ $('Loop - Companies').first().json.id }}" },
+            { "name": "deleted_at", "value": "=is.null" },
+            { "name": "select", "value": "id,owner_id,status,value,created_at,updated_at,won_at,lost_at" },
+            { "name": "order", "value": "updated_at.desc" },
+            { "name": "limit", "value": "500" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "id": "wf09-node-011",
+      "name": "HTTP - Get Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2400, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Helpers ────────────────────────────────────────────────\nconst company = $('Loop - Companies').first().json;\n\n// Credenciais OpenAI\nconst credRaw = $('HTTP - Get OpenAI Credentials').first().json;\nconst credArr = Array.isArray(credRaw) ? credRaw : [credRaw];\nconst openAiKey = credArr[0]?.ai_api_key ?? null;\n\n// Agentes\nconst agentsRaw = $('HTTP - Get Agents Info').first().json;\nconst agents = Array.isArray(agentsRaw) ? agentsRaw : (agentsRaw?.id ? [agentsRaw] : []);\n\n// Performance dos agentes (últimos 7 dias)\nconst perfRaw = $('HTTP - Get Agent Performance').first().json;\nconst perfRows = Array.isArray(perfRaw) ? perfRaw : (perfRaw?.agent_id ? [perfRaw] : []);\n\n// Agregar performance por agente\nconst perfMap = {};\nfor (const row of perfRows) {\n  if (!row.agent_id) continue;\n  if (!perfMap[row.agent_id]) {\n    perfMap[row.agent_id] = { approaches: 0, responses: 0, qualified: 0, meetings: 0, sales: 0, revenue: 0, escalations: 0 };\n  }\n  const m = perfMap[row.agent_id];\n  m.approaches  += row.approaches  || 0;\n  m.responses   += row.responses   || 0;\n  m.qualified   += row.qualified   || 0;\n  m.meetings    += row.meetings    || 0;\n  m.sales       += row.sales       || 0;\n  m.revenue     += row.revenue     || 0;\n  m.escalations += row.escalations || 0;\n}\n\n// Montar resumo dos agentes\nconst agentsSummary = agents.map(a => {\n  const p = perfMap[a.id] || { approaches: 0, responses: 0, qualified: 0, meetings: 0, sales: 0, revenue: 0 };\n  const responseRate = p.approaches > 0 ? ((p.responses / p.approaches) * 100).toFixed(1) : '0';\n  const convRate = p.responses > 0 ? ((p.sales / p.responses) * 100).toFixed(1) : '0';\n  return {\n    id: a.id,\n    name: a.name,\n    type: a.function_type,\n    active: a.is_active,\n    monthly_goal: a.monthly_goal,\n    goal_metric: a.goal_metric,\n    last_7_days: {\n      approaches: p.approaches,\n      responses: p.responses,\n      qualified: p.qualified,\n      meetings: p.meetings,\n      sales: p.sales,\n      revenue: p.revenue,\n      response_rate_pct: parseFloat(responseRate),\n      conversion_rate_pct: parseFloat(convRate)\n    }\n  };\n});\n\n// Vendedores\nconst sellersRaw = $('HTTP - Get Sellers').first().json;\nconst sellers = Array.isArray(sellersRaw) ? sellersRaw : (sellersRaw?.id ? [sellersRaw] : []);\n\n// Leads\nconst leadsRaw = $('HTTP - Get Leads').first().json;\nconst leads = Array.isArray(leadsRaw) ? leadsRaw : (leadsRaw?.id ? [leadsRaw] : []);\n\nconst now = Date.now();\nconst day7 = 7 * 24 * 60 * 60 * 1000;\nconst day30 = 30 * 24 * 60 * 60 * 1000;\nconst day5 = 5 * 24 * 60 * 60 * 1000;\n\n// Agregar leads por vendedor\nconst sellerMap = {};\nfor (const s of sellers) {\n  sellerMap[s.id] = { total: 0, won_30d: 0, lost_30d: 0, stale: 0, revenue_30d: 0, last_activity: null };\n}\n\nfor (const lead of leads) {\n  if (!lead.owner_id || !sellerMap[lead.owner_id]) continue;\n  const m = sellerMap[lead.owner_id];\n  m.total++;\n\n  const updatedAt = new Date(lead.updated_at).getTime();\n  const wonAt = lead.won_at ? new Date(lead.won_at).getTime() : null;\n  const lostAt = lead.lost_at ? new Date(lead.lost_at).getTime() : null;\n\n  if (wonAt && (now - wonAt) < day30) {\n    m.won_30d++;\n    m.revenue_30d += parseFloat(lead.value || 0);\n  }\n  if (lostAt && (now - lostAt) < day30) m.lost_30d++;\n  if ((now - updatedAt) > day5 && lead.status !== 'GANHO' && lead.status !== 'PERDIDO') m.stale++;\n  if (!m.last_activity || updatedAt > new Date(m.last_activity).getTime()) m.last_activity = lead.updated_at;\n}\n\nconst sellersSummary = sellers.map(s => {\n  const m = sellerMap[s.id] || {};\n  const daysSinceLast = m.last_activity ? Math.floor((now - new Date(m.last_activity).getTime()) / (24*60*60*1000)) : 99;\n  return {\n    id: s.id,\n    name: s.name,\n    leads_total: m.total || 0,\n    leads_won_30d: m.won_30d || 0,\n    leads_lost_30d: m.lost_30d || 0,\n    leads_stale: m.stale || 0,\n    revenue_30d: m.revenue_30d || 0,\n    days_since_last_activity: daysSinceLast\n  };\n});\n\n// System prompt\nconst systemPrompt = `Você é um Supervisor Comercial de IA da plataforma NextSales.\nSua função é analisar dados de performance de agentes de IA e vendedores humanos e gerar insights acionáveis para o gestor.\n\nRegras obrigatórias:\n- Retorne APENAS um JSON válido com a chave \"insights\" contendo um array\n- Máximo de 6 insights no total\n- Cada insight deve ter: agent_id (uuid ou null), profile_id (uuid ou null), type, severity, content, recommendation\n- type deve ser um de: performance_drop, script_issue, channel_weak, goal_risk, general\n- severity deve ser um de: critical, warning, info\n- critical: métrica abaixo de 30% do esperado ou situação urgente\n- warning: métrica entre 30-70% do esperado ou situação preocupante\n- info: observação positiva ou neutra\n- content: descrição clara do problema/situação em português (máx 120 chars)\n- recommendation: ação específica que o gestor deve tomar (máx 100 chars)\n- Foque nos problemas mais importantes, não repita insights similares\n- Se não há problemas, gere insights positivos (info)`;\n\n// User message com dados\nconst userData = JSON.stringify({\n  empresa: company.name,\n  data_analise: new Date().toISOString().split('T')[0],\n  agentes: agentsSummary,\n  vendedores: sellersSummary\n}, null, 2);\n\nreturn [{\n  json: {\n    company_id: company.id,\n    company_name: company.name,\n    openai_key: openAiKey,\n    agents: agentsSummary,\n    sellers: sellersSummary,\n    system_prompt: systemPrompt,\n    user_message: userData\n  }\n}];"
+      },
+      "id": "wf09-node-012",
+      "name": "Code - Aggregate & Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 120]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"gpt-4o-mini\", \"response_format\": { \"type\": \"json_object\" }, \"max_tokens\": 1200, \"messages\": [ { \"role\": \"system\", \"content\": \"{{ $json.system_prompt }}\" }, { \"role\": \"user\", \"content\": \"{{ $json.user_message }}\" } ] }",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $json.openai_key }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "response": { "response": { "neverError": true } }
+        }
+      },
+      "id": "wf09-node-013",
+      "name": "HTTP - OpenAI Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2880, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "const aggregated = $('Code - Aggregate & Build Prompt').first().json;\nconst openaiRaw = $input.first().json;\n\n// Extrair conteúdo da resposta OpenAI\nlet parsed;\ntry {\n  const content = openaiRaw?.choices?.[0]?.message?.content;\n  if (!content) return [];\n  parsed = JSON.parse(content);\n} catch(e) {\n  return [];\n}\n\nconst insights = Array.isArray(parsed.insights) ? parsed.insights : [];\nif (insights.length === 0) return [];\n\n// Validar e preparar para inserção\nconst validTypes = ['performance_drop','script_issue','channel_weak','goal_risk','general'];\nconst validSeverities = ['info','warning','critical'];\n\nconst rows = [];\nfor (const ins of insights) {\n  if (!ins.content) continue;\n  if (!validTypes.includes(ins.type)) ins.type = 'general';\n  if (!validSeverities.includes(ins.severity)) ins.severity = 'info';\n  rows.push({\n    company_id: aggregated.company_id,\n    agent_id: ins.agent_id || null,\n    profile_id: ins.profile_id || null,\n    type: ins.type,\n    severity: ins.severity,\n    content: String(ins.content).slice(0, 300),\n    recommendation: ins.recommendation ? String(ins.recommendation).slice(0, 200) : null,\n    is_read: false,\n    is_applied: false\n  });\n}\n\nif (rows.length === 0) return [];\n\nreturn [{ json: { company_id: aggregated.company_id, insights: rows } }];"
+      },
+      "id": "wf09-node-014",
+      "name": "Code - Parse Insights",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3120, 120]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-insights",
+              "leftValue": "={{ $json.insights ? $json.insights.length : 0 }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wf09-node-015",
+      "name": "IF - Has Insights",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3360, 120]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/supervisor_insights",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.insights) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "id": "wf09-node-016",
+      "name": "HTTP - Insert Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3600, 40]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/profiles",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "company_id", "value": "=eq.{{ $('Code - Parse Insights').first().json.company_id }}" },
+            { "name": "role", "value": "=eq.admin" },
+            { "name": "is_active", "value": "=eq.true" },
+            { "name": "select", "value": "id" },
+            { "name": "limit", "value": "1" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wf09-node-017",
+      "name": "HTTP - Get Admin Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3840, 40]
+    },
+    {
+      "parameters": {
+        "jsCode": "const insightsData = $('Code - Parse Insights').first().json;\nconst adminRaw = $input.first().json;\nconst adminArr = Array.isArray(adminRaw) ? adminRaw : [adminRaw];\nconst admin = adminArr[0];\n\nif (!admin || !admin.id) return [];\n\nconst criticalCount = insightsData.insights.filter(i => i.severity === 'critical').length;\nconst total = insightsData.insights.length;\n\nconst title = criticalCount > 0\n  ? `⚠️ Supervisor: ${criticalCount} alerta(s) crítico(s)`\n  : `🧠 Supervisor: ${total} novo(s) insight(s)`;\n\nreturn [{\n  json: {\n    company_id: insightsData.company_id,\n    recipient_user_id: admin.id,\n    type: 'lead_assigned',\n    title: title,\n    body: `Análise diária dos agentes e vendedores está disponível na Central de Comando.`,\n    is_read: false\n  }\n}];"
+      },
+      "id": "wf09-node-018",
+      "name": "Code - Build Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4080, 40]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/notifications",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "id": "wf09-node-019",
+      "name": "HTTP - Insert Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4320, 40]
+    },
+    {
+      "parameters": {},
+      "id": "wf09-node-020",
+      "name": "NoOp - Loop Back",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [4560, 40]
+    },
+    {
+      "parameters": {},
+      "id": "wf09-node-021",
+      "name": "NoOp - No Companies",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [960, 400]
+    },
+    {
+      "parameters": {},
+      "id": "wf09-node-022",
+      "name": "NoOp - No Credentials",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1680, 340]
+    },
+    {
+      "parameters": {},
+      "id": "wf09-node-023",
+      "name": "NoOp - No Insights",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3600, 240]
+    }
+  ],
+  "connections": {
+    "Schedule - Daily 02h BRT": {
+      "main": [[{ "node": "HTTP - Get Companies", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Get Companies": {
+      "main": [[{ "node": "Code - Flatten Companies", "type": "main", "index": 0 }]]
+    },
+    "Code - Flatten Companies": {
+      "main": [[{ "node": "IF - Has Companies", "type": "main", "index": 0 }]]
+    },
+    "IF - Has Companies": {
+      "main": [
+        [{ "node": "Loop - Companies", "type": "main", "index": 0 }],
+        [{ "node": "NoOp - No Companies", "type": "main", "index": 0 }]
+      ]
+    },
+    "Loop - Companies": {
+      "main": [
+        [{ "node": "HTTP - Get OpenAI Credentials", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "HTTP - Get OpenAI Credentials": {
+      "main": [[{ "node": "IF - Has OpenAI Key", "type": "main", "index": 0 }]]
+    },
+    "IF - Has OpenAI Key": {
+      "main": [
+        [{ "node": "HTTP - Get Agent Performance", "type": "main", "index": 0 }],
+        [{ "node": "NoOp - No Credentials", "type": "main", "index": 0 }]
+      ]
+    },
+    "NoOp - No Credentials": {
+      "main": [[{ "node": "Loop - Companies", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Get Agent Performance": {
+      "main": [[{ "node": "HTTP - Get Agents Info", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Get Agents Info": {
+      "main": [[{ "node": "HTTP - Get Sellers", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Get Sellers": {
+      "main": [[{ "node": "HTTP - Get Leads", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Get Leads": {
+      "main": [[{ "node": "Code - Aggregate & Build Prompt", "type": "main", "index": 0 }]]
+    },
+    "Code - Aggregate & Build Prompt": {
+      "main": [[{ "node": "HTTP - OpenAI Analysis", "type": "main", "index": 0 }]]
+    },
+    "HTTP - OpenAI Analysis": {
+      "main": [[{ "node": "Code - Parse Insights", "type": "main", "index": 0 }]]
+    },
+    "Code - Parse Insights": {
+      "main": [[{ "node": "IF - Has Insights", "type": "main", "index": 0 }]]
+    },
+    "IF - Has Insights": {
+      "main": [
+        [{ "node": "HTTP - Insert Insights", "type": "main", "index": 0 }],
+        [{ "node": "NoOp - No Insights", "type": "main", "index": 0 }]
+      ]
+    },
+    "NoOp - No Insights": {
+      "main": [[{ "node": "Loop - Companies", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Insert Insights": {
+      "main": [[{ "node": "HTTP - Get Admin Profile", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Get Admin Profile": {
+      "main": [[{ "node": "Code - Build Notification", "type": "main", "index": 0 }]]
+    },
+    "Code - Build Notification": {
+      "main": [[{ "node": "HTTP - Insert Notification", "type": "main", "index": 0 }]]
+    },
+    "HTTP - Insert Notification": {
+      "main": [[{ "node": "NoOp - Loop Back", "type": "main", "index": 0 }]]
+    },
+    "NoOp - Loop Back": {
+      "main": [[{ "node": "Loop - Companies", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": ["exercito-comercial", "supervisor", "intelligence"],
+  "triggerCount": 0,
+  "updatedAt": "2026-03-23T00:00:00.000Z",
+  "versionId": "wf09-v1"
+}

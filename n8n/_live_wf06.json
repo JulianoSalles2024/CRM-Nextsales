@@ -1,0 +1,1438 @@
+{
+  "updatedAt": "2026-03-24T19:38:37.618Z",
+  "createdAt": "2026-03-19T01:55:40.907Z",
+  "id": "oeOYbr_dHo6fYhQBp8pY2",
+  "name": "WF-06 · Roteador de Agentes Comerciais",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WF-06 — Agent Router V1\n**Exército Comercial de IA — Roteador Proativo**\n\nRoda a cada 5 minutos via cron.\nBusca TODOS os agentes ativos, checa horário de trabalho,\nfaz a fila de leads de cada agente e dispara WF-07.\n\n**Fluxo:**\nSchedule → Get Agents → Loop → Check Hours →\nGet Queue → Get Conversation → Loop → Trigger WF-07\n\n**URL do WF-07:** configure AGENT_EXECUTOR_WEBHOOK_URL nas env vars do n8n.\n(ex: https://seu-n8n.com/webhook/agent-executor)",
+        "height": 240,
+        "width": 460,
+        "color": 6
+      },
+      "id": "6123b9ca-b634-4ea0-877c-7b4b86361501",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "bc178f4a-c975-487b-98b9-2c469cce1dd5",
+      "name": "Schedule - Every 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/ai_agents",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "is_active",
+              "value": "eq.true"
+            },
+            {
+              "name": "select",
+              "value": "id,name,company_id,function_type,tone,niche,channels,work_hours_start,work_hours_end,timezone,escalate_rules,monthly_goal,goal_metric,playbook_id,is_active"
+            },
+            {
+              "name": "is_archived",
+              "value": "eq.false"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ec993a3b-187e-4f01-bf4a-b524ead7945a",
+      "name": "HTTP - Get Active Agents",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-agents",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e06aba05-79cc-4b4e-9494-8a4e441c99dd",
+      "name": "IF - Has Active Agents",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten agents array from HTTP response\nconst agents = $input.all().map(item => item.json);\n// If it's already a flat array of objects (Supabase REST returns JSON array)\nif (Array.isArray(agents[0])) {\n  return agents[0].map(a => ({ json: a }));\n}\nreturn agents.map(a => ({ json: a }));"
+      },
+      "id": "a8f98a9b-f514-464a-bb07-ab00ca8efd98",
+      "name": "Code - Flatten Agents",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1fe81f31-1e83-48c8-ba18-d69aba3d1b0a",
+      "name": "Loop - Agents",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        960,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const agent = $input.all()[0].json;\nconst now = new Date();\n\nconst tz = agent.timezone || 'America/Sao_Paulo';\n\nconst formatter = new Intl.DateTimeFormat('en-US', {\n  timeZone: tz,\n  hour: 'numeric',\n  minute: 'numeric',\n  hour12: false\n});\nconst parts = formatter.formatToParts(now);\nconst currentHour = parseInt(parts.find(p => p.type === 'hour').value);\nconst currentMinute = parseInt(parts.find(p => p.type === 'minute').value);\nconst currentTime = currentHour * 60 + currentMinute;\n\nconst parseTime = (t) => {\n  if (!t) return null;\n  const p = t.toString().split(':');\n  return parseInt(p[0]) * 60 + (parseInt(p[1] || 0));\n};\n\nconst start = parseTime(agent.work_hours_start) ?? 8 * 60;\nconst end = parseTime(agent.work_hours_end) ?? 18 * 60;\n\nconst withinHours = currentTime >= start && currentTime < end;\n\nif (!withinHours) return [];\n\nreturn [{ json: { ...agent, _currentTime: currentTime } }];"
+      },
+      "id": "698e92b9-0ca6-4c6a-992d-77f14398d834",
+      "name": "Code - Check Work Hours",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/get_agent_lead_queue",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "p_agent_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "p_limit",
+              "value": "=5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "57025807-8273-4358-bf29-f4c0e64d86a5",
+      "name": "HTTP - Get Lead Queue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get agent data from previous node (Check Work Hours)\nconst agent = $('Code - Check Work Hours').first().json;\n\n// Get leads from RPC response\nconst rawLeads = $input.all().map(i => i.json);\nconst leads = Array.isArray(rawLeads[0]) ? rawLeads[0] : rawLeads;\n\nif (!leads || leads.length === 0) {\n  return []; // No leads to process\n}\n\n// Attach agent context to each lead\nreturn leads.map(lead => ({\n  json: {\n    lead_id: lead.lead_id || lead.id,\n    lead_name: lead.name,\n    lead_phone: lead.phone,\n    agent_id: agent.id,\n    agent_name: agent.name,\n    company_id: agent.company_id,\n    function_type: agent.function_type\n  }\n}));"
+      },
+      "id": "90b39829-e6e7-4e71-a8e7-80c521dbc8d3",
+      "name": "Code - Attach Agent to Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-leads",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8b81078e-929e-46a9-9d71-25f66da176aa",
+      "name": "IF - Has Leads",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "33be7d8c-7bca-4fd4-b48b-f220c41148ac",
+      "name": "Loop - Leads",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2400,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lead_id",
+              "value": "=eq.{{ $json.lead_id }}"
+            },
+            {
+              "name": "company_id",
+              "value": "=eq.{{ $json.company_id }}"
+            },
+            {
+              "name": "status",
+              "value": "neq.closed"
+            },
+            {
+              "name": "select",
+              "value": "id,lead_id,status,ai_agent_id,contact_identifier"
+            },
+            {
+              "name": "order",
+              "value": "updated_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6aa56548-23e1-4804-b42e-e0bd211ec62e",
+      "name": "HTTP - Get Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Loop - Leads').first().json;\nconst convArr = $input.all().map(i => i.json);\nconst conv = Array.isArray(convArr[0]) ? convArr[0][0] : convArr[0];\n\nif (!conv || !conv.id) {\n  // No conversation found for this lead — skip\n  return [];\n}\n\nreturn [{\n  json: {\n    conversation_id: conv.id,\n    lead_id: lead.lead_id,\n    agent_id: lead.agent_id,\n    company_id: lead.company_id,\n    contact_identifier: conv.contact_identifier || lead.lead_phone || '',\n    input_text: '',\n    content_type: 'proactive'\n  }\n}];"
+      },
+      "id": "6a2eb33c-aeb6-4648-804a-a724d99ee6ac",
+      "name": "Code - Build WF07 Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-conv",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ff6a848f-b193-4c6d-ade5-cccda20fc86d",
+      "name": "IF - Has Conversation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.julianosalles.com.br/webhook/agent-executor",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Code - Build WF07 Payload').item.json }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 5000
+        }
+      },
+      "id": "5d83329b-10da-47e0-861e-ae56ec5a841e",
+      "name": "HTTP - Trigger WF-07",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3360,
+        128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0fd8315e-a97e-4774-a7dc-e3a1d06d8d98",
+      "name": "No Operation - No Agents",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        720,
+        560
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "14da4dc0-9354-4aef-9fda-332c67a22299",
+      "name": "No Operation - Off Hours",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        480
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "903a770f-5bf4-4f48-95c2-05ecebf67edd",
+      "name": "No Operation - No Leads",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "61616d79-f334-4339-91a9-9e13c9209bac",
+      "name": "No Operation - No Conv",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3360,
+        320
+      ]
+    },
+    {
+      "id": "patch-conv-ai-agent-001",
+      "name": "HTTP - Assign Agent to Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3240,
+        128
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations?id=eq.{{ $json.conversation_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"ai_agent_id\": \"{{ $json.agent_id }}\"}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule - Every 5 min": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Active Agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Active Agents": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Active Agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Active Agents": {
+      "main": [
+        [
+          {
+            "node": "Code - Flatten Agents",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - No Agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Flatten Agents": {
+      "main": [
+        [
+          {
+            "node": "Loop - Agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop - Agents": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code - Check Work Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Work Hours": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Lead Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Lead Queue": {
+      "main": [
+        [
+          {
+            "node": "Code - Attach Agent to Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Attach Agent to Leads": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Leads": {
+      "main": [
+        [
+          {
+            "node": "Loop - Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - No Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop - Leads": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP - Get Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Conversation": {
+      "main": [
+        [
+          {
+            "node": "Code - Build WF07 Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build WF07 Payload": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Conversation": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Assign Agent to Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - No Conv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Trigger WF-07": {
+      "main": [
+        [
+          {
+            "node": "Loop - Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation - No Conv": {
+      "main": [
+        [
+          {
+            "node": "Loop - Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Assign Agent to Conversation": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Trigger WF-07",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Schedule - Every 5 min": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": {},
+  "versionId": "1f391d8d-2dba-4d5a-b262-8f134036001c",
+  "activeVersionId": "1f391d8d-2dba-4d5a-b262-8f134036001c",
+  "versionCounter": 52,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-03-19T01:55:40.912Z",
+      "createdAt": "2026-03-19T01:55:40.912Z",
+      "role": "workflow:owner",
+      "workflowId": "oeOYbr_dHo6fYhQBp8pY2",
+      "projectId": "pPgxTRwY0nd0PR8B",
+      "project": {
+        "updatedAt": "2025-07-07T23:46:10.948Z",
+        "createdAt": "2025-07-07T23:43:16.782Z",
+        "id": "pPgxTRwY0nd0PR8B",
+        "name": "Juiano Salles <jukasalleso@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "459911c5-b6ba-425a-82da-38c1f7677fde"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-24T19:38:37.620Z",
+    "createdAt": "2026-03-24T19:38:37.620Z",
+    "versionId": "1f391d8d-2dba-4d5a-b262-8f134036001c",
+    "workflowId": "oeOYbr_dHo6fYhQBp8pY2",
+    "nodes": [
+      {
+        "parameters": {
+          "content": "## WF-06 — Agent Router V1\n**Exército Comercial de IA — Roteador Proativo**\n\nRoda a cada 5 minutos via cron.\nBusca TODOS os agentes ativos, checa horário de trabalho,\nfaz a fila de leads de cada agente e dispara WF-07.\n\n**Fluxo:**\nSchedule → Get Agents → Loop → Check Hours →\nGet Queue → Get Conversation → Loop → Trigger WF-07\n\n**URL do WF-07:** configure AGENT_EXECUTOR_WEBHOOK_URL nas env vars do n8n.\n(ex: https://seu-n8n.com/webhook/agent-executor)",
+          "height": 240,
+          "width": 460,
+          "color": 6
+        },
+        "id": "6123b9ca-b634-4ea0-877c-7b4b86361501",
+        "name": "Sticky Note",
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "*/5 * * * *"
+              }
+            ]
+          }
+        },
+        "id": "bc178f4a-c975-487b-98b9-2c469cce1dd5",
+        "name": "Schedule - Every 5 min",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/ai_agents",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "is_active",
+                "value": "eq.true"
+              },
+              {
+                "name": "select",
+                "value": "id,name,company_id,function_type,tone,niche,channels,work_hours_start,work_hours_end,timezone,escalate_rules,monthly_goal,goal_metric,playbook_id,is_active"
+              },
+              {
+                "name": "is_archived",
+                "value": "eq.false"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "ec993a3b-187e-4f01-bf4a-b524ead7945a",
+        "name": "HTTP - Get Active Agents",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          240,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "check-agents",
+                "leftValue": "={{ $input.all().length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "e06aba05-79cc-4b4e-9494-8a4e441c99dd",
+        "name": "IF - Has Active Agents",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          480,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Flatten agents array from HTTP response\nconst agents = $input.all().map(item => item.json);\n// If it's already a flat array of objects (Supabase REST returns JSON array)\nif (Array.isArray(agents[0])) {\n  return agents[0].map(a => ({ json: a }));\n}\nreturn agents.map(a => ({ json: a }));"
+        },
+        "id": "a8f98a9b-f514-464a-bb07-ab00ca8efd98",
+        "name": "Code - Flatten Agents",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          720,
+          368
+        ]
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "1fe81f31-1e83-48c8-ba18-d69aba3d1b0a",
+        "name": "Loop - Agents",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          960,
+          368
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const agent = $input.all()[0].json;\nconst now = new Date();\n\nconst tz = agent.timezone || 'America/Sao_Paulo';\n\nconst formatter = new Intl.DateTimeFormat('en-US', {\n  timeZone: tz,\n  hour: 'numeric',\n  minute: 'numeric',\n  hour12: false\n});\nconst parts = formatter.formatToParts(now);\nconst currentHour = parseInt(parts.find(p => p.type === 'hour').value);\nconst currentMinute = parseInt(parts.find(p => p.type === 'minute').value);\nconst currentTime = currentHour * 60 + currentMinute;\n\nconst parseTime = (t) => {\n  if (!t) return null;\n  const p = t.toString().split(':');\n  return parseInt(p[0]) * 60 + (parseInt(p[1] || 0));\n};\n\nconst start = parseTime(agent.work_hours_start) ?? 8 * 60;\nconst end = parseTime(agent.work_hours_end) ?? 18 * 60;\n\nconst withinHours = currentTime >= start && currentTime < end;\n\nif (!withinHours) return [];\n\nreturn [{ json: { ...agent, _currentTime: currentTime } }];"
+        },
+        "id": "698e92b9-0ca6-4c6a-992d-77f14398d834",
+        "name": "Code - Check Work Hours",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1200,
+          368
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/get_agent_lead_queue",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "p_agent_id",
+                "value": "={{ $json.id }}"
+              },
+              {
+                "name": "p_limit",
+                "value": "=5"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "57025807-8273-4358-bf29-f4c0e64d86a5",
+        "name": "HTTP - Get Lead Queue",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1680,
+          288
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Get agent data from previous node (Check Work Hours)\nconst agent = $('Code - Check Work Hours').first().json;\n\n// Get leads from RPC response\nconst rawLeads = $input.all().map(i => i.json);\nconst leads = Array.isArray(rawLeads[0]) ? rawLeads[0] : rawLeads;\n\nif (!leads || leads.length === 0) {\n  return []; // No leads to process\n}\n\n// Attach agent context to each lead\nreturn leads.map(lead => ({\n  json: {\n    lead_id: lead.lead_id || lead.id,\n    lead_name: lead.name,\n    lead_phone: lead.phone,\n    agent_id: agent.id,\n    agent_name: agent.name,\n    company_id: agent.company_id,\n    function_type: agent.function_type\n  }\n}));"
+        },
+        "id": "90b39829-e6e7-4e71-a8e7-80c521dbc8d3",
+        "name": "Code - Attach Agent to Leads",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1920,
+          288
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "has-leads",
+                "leftValue": "={{ $input.all().length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "8b81078e-929e-46a9-9d71-25f66da176aa",
+        "name": "IF - Has Leads",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          2160,
+          288
+        ]
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "33be7d8c-7bca-4fd4-b48b-f220c41148ac",
+        "name": "Loop - Leads",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          2400,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "lead_id",
+                "value": "=eq.{{ $json.lead_id }}"
+              },
+              {
+                "name": "company_id",
+                "value": "=eq.{{ $json.company_id }}"
+              },
+              {
+                "name": "status",
+                "value": "neq.closed"
+              },
+              {
+                "name": "select",
+                "value": "id,lead_id,status,ai_agent_id,contact_identifier"
+              },
+              {
+                "name": "order",
+                "value": "updated_at.desc"
+              },
+              {
+                "name": "limit",
+                "value": "1"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "6aa56548-23e1-4804-b42e-e0bd211ec62e",
+        "name": "HTTP - Get Conversation",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2640,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const lead = $('Loop - Leads').first().json;\nconst convArr = $input.all().map(i => i.json);\nconst conv = Array.isArray(convArr[0]) ? convArr[0][0] : convArr[0];\n\nif (!conv || !conv.id) {\n  // No conversation found for this lead — skip\n  return [];\n}\n\nreturn [{\n  json: {\n    conversation_id: conv.id,\n    lead_id: lead.lead_id,\n    agent_id: lead.agent_id,\n    company_id: lead.company_id,\n    contact_identifier: conv.contact_identifier || lead.lead_phone || '',\n    input_text: '',\n    content_type: 'proactive'\n  }\n}];"
+        },
+        "id": "6a2eb33c-aeb6-4648-804a-a724d99ee6ac",
+        "name": "Code - Build WF07 Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2880,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "has-conv",
+                "leftValue": "={{ $input.all().length }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ff6a848f-b193-4c6d-ade5-cccda20fc86d",
+        "name": "IF - Has Conversation",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          3120,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://n8n.julianosalles.com.br/webhook/agent-executor",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $('Code - Build WF07 Payload').item.json }}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            },
+            "timeout": 5000
+          }
+        },
+        "id": "5d83329b-10da-47e0-861e-ae56ec5a841e",
+        "name": "HTTP - Trigger WF-07",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          3360,
+          128
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "0fd8315e-a97e-4774-a7dc-e3a1d06d8d98",
+        "name": "No Operation - No Agents",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          720,
+          560
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "14da4dc0-9354-4aef-9fda-332c67a22299",
+        "name": "No Operation - Off Hours",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          1680,
+          480
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "903a770f-5bf4-4f48-95c2-05ecebf67edd",
+        "name": "No Operation - No Leads",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          2400,
+          400
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "61616d79-f334-4339-91a9-9e13c9209bac",
+        "name": "No Operation - No Conv",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          3360,
+          320
+        ]
+      },
+      {
+        "id": "patch-conv-ai-agent-001",
+        "name": "HTTP - Assign Agent to Conversation",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          3240,
+          128
+        ],
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations?id=eq.{{ $json.conversation_id }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"ai_agent_id\": \"{{ $json.agent_id }}\"}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Schedule - Every 5 min": {
+        "main": [
+          [
+            {
+              "node": "HTTP - Get Active Agents",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - Get Active Agents": {
+        "main": [
+          [
+            {
+              "node": "IF - Has Active Agents",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF - Has Active Agents": {
+        "main": [
+          [
+            {
+              "node": "Code - Flatten Agents",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation - No Agents",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Flatten Agents": {
+        "main": [
+          [
+            {
+              "node": "Loop - Agents",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop - Agents": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Code - Check Work Hours",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Check Work Hours": {
+        "main": [
+          [
+            {
+              "node": "HTTP - Get Lead Queue",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - Get Lead Queue": {
+        "main": [
+          [
+            {
+              "node": "Code - Attach Agent to Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Attach Agent to Leads": {
+        "main": [
+          [
+            {
+              "node": "IF - Has Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF - Has Leads": {
+        "main": [
+          [
+            {
+              "node": "Loop - Leads",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation - No Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop - Leads": {
+        "main": [
+          [],
+          [
+            {
+              "node": "HTTP - Get Conversation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - Get Conversation": {
+        "main": [
+          [
+            {
+              "node": "Code - Build WF07 Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Build WF07 Payload": {
+        "main": [
+          [
+            {
+              "node": "IF - Has Conversation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF - Has Conversation": {
+        "main": [
+          [
+            {
+              "node": "HTTP - Assign Agent to Conversation",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation - No Conv",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - Trigger WF-07": {
+        "main": [
+          [
+            {
+              "node": "Loop - Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "No Operation - No Conv": {
+        "main": [
+          [
+            {
+              "node": "Loop - Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - Assign Agent to Conversation": {
+        "main": [
+          [
+            {
+              "node": "HTTP - Trigger WF-07",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Juiano Salles",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-24T19:38:38.014Z",
+        "id": 475,
+        "workflowId": "oeOYbr_dHo6fYhQBp8pY2",
+        "versionId": "1f391d8d-2dba-4d5a-b262-8f134036001c",
+        "event": "activated",
+        "userId": "459911c5-b6ba-425a-82da-38c1f7677fde"
+      },
+      {
+        "createdAt": "2026-03-24T19:38:37.787Z",
+        "id": 473,
+        "workflowId": "oeOYbr_dHo6fYhQBp8pY2",
+        "versionId": "1f391d8d-2dba-4d5a-b262-8f134036001c",
+        "event": "deactivated",
+        "userId": "459911c5-b6ba-425a-82da-38c1f7677fde"
+      }
+    ]
+  }
+}

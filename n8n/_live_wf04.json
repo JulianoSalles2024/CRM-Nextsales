@@ -1,0 +1,811 @@
+{
+  "updatedAt": "2026-03-22T13:16:20.540Z",
+  "createdAt": "2026-03-14T16:43:18.049Z",
+  "id": "HDavqTNss64fFmJTIPpBQ",
+  "name": "WF-04 · Fechamento Automático de Conversas",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "bd4bd6fc-966c-4515-af6a-4ac600574eb3",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1536,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/get_expired_conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "id": "bc4436a3-44de-4e01-bb43-de91bfed0352",
+      "name": "HTTP - RPC get_expired_conversations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1328,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Unpack RPC result ────────────────────────────────────────────────────\n// n8n HTTP Request v4.2 auto-splits JSON array responses into individual\n// items BEFORE this node runs, so $input.all() usually has one item per row.\n// We still handle the legacy case where the full array arrives as one item.\n\nconst allItems = $input.all();\n\n// No items at all (empty response)\nif (!allItems || allItems.length === 0) {\n  return [{ json: { skip: true } }];\n}\n\nconst first = allItems[0].json;\n\n// Case A: v4.2 auto-split — each item IS already a row object\nif (first && first.conversation_id) {\n  return allItems.map(function(item) {\n    return { json: Object.assign({}, item.json, { skip: false }) };\n  });\n}\n\n// Case B: full array arrived as a single item (older n8n / raw response)\nif (Array.isArray(first) && first.length > 0) {\n  return first.map(function(row) {\n    return { json: Object.assign({}, row, { skip: false }) };\n  });\n}\n\n// Case C: empty array or unrecognised shape → skip\nreturn [{ json: { skip: true } }];"
+      },
+      "id": "b7b25075-68f4-4144-b45a-4da48740ff60",
+      "name": "Code - Unpack Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-has-expired-01",
+              "leftValue": "={{ $json.conversation_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ee5ec1d9-b1ec-4f7e-b525-a567fb59f214",
+      "name": "IF - Has Expired?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        112
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "88415532-d6cb-48d0-a340-f897031b87f5",
+      "name": "No Operation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations?id=eq.{{ $json.conversation_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"resolved\"\n}",
+        "options": {}
+      },
+      "id": "b39f394f-c508-4979-ace6-f5ecb6601864",
+      "name": "HTTP - Resolve Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -656,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"company_id\":      \"{{ $('Code - Unpack Items').item.json.company_id }}\",\n  \"conversation_id\": \"{{ $('Code - Unpack Items').item.json.conversation_id }}\",\n  \"direction\":       null,\n  \"sender_type\":     \"system\",\n  \"content\":         \"Conversa encerrada automaticamente por inatividade de {{ $('Code - Unpack Items').item.json.hours_inactive }}h sem resposta.\",\n  \"content_type\":    \"text\",\n  \"status\":          null\n}",
+        "options": {}
+      },
+      "id": "250e18aa-6878-44e6-8bef-0220be5eae28",
+      "name": "HTTP - Insert System Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-has-lead-01",
+              "leftValue": "={{ $('Code - Unpack Items').item.json.lead_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d819f5e3-e313-4dda-b579-b3c8084c737a",
+      "name": "IF - Has Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/leads?id=eq.{{ $('Code - Unpack Items').item.json.lead_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\":  \"PERDIDO\",\n  \"lost_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "6152304e-4eaa-4930-b0dd-0232feac053a",
+      "name": "HTTP - Mark Lead Lost",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "583a831d-36ff-4f31-b370-3b825645e204",
+      "name": "No Operation (no lead)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        224
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP - RPC get_expired_conversations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - RPC get_expired_conversations": {
+      "main": [
+        [
+          {
+            "node": "Code - Unpack Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Unpack Items": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Expired?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Expired?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Resolve Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Resolve Conversation": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Insert System Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Insert System Message": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Lead?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Mark Lead Lost",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation (no lead)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": {},
+  "versionId": "7e17f8d5-ec05-47df-a47d-ef87203e4982",
+  "activeVersionId": "7e17f8d5-ec05-47df-a47d-ef87203e4982",
+  "versionCounter": 18,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-03-14T16:43:18.055Z",
+      "createdAt": "2026-03-14T16:43:18.055Z",
+      "role": "workflow:owner",
+      "workflowId": "HDavqTNss64fFmJTIPpBQ",
+      "projectId": "pPgxTRwY0nd0PR8B",
+      "project": {
+        "updatedAt": "2025-07-07T23:46:10.948Z",
+        "createdAt": "2025-07-07T23:43:16.782Z",
+        "id": "pPgxTRwY0nd0PR8B",
+        "name": "Juiano Salles <jukasalleso@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "459911c5-b6ba-425a-82da-38c1f7677fde"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-19T19:27:17.996Z",
+    "createdAt": "2026-03-19T19:27:17.996Z",
+    "versionId": "7e17f8d5-ec05-47df-a47d-ef87203e4982",
+    "workflowId": "HDavqTNss64fFmJTIPpBQ",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 5
+              }
+            ]
+          }
+        },
+        "id": "bd4bd6fc-966c-4515-af6a-4ac600574eb3",
+        "name": "Schedule Trigger",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -1536,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/get_expired_conversations",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={}",
+          "options": {}
+        },
+        "id": "bc4436a3-44de-4e01-bb43-de91bfed0352",
+        "name": "HTTP - RPC get_expired_conversations",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -1328,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// ── Unpack RPC result ────────────────────────────────────────────────────\n// n8n HTTP Request v4.2 auto-splits JSON array responses into individual\n// items BEFORE this node runs, so $input.all() usually has one item per row.\n// We still handle the legacy case where the full array arrives as one item.\n\nconst allItems = $input.all();\n\n// No items at all (empty response)\nif (!allItems || allItems.length === 0) {\n  return [{ json: { skip: true } }];\n}\n\nconst first = allItems[0].json;\n\n// Case A: v4.2 auto-split — each item IS already a row object\nif (first && first.conversation_id) {\n  return allItems.map(function(item) {\n    return { json: Object.assign({}, item.json, { skip: false }) };\n  });\n}\n\n// Case B: full array arrived as a single item (older n8n / raw response)\nif (Array.isArray(first) && first.length > 0) {\n  return first.map(function(row) {\n    return { json: Object.assign({}, row, { skip: false }) };\n  });\n}\n\n// Case C: empty array or unrecognised shape → skip\nreturn [{ json: { skip: true } }];"
+        },
+        "id": "b7b25075-68f4-4144-b45a-4da48740ff60",
+        "name": "Code - Unpack Items",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1104,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "cond-has-expired-01",
+                "leftValue": "={{ $json.conversation_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "ee5ec1d9-b1ec-4f7e-b525-a567fb59f214",
+        "name": "IF - Has Expired?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          -880,
+          112
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "88415532-d6cb-48d0-a340-f897031b87f5",
+        "name": "No Operation",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          -656,
+          272
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations?id=eq.{{ $json.conversation_id }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"status\": \"resolved\"\n}",
+          "options": {}
+        },
+        "id": "b39f394f-c508-4979-ace6-f5ecb6601864",
+        "name": "HTTP - Resolve Conversation",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -656,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"company_id\":      \"{{ $('Code - Unpack Items').item.json.company_id }}\",\n  \"conversation_id\": \"{{ $('Code - Unpack Items').item.json.conversation_id }}\",\n  \"direction\":       null,\n  \"sender_type\":     \"system\",\n  \"content\":         \"Conversa encerrada automaticamente por inatividade de {{ $('Code - Unpack Items').item.json.hours_inactive }}h sem resposta.\",\n  \"content_type\":    \"text\",\n  \"status\":          null\n}",
+          "options": {}
+        },
+        "id": "250e18aa-6878-44e6-8bef-0220be5eae28",
+        "name": "HTTP - Insert System Message",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -448,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "cond-has-lead-01",
+                "leftValue": "={{ $('Code - Unpack Items').item.json.lead_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "d819f5e3-e313-4dda-b579-b3c8084c737a",
+        "name": "IF - Has Lead?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          -224,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/leads?id=eq.{{ $('Code - Unpack Items').item.json.lead_id }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"status\":  \"PERDIDO\",\n  \"lost_at\": \"{{ new Date().toISOString() }}\"\n}",
+          "options": {}
+        },
+        "id": "6152304e-4eaa-4930-b0dd-0232feac053a",
+        "name": "HTTP - Mark Lead Lost",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "583a831d-36ff-4f31-b370-3b825645e204",
+        "name": "No Operation (no lead)",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          0,
+          224
+        ]
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "HTTP - RPC get_expired_conversations",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - RPC get_expired_conversations": {
+        "main": [
+          [
+            {
+              "node": "Code - Unpack Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Unpack Items": {
+        "main": [
+          [
+            {
+              "node": "IF - Has Expired?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF - Has Expired?": {
+        "main": [
+          [
+            {
+              "node": "HTTP - Resolve Conversation",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - Resolve Conversation": {
+        "main": [
+          [
+            {
+              "node": "HTTP - Insert System Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP - Insert System Message": {
+        "main": [
+          [
+            {
+              "node": "IF - Has Lead?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF - Has Lead?": {
+        "main": [
+          [
+            {
+              "node": "HTTP - Mark Lead Lost",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation (no lead)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Juiano Salles",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-19T19:27:18.053Z",
+        "id": 274,
+        "workflowId": "HDavqTNss64fFmJTIPpBQ",
+        "versionId": "7e17f8d5-ec05-47df-a47d-ef87203e4982",
+        "event": "activated",
+        "userId": "459911c5-b6ba-425a-82da-38c1f7677fde"
+      },
+      {
+        "createdAt": "2026-03-19T19:27:18.033Z",
+        "id": 273,
+        "workflowId": "HDavqTNss64fFmJTIPpBQ",
+        "versionId": "7e17f8d5-ec05-47df-a47d-ef87203e4982",
+        "event": "deactivated",
+        "userId": "459911c5-b6ba-425a-82da-38c1f7677fde"
+      }
+    ]
+  }
+}

@@ -9,33 +9,42 @@ interface Invite {
   company_id: string | null;
   used_at: string | null;
   expires_at: string | null;
+  email: string | null; // null = convite legado (sem restrição de e-mail)
 }
 
 type PageState =
-  | { status: 'validating' }
+  | { status: 'loading' }           // Limpando sessão + validando token
   | { status: 'invalid'; message: string }
   | { status: 'form'; invite: Invite }
   | { status: 'submitting'; invite: Invite }
   | { status: 'error'; invite: Invite; message: string };
 
 const safeError = (...args: unknown[]) => console.error(...args);
-const safeWarn = (...args: unknown[]) => console.warn(...args);
 
 // ── Main component ─────────────────────────────────────────
 
 const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
-  // Support both /invite/:token (path) and ?token= (query string)
   const token =
     pathToken ||
     new URLSearchParams(window.location.search).get('token') ||
     '';
 
-  const [state, setState] = useState<PageState>({ status: 'validating' });
+  const [state, setState] = useState<PageState>({ status: 'loading' });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
-  // ── PASSO 1–3: Validate invite on mount ─────────────────
+  // ── PASSO 1: Limpar sessão existente, depois validar token ──
+  //
+  // Se houver um admin (ou qualquer usuário) logado no mesmo browser,
+  // fazemos signOut antes de mostrar o formulário. Sem isso, o usuário
+  // poderia fechar a InvitePage, navegar para '/' e entrar com a sessão
+  // ativa de quem estava logado — vendo dados de outra conta.
+  //
+  // O useEffect roda UMA vez (dependência: token). O signOut é
+  // await, então o setState('form'/'invalid') só acontece depois
+  // que a sessão foi limpa — sem loop de renderização.
+
   useEffect(() => {
     if (!token) {
       setState({ status: 'invalid', message: 'Token não encontrado na URL.' });
@@ -43,6 +52,13 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
     }
 
     (async () => {
+      // 1a. Encerrar qualquer sessão ativa
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.auth.signOut();
+      }
+
+      // 1b. Validar o token no banco
       const { data, error } = await supabase
         .rpc('validate_invite', { p_token: token });
 
@@ -58,7 +74,6 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
       }
 
       if (!data || data.length === 0) {
-        safeWarn('[InvitePage] token not found:', token);
         setState({ status: 'invalid', message: 'Convite não encontrado.' });
         return;
       }
@@ -75,85 +90,102 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
         return;
       }
 
+      // Pré-preenche o campo de e-mail se o convite tiver e-mail vinculado
+      if (invite.email) {
+        setEmail(invite.email);
+      }
+
       setState({ status: 'form', invite: { ...invite, token } });
     })();
   }, [token]);
 
-  // ── PASSO 4–7: Handle signup ─────────────────────────────
+  // ── PASSO 2: Handle signup ────────────────────────────────
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (state.status !== 'form') return;
     const { invite } = state;
 
+    // Fix #3: Validar que o e-mail digitado coincide com o do convite.
+    // Convites legados (email = null) não têm essa restrição.
+    if (invite.email && email.trim().toLowerCase() !== invite.email.toLowerCase()) {
+      setState({
+        status: 'error',
+        invite,
+        message: `Este convite foi enviado para ${invite.email}. Use este e-mail para criar sua conta.`,
+      });
+      return;
+    }
+
     setState({ status: 'submitting', invite });
 
-    // PASSO 4 — Criar / recuperar usuário
+    // PASSO 3 — Criar conta via signUp.
+    //
+    // O trigger handle_new_user() (migration 016) cuida de:
+    //   - Validar o invite_token
+    //   - Criar o profile com company_id e role corretos
+    //   - Marcar o convite como used_at
+    //
+    // Por isso NÃO chamamos accept_invite() aqui — ela causaria
+    // o erro P0003 "convite já utilizado" porque o trigger já
+    // consumiu o token durante o signUp.
+    //
+    // Se o e-mail já existe (conta criada anteriormente com este
+    // convite ou outro), fazemos signIn com as credenciais fornecidas.
+
     let userId: string | null = null;
 
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
       password,
+      options: {
+        data: {
+          name,
+          invite_token: token,
+        },
+      },
     });
 
-    if (signInData?.user) {
-      userId = signInData.user.id;
-    } else if (signInError && signInError.message === 'Invalid login credentials') {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            invite_token: token,
-          },
-        },
-      });
+    if (!signUpError) {
+      // signUp bem-sucedido
+      userId = signUpData?.user?.id ?? null;
+    } else {
+      const isEmailTaken =
+        signUpError.message.toLowerCase().includes('already registered') ||
+        signUpError.message.toLowerCase().includes('already been registered') ||
+        signUpError.message.toLowerCase().includes('email já');
 
-      if (signUpError) {
-        const is429 =
-          signUpError.message.includes('429') ||
-          signUpError.message.toLowerCase().includes('rate limit') ||
-          signUpError.status === 429;
+      const is429 =
+        signUpError.message.includes('429') ||
+        signUpError.message.toLowerCase().includes('rate limit') ||
+        (signUpError as any).status === 429;
 
-        const isEmailTaken =
-          signUpError.message.toLowerCase().includes('already registered') ||
-          signUpError.message.toLowerCase().includes('already been registered') ||
-          signUpError.message.toLowerCase().includes('email já');
-
-        if (isEmailTaken) {
-          // Email já existe — tentar logar com as credenciais fornecidas
-          const { data: retrySignIn, error: retryError } = await supabase.auth.signInWithPassword({ email, password });
-          if (retrySignIn?.user) {
-            userId = retrySignIn.user.id;
-          } else {
-            setState({
-              status: 'error',
-              invite,
-              message: 'Este email já tem uma conta. Verifique sua senha e tente novamente.',
-            });
-            return;
-          }
+      if (isEmailTaken) {
+        // E-mail já cadastrado — tentar logar com as credenciais fornecidas
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (signInData?.user) {
+          userId = signInData.user.id;
         } else {
           setState({
             status: 'error',
             invite,
-            message: is429
-              ? 'Too many signup attempts. Please wait a few minutes.'
-              : signUpError.message || 'Erro ao criar conta.',
+            message: signInError?.message || 'Este e-mail já tem uma conta. Verifique sua senha.',
           });
           return;
         }
+      } else {
+        setState({
+          status: 'error',
+          invite,
+          message: is429
+            ? 'Muitas tentativas. Aguarde alguns minutos.'
+            : signUpError.message || 'Erro ao criar conta.',
+        });
+        return;
       }
-
-      userId = userId ?? signUpData?.user?.id ?? null;
-    } else {
-      setState({
-        status: 'error',
-        invite,
-        message: signInError?.message || 'Erro ao autenticar.',
-      });
-      return;
     }
 
     if (!userId) {
@@ -161,28 +193,25 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
       return;
     }
 
-    // PASSO 5 — Aceitar convite via RPC
-    const { data: inviteRow, error: inviteRowError } = await supabase
-      .from('invites')
-      .select('id')
-      .eq('token', token)
+    // PASSO 4 — Verificar que o profile foi criado com company_id
+    // (confirma que o trigger rodou com sucesso)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id, role')
+      .eq('id', userId)
       .single();
 
-    if (inviteRowError || !inviteRow?.id) {
-      setState({ status: 'error', invite, message: 'Não foi possível localizar o convite.' });
+    if (profileError || !profile?.company_id) {
+      safeError('[InvitePage] profile check failed:', profileError);
+      setState({
+        status: 'error',
+        invite,
+        message: 'Erro ao configurar perfil. O convite pode ter expirado ou já sido utilizado.',
+      });
       return;
     }
 
-    const { error: rpcError } = await supabase.rpc('accept_invite', {
-      invite_id: inviteRow.id,
-    });
-
-    if (rpcError) {
-      setState({ status: 'error', invite, message: rpcError.message });
-      return;
-    }
-
-    // PASSO 6 — Redirecionar
+    // PASSO 5 — Redirecionar para o app
     window.location.href = '/';
   };
 
@@ -195,7 +224,7 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-[#0f1c3a] to-slate-950 px-4">
       <div className="w-full max-w-md bg-slate-800/50 backdrop-blur-md border border-white/[0.06] rounded-2xl shadow-xl shadow-black/30 px-8 py-10">
 
-        {state.status === 'validating' && (
+        {state.status === 'loading' && (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-slate-400 text-sm">Validando convite...</p>
@@ -261,7 +290,14 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="seu@email.com"
                   className={inputClass}
+                  // Convites com email vinculado: campo readonly para evitar troca
+                  readOnly={!!(state.status !== 'error' && (state as any).invite?.email)}
                 />
+                {(state.status === 'form' || state.status === 'submitting') && state.invite.email && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Este convite foi enviado para este e-mail.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -297,13 +333,6 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
                 {state.status === 'submitting' ? 'Criando conta...' : 'Criar conta'}
               </button>
             </form>
-
-            <p className="mt-6 text-center text-xs text-slate-600">
-              Já tem uma conta?{' '}
-              <a href="/" className="text-blue-400 hover:text-blue-300 transition-colors">
-                Entrar
-              </a>
-            </p>
           </>
         )}
 
