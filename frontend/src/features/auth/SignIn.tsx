@@ -121,7 +121,7 @@ export const SignIn: React.FC<SignInProps> = ({
 
   return (
     <div
-      className="relative flex min-h-screen overflow-hidden"
+      className="relative flex flex-col sm:flex-row min-h-screen overflow-hidden"
       style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
     >
       <style>{`
@@ -134,6 +134,7 @@ export const SignIn: React.FC<SignInProps> = ({
         @keyframes ns-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         .ns-cursor { display:inline-block; animation: ns-blink 0.85s step-end infinite; }
         .ns-cursor-active { display:inline-block; opacity: 1; }
+        @media (min-width: 640px) { .ns-card-shift { transform: translateX(-10rem); } }
         /* Override browser autofill — keeps the glassmorphism intact */
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
@@ -254,9 +255,36 @@ export const SignIn: React.FC<SignInProps> = ({
         ))}
       </svg>
 
-      {/* ══ LEFT PANEL — Branding ══ */}
+      {/* ══ MOBILE HEADER — Logo + tagline compactos ══ */}
+      <div className="sm:hidden relative z-10 flex flex-col items-center pt-12 pb-2 px-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center justify-center rounded-xl bg-blue-600"
+            style={{ width: 38, height: 38, boxShadow: '0 0 18px rgba(37,99,235,0.45)' }}>
+            <Cpu size={18} color="#fff" strokeWidth={1.8}/>
+          </div>
+          <div>
+            <div className="text-white font-semibold" style={{ fontSize: '1rem', letterSpacing: '-0.01em' }}>
+              NextSales
+            </div>
+            <div className="text-slate-500 uppercase" style={{ fontSize: '0.62rem', letterSpacing: '0.13em' }}>
+              CRM Platform
+            </div>
+          </div>
+        </div>
+        <h2 className="ns-display text-white text-center"
+          style={{ fontSize: 'clamp(1.7rem, 7vw, 2.2rem)', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-0.01em' }}>
+          O CRM que{' '}
+          <em style={{ fontStyle: 'italic', color: '#93c5fd' }}>
+            {displayText}
+            <span className={isIdle ? 'ns-cursor' : 'ns-cursor-active'} style={{ marginLeft: '1px', fontStyle: 'normal' }} aria-hidden="true">|</span>
+          </em>
+          {' '}com você.
+        </h2>
+      </div>
+
+      {/* ══ LEFT PANEL — Branding (desktop only) ══ */}
       <div
-        className="relative z-10 flex flex-col justify-center"
+        className="hidden sm:flex relative z-10 flex-col justify-center"
         style={{ width: '55%', padding: '0 clamp(3rem, 6vw, 7rem)' }}
       >
         {/* Logo */}
@@ -337,12 +365,9 @@ export const SignIn: React.FC<SignInProps> = ({
         </div>
       </div>
 
-      {/* ══ RIGHT PANEL — Card igual ao AuthPage original ══ */}
-      <div
-        className="relative z-10 flex items-center justify-center"
-        style={{ width: '45%', padding: '0 clamp(2rem, 4vw, 5rem)' }}
-      >
-        <div className="w-full" style={{ maxWidth: 448, transform: 'translateX(-10rem)' }}>
+      {/* ══ RIGHT PANEL — Card ══ */}
+      <div className="relative z-10 flex items-start sm:items-center justify-center w-full sm:w-[45%] px-5 pb-10 sm:pb-0 sm:px-[clamp(2rem,4vw,5rem)]">
+        <div className="w-full ns-card-shift" style={{ maxWidth: 448 }}>
           {/* Card — mesmo estilo do AuthPage */}
           <div className="rounded-2xl border border-white/10 px-8 py-10 transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/30 hover:ring-1 hover:ring-blue-500/20 ns-aup"
             style={{ animationDelay: '0.26s' }}>
