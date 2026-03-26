@@ -1,5 +1,5 @@
 export const VIEW_PATHS: Record<string, string> = {
-    'Inbox': '/',
+    'Inbox': '/inbox',
     'Pipeline': '/pipeline',
     'Leads': '/leads',
     'Clientes': '/clientes',

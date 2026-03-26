@@ -117,7 +117,7 @@ export function useAppState() {
         if (path.startsWith('/painel360/')) return 'Painel 360';
         if (path.startsWith('/configuracoes/')) return 'Configurações';
         if (path.startsWith('/agentes/')) return 'Agentes';
-        return 'Inbox';
+        return 'Dashboard';
     });
     const [inboxMode, setInboxMode] = useState<'standard' | 'analysis'>('standard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
