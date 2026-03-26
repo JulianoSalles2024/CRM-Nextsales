@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bot, User as UserIcon } from 'lucide-react';
+import { LogOut, Sun, Moon, Bot, User as UserIcon, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User } from '@/types';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -14,6 +14,7 @@ interface HeaderProps {
   onOpenSdrBot: () => void;
   activeView: string;
   onNavigate: (view: string) => void;
+  onMobileMenuToggle: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -25,6 +26,7 @@ const Header: React.FC<HeaderProps> = ({
   onOpenSdrBot,
   activeView,
   onNavigate,
+  onMobileMenuToggle,
 }) => {
   const [isUserMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -44,9 +46,18 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="flex-shrink-0 bg-transparent px-6 h-20 flex items-center justify-end z-[200]">
+    <header className="flex-shrink-0 bg-transparent px-6 h-20 flex items-center justify-between z-[200]">
+      {/* Hamburger - mobile only */}
+      <button
+        onClick={onMobileMenuToggle}
+        className="md:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+        aria-label="Abrir menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* Right Side - Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 ml-auto">
         {/* SDR Bot Button */}
         <button
           onClick={onOpenSdrBot}

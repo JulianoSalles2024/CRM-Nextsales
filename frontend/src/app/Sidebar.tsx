@@ -10,7 +10,7 @@ import {
   Contact,
   PanelLeft,
   Settings,
-  Zap,
+  Cpu,
   Bell,
   HelpCircle,
   MessageSquare,
@@ -44,6 +44,8 @@ interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
   isChatEnabled: boolean;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 const NavItem: React.FC<{
@@ -93,10 +95,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
   onToggle,
   isChatEnabled,
+  isMobileOpen = false,
+  onMobileClose,
 }) => {
   const { currentPermissions, currentUserRole, isRoleReady } = useAuth();
   const aiEscalationCount = useAiEscalationCount();
   const supportTicketCount = useSupportTicketCount();
+  const [isMobileCollapsed, setIsMobileCollapsed] = useState(false);
 
   if (!isRoleReady) return null;
 
@@ -143,27 +148,36 @@ const Sidebar: React.FC<SidebarProps> = ({
     return { ...item, originalKey: item.label };
   });
 
-  return (
-    <aside
-      className={`hidden md:flex flex-col bg-[#0B1220]/80 backdrop-blur-md border-r border-white/5 p-4 transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-20' : 'w-64'
-      }`}
-    >
-      <div className={`flex items-center gap-3 mb-10 px-2 h-8 ${isCollapsed ? 'justify-center' : ''}`}>
-        {!isCollapsed && (
-          <h1 className="text-2xl font-bold text-white whitespace-nowrap flex items-center gap-2 tracking-tight">
-            <Zap className="w-6 h-6 text-blue-500 fill-blue-500/20" />
-            <span><span className="text-blue-400">Next</span>Sales</span>
-          </h1>
-        )}
-        <button
-          onClick={onToggle}
-          className={`p-1.5 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-700 ${
-            !isCollapsed ? 'ml-auto' : ''
-          }`}
+  const sidebarContent = (isCollapsedMode: boolean, onToggleFn: () => void) => (
+    <>
+      <div className={`flex items-center gap-3 mb-10 px-2 ${isCollapsedMode ? 'justify-center' : ''}`}>
+        <div
+          className="flex items-center justify-center rounded-xl bg-blue-600 shrink-0"
+          style={{ width: 34, height: 34, boxShadow: '0 0 16px rgba(37,99,235,0.45)' }}
         >
-          <PanelLeft className="w-5 h-5" />
-        </button>
+          <Cpu size={17} color="#fff" strokeWidth={1.8} />
+        </div>
+        {!isCollapsedMode && (
+          <>
+            <span className="text-lg font-bold text-white whitespace-nowrap tracking-tight">
+              <span className="text-blue-400">Next</span>Sales
+            </span>
+            <button
+              onClick={onToggleFn}
+              className="ml-auto p-1.5 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-700"
+            >
+              <PanelLeft className="w-5 h-5" />
+            </button>
+          </>
+        )}
+        {isCollapsedMode && (
+          <button
+            onClick={onToggleFn}
+            className="p-1.5 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-700"
+          >
+            <PanelLeft className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto no-scrollbar">
@@ -173,8 +187,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               <NavItem
                 item={item}
                 isActive={activeView === item.originalKey}
-                onClick={() => onNavigate(item.originalKey)}
-                isCollapsed={isCollapsed}
+                onClick={() => { onNavigate(item.originalKey); onMobileClose?.(); }}
+                isCollapsed={isCollapsedMode}
                 badge={
                   item.originalKey === 'Omnichannel' ? aiEscalationCount :
                   item.originalKey === 'Suporte' && currentUserRole === 'admin' ? supportTicketCount :
@@ -193,8 +207,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               <NavItem
                 item={item}
                 isActive={activeView === item.label}
-                onClick={() => onNavigate(item.label)}
-                isCollapsed={isCollapsed}
+                onClick={() => { onNavigate(item.label); onMobileClose?.(); }}
+                isCollapsed={isCollapsedMode}
                 badge={
                   item.label === 'Suporte' && currentUserRole === 'admin' ? supportTicketCount : undefined
                 }
@@ -203,7 +217,33 @@ const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </ul>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile drawer overlay */}
+      {isMobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onMobileClose}
+          />
+          <aside className={`relative flex flex-col bg-[#0B1220] border-r border-white/5 p-4 h-full overflow-y-auto transition-all duration-300 ease-in-out ${isMobileCollapsed ? 'w-20' : 'w-64'}`}>
+            {sidebarContent(isMobileCollapsed, () => setIsMobileCollapsed((p) => !p))}
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <aside
+      className={`hidden md:flex flex-col bg-[#0B1220]/80 backdrop-blur-md border-r border-white/5 p-4 transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      {sidebarContent(isCollapsed, onToggle)}
     </aside>
+    </>
   );
 };
 
