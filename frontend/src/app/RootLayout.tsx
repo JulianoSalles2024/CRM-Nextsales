@@ -29,6 +29,8 @@ import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateBoardModal from '@/src/features/leads/CreateBoardModal';
 import Notification from '@/src/features/notifications/Notification';
 import { HelpWidget } from '@/src/features/support';
+import TrialBanner from '@/src/components/trial/TrialBanner';
+import TrialGuard from '@/src/components/trial/TrialGuard';
 
 export default function RootLayout() {
     const ctx = useAppContext();
@@ -181,6 +183,7 @@ export default function RootLayout() {
     }
 
     return (
+        <TrialGuard>
         <div className="flex h-screen text-zinc-800 dark:text-gray-300">
             <Sidebar
                 activeView={ctx.activeView}
@@ -203,6 +206,9 @@ export default function RootLayout() {
                     onNavigate={ctx.setActiveView}
                     onMobileMenuToggle={() => setIsMobileMenuOpen((p) => !p)}
                 />
+
+                {/* Banner Trial Thrill — aparece durante o período de teste */}
+                <TrialBanner onUpgrade={() => { /* TrialGuard bloqueia se expirado */ }} />
 
                 {/* Banner WhatsApp — aparece para quem ainda não conectou */}
                 <AnimatePresence>
@@ -402,5 +408,6 @@ export default function RootLayout() {
                 )}
             </AnimatePresence>
         </div>
+        </TrialGuard>
     );
 }

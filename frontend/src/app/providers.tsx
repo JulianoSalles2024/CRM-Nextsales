@@ -1,6 +1,7 @@
 import React from 'react';
 import { AuthProvider } from '@/src/features/auth/AuthContext';
 import AuthGate from '@/src/features/auth/AuthGate';
+import { BillingProvider } from '@/src/contexts/BillingContext';
 
 const safeError = (...args: unknown[]) => {
     try { console.error(...args); } catch { /* ignore */ }
@@ -42,7 +43,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     return (
         <AuthProvider>
             <AuthGate>
-                {children}
+                <BillingProvider>
+                    {children}
+                </BillingProvider>
             </AuthGate>
         </AuthProvider>
     );
