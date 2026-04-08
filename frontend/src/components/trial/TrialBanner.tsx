@@ -14,8 +14,8 @@ export default function TrialBanner({ onUpgrade }: Props) {
   // Não mostra se não é trial, já expirou (o TrialGuard cuida disso) ou foi dismissado
   if (!isTrial || isTrialExpired || dismissed) return null;
 
-  const isUrgent  = daysRemaining <= 3;
-  const isWarning = daysRemaining <= 7 && daysRemaining > 3;
+  const isUrgent  = daysRemaining <= 2;
+  const isWarning = daysRemaining <= 4 && daysRemaining > 2;
 
   const label = daysRemaining === 0
     ? 'Último dia do seu plano Thrill!'
