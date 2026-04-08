@@ -45,6 +45,8 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS })
   }
+
+  try {
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 })
   }
@@ -218,6 +220,12 @@ Deno.serve(async (req: Request) => {
     pix_qr_code_image:  pixImage,
     confirmed:          asaasPayment.status === 'CONFIRMED' || asaasPayment.status === 'RECEIVED',
   })
+
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[billing-checkout] Erro não capturado:', msg)
+    return json({ error: msg }, 500)
+  }
 })
 
 // ── Ativar plano da empresa ───────────────────────────────────
@@ -260,7 +268,13 @@ async function asaasFetch(method: string, path: string, body?: unknown) {
     },
     body: body ? JSON.stringify(body) : undefined,
   })
-  return res.json()
+  const text = await res.text()
+  console.log(`[asaasFetch] ${method} ${path} → ${res.status}: ${text.slice(0, 300)}`)
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(`Asaas retornou resposta inválida (${res.status}): ${text.slice(0, 200)}`)
+  }
 }
 
 function json(data: unknown, status = 200) {

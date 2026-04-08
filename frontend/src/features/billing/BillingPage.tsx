@@ -51,12 +51,17 @@ function CurrentPlanBadge() {
     </div>
   );
 
-  if (isActive) return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-      <CheckCircle2 className="w-3.5 h-3.5" />
-      Plano {billing.plan_slug} · Ativo
-    </div>
-  );
+  if (isActive) {
+    const periodEnd = billing.current_period_end
+      ? new Date(billing.current_period_end).toLocaleDateString('pt-BR')
+      : null;
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Plano {billing.plan_slug} · Ativo{periodEnd ? ` · até ${periodEnd}` : ''}
+      </div>
+    );
+  }
 
   return null;
 }
@@ -144,7 +149,7 @@ function PlanCard({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function BillingPage() {
-  const { isTrial, isTrialExpired, daysRemaining } = useBilling();
+  const { billing, isTrial, isTrialExpired, isActive, daysRemaining } = useBilling();
   const [interval, setInterval]         = useState<BillingInterval>('monthly');
   const [checkoutPlan, setCheckoutPlan] = useState<CheckoutPlan | null>(null);
 
@@ -192,6 +197,36 @@ export default function BillingPage() {
                 {item}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Detalhes da assinatura ativa */}
+      {isActive && billing?.current_period_end && (
+        <div className="p-4 rounded-xl border border-emerald-500/10 bg-emerald-500/5">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span className="text-sm font-semibold text-white">Assinatura ativa</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Plano</p>
+              <p className="text-sm font-semibold text-white capitalize">{billing.plan_slug}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Período</p>
+              <p className="text-sm font-semibold text-white">
+                {billing.billing_interval === 'yearly' ? 'Anual' : 'Mensal'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Próxima renovação</p>
+              <p className="text-sm font-semibold text-emerald-400">
+                {new Date(billing.current_period_end).toLocaleDateString('pt-BR', {
+                  day: '2-digit', month: 'long', year: 'numeric',
+                })}
+              </p>
+            </div>
           </div>
         </div>
       )}
