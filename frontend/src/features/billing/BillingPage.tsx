@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useBilling } from '@/src/contexts/BillingContext';
 import CheckoutModal, { type CheckoutPlan, type BillingInterval } from './CheckoutModal';
+import CancelSubscriptionModal from './CancelSubscriptionModal';
 
 // ─── Planos ───────────────────────────────────────────────────────────────────
 
@@ -150,8 +151,9 @@ function PlanCard({
 
 export default function BillingPage() {
   const { billing, isTrial, isTrialExpired, isActive, daysRemaining } = useBilling();
-  const [interval, setInterval]         = useState<BillingInterval>('monthly');
-  const [checkoutPlan, setCheckoutPlan] = useState<CheckoutPlan | null>(null);
+  const [interval, setInterval]           = useState<BillingInterval>('monthly');
+  const [checkoutPlan, setCheckoutPlan]   = useState<CheckoutPlan | null>(null);
+  const [showCancel, setShowCancel]       = useState(false);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -267,13 +269,40 @@ export default function BillingPage() {
       </div>
 
       {/* Footer */}
-      <div className="text-center pb-4">
+      <div className="text-center pb-2">
         <p className="text-[10px] text-slate-600">
           Sem taxas escondidas · Cancele quando quiser · Suporte em português
         </p>
       </div>
 
-      {/* Modal de checkout */}
+      {/* Zona de perigo — apenas para assinantes ativos */}
+      {isActive && !billing?.cancel_at_period_end && (
+        <div className="border-t border-white/5 pt-4 pb-2 text-center">
+          <button
+            onClick={() => setShowCancel(true)}
+            className="text-xs text-slate-600 hover:text-slate-400 underline underline-offset-2 transition-colors"
+          >
+            Cancelar assinatura
+          </button>
+        </div>
+      )}
+
+      {/* Aviso de cancelamento agendado */}
+      {isActive && billing?.cancel_at_period_end && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5">
+          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+          <p className="text-xs text-amber-300">
+            Cancelamento agendado — seu acesso continua até{' '}
+            <span className="font-semibold text-white">
+              {billing.current_period_end
+                ? new Date(billing.current_period_end).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+                : 'o fim do período'}
+            </span>.
+          </p>
+        </div>
+      )}
+
+      {/* Modais */}
       <AnimatePresence>
         {checkoutPlan && (
           <CheckoutModal
@@ -281,6 +310,9 @@ export default function BillingPage() {
             interval={interval}
             onClose={() => setCheckoutPlan(null)}
           />
+        )}
+        {showCancel && (
+          <CancelSubscriptionModal onClose={() => setShowCancel(false)} />
         )}
       </AnimatePresence>
     </div>
