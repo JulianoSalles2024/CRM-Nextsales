@@ -405,6 +405,7 @@ export default function RootLayout() {
                             dismissBanner();
                             refetchConn();
                         }}
+                        onGoToAgents={() => ctx.setActiveView('Agentes')}
                         userName={ctx.localUser?.name}
                     />
                 )}

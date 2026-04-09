@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  MessageCircle, CheckCircle2, AlertCircle, RefreshCw, X, Smartphone, Wifi,
+  MessageCircle, CheckCircle2, AlertCircle, RefreshCw, X, Smartphone, Wifi, Bot, ArrowRight,
 } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 
@@ -12,6 +12,7 @@ type Step = 'loading' | 'qr' | 'connected' | 'error';
 interface Props {
   onClose: () => void;
   onConnected: () => void;
+  onGoToAgents?: () => void;
   userName?: string;
 }
 
@@ -19,7 +20,7 @@ const QR_TTL = 28;
 const POLL_INTERVAL = 5000;
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
-const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName }) => {
+const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, onGoToAgents, userName }) => {
   const [step, setStep] = useState<Step>('loading');
   // qrValue: raw string para QRCodeSVG | base64 PNG fallback
   const [qrValue, setQrValue] = useState<string | null>(null);
@@ -154,7 +155,7 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error ?? `Registro falhou (HTTP ${res.status})`);
       }
-      setTimeout(() => { onConnected(); }, 2200);
+      // Não fecha automaticamente — mostra o próximo passo (criar agente)
     } catch (err: any) {
       setRegistering(false);
       setErrorMsg(err?.message ?? 'Erro ao registrar conexão no banco.');
@@ -299,24 +300,64 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
               <motion.div
                 key="connected"
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                className="flex flex-col items-center py-10 gap-4"
+                className="flex flex-col gap-4 py-2"
               >
+                {/* Sucesso */}
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center"
+                  >
+                    <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                  </motion.div>
+                  <div className="text-center">
+                    <p className="text-white font-semibold">WhatsApp conectado!</p>
+                    <div className="flex items-center justify-center gap-1.5 mt-1">
+                      <Wifi className="w-3 h-3 text-emerald-400" />
+                      <span className="text-xs text-emerald-400">Online</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Próximo passo — criar agente */}
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4"
                 >
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-sky-500/10 shrink-0 mt-0.5">
+                      <Bot className="w-4 h-4 text-sky-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white">Próximo passo: criar seu agente de IA</p>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        Sem um agente configurado, o WhatsApp recebe mensagens mas não responde automaticamente.
+                      </p>
+                    </div>
+                  </div>
+                  {onGoToAgents && (
+                    <button
+                      onClick={() => { onConnected(); onGoToAgents(); }}
+                      className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-sky-400 border border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all"
+                    >
+                      <Bot className="w-4 h-4" />
+                      Criar agente agora
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </motion.div>
-                <div className="text-center">
-                  <p className="text-white font-semibold">WhatsApp conectado!</p>
-                  <p className="text-xs text-slate-500 mt-1">Você já pode receber mensagens no CRM</p>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-xs text-emerald-300 font-medium">Online</span>
-                </div>
+
+                {/* Fechar sem criar agente */}
+                <button
+                  onClick={onConnected}
+                  className="text-xs text-slate-600 hover:text-slate-400 transition-colors text-center"
+                >
+                  Criar agente depois
+                </button>
               </motion.div>
             )}
 
