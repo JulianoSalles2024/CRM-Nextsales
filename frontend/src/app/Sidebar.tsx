@@ -26,6 +26,7 @@ import {
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAiEscalationCount } from '@/src/features/inbox/hooks/useAiEscalationCount';
 import { supabase } from '@/src/lib/supabase';
+import { usePlanLimits } from '@/src/hooks/usePlanLimits';
 
 function useSupportTicketCount() {
   const [count, setCount] = useState(0);
@@ -109,6 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { currentPermissions, currentUserRole, isRoleReady } = useAuth();
   const aiEscalationCount = useAiEscalationCount();
   const supportTicketCount = useSupportTicketCount();
+  const { hasFeature } = usePlanLimits();
   const [isMobileCollapsed, setIsMobileCollapsed] = useState(false);
 
   if (!isRoleReady) return null;
@@ -145,6 +147,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (!isChatEnabled && item.label === 'Chat') return false;
     if (!currentPermissions.canViewDashboard && item.label === 'Dashboard') return false;
     if (!currentPermissions.canViewReports && item.label === 'Relatórios') return false;
+    if (!hasFeature('has_reports_advanced') && item.label === 'Relatórios') return false;
     if (currentUserRole !== 'admin' && item.label === 'Painel 360') return false;
     if (currentUserRole === 'admin' && item.label === 'Pipeline') return false;
     if (currentUserRole === 'admin' && item.label === 'Playbooks') return false;
