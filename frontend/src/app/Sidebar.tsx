@@ -50,7 +50,7 @@ interface SidebarProps {
 }
 
 const NavItem: React.FC<{
-  item: { icon: React.ElementType; label: string };
+  item: { icon: React.ElementType; label: string; comingSoon?: boolean };
   isActive: boolean;
   isCollapsed: boolean;
   onClick: () => void;
@@ -60,11 +60,13 @@ const NavItem: React.FC<{
     href="#"
     onClick={(e) => {
       e.preventDefault();
-      onClick();
+      if (!item.comingSoon) onClick();
     }}
     title={isCollapsed ? item.label : undefined}
     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group border ${
-      isActive
+      item.comingSoon
+        ? 'border-transparent text-slate-600 cursor-not-allowed'
+        : isActive
         ? 'bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20'
         : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-900'
     } ${isCollapsed ? 'justify-center' : ''}`}
@@ -72,7 +74,7 @@ const NavItem: React.FC<{
     <div className="relative flex-shrink-0">
       <item.icon
         className={`w-5 h-5 transition-colors ${
-          isActive ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-300'
+          item.comingSoon ? 'text-slate-700' : isActive ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-300'
         }`}
       />
       {badge != null && badge > 0 && isCollapsed && (
@@ -82,7 +84,12 @@ const NavItem: React.FC<{
       )}
     </div>
     {!isCollapsed && <span className="flex-1">{item.label}</span>}
-    {!isCollapsed && badge != null && badge > 0 && (
+    {!isCollapsed && item.comingSoon && (
+      <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wide bg-slate-800 text-slate-500 border border-slate-700">
+        EM BREVE
+      </span>
+    )}
+    {!isCollapsed && !item.comingSoon && badge != null && badge > 0 && (
       <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-[10px] font-bold text-black flex items-center justify-center">
         {badge > 9 ? '9+' : badge}
       </span>
@@ -131,7 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: BarChart, label: 'Relatórios' },
     { icon: InboxIcon, label: 'Omnichannel' },
     { icon: Bot, label: 'Agentes' },
-    { icon: Package, label: 'Portfólio' },
+    { icon: Package, label: 'Portfólio', comingSoon: true },
     { icon: MessageSquare, label: 'Chat' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter((item) => {
