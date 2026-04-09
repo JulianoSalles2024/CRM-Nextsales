@@ -156,15 +156,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const sidebarContent = (isCollapsedMode: boolean, onToggleFn: () => void) => (
     <>
       <div className={`flex items-center gap-3 mb-10 px-2 ${isCollapsedMode ? 'justify-center' : ''}`}>
-        <div
-          className="flex items-center justify-center rounded-xl bg-blue-600 shrink-0"
-          style={{ width: 34, height: 34, boxShadow: '0 0 16px rgba(37,99,235,0.45)' }}
-        >
-          <Cpu size={17} color="#fff" strokeWidth={1.8} />
-        </div>
         {!isCollapsedMode && (
           <>
-            <span className="text-lg font-bold text-white whitespace-nowrap tracking-tight">
+            <span className="text-xl font-bold text-white whitespace-nowrap tracking-tight">
               <span className="text-sky-400">Next</span>Sales
             </span>
             <button
