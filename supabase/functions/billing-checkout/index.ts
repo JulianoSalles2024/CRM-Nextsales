@@ -127,8 +127,10 @@ Deno.serve(async (req: Request) => {
     plan_slug,
     billing_interval,
     payment_type,
-    status: 'past_due', // fica 'active' após pagamento confirmado
-    gateway_customer_id: gatewayCustomerId,
+    status:               'past_due', // fica 'active' após pagamento confirmado
+    gateway_customer_id:  gatewayCustomerId,
+    cancel_at_period_end: false,       // reset ao fazer nova assinatura
+    canceled_at:          null,
     metadata: {
       customer_name:  customer_data.name,
       customer_phone: customer_data.phone ?? null,
