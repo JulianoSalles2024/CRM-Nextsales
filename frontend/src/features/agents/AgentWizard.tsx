@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { AgentFunctionType, AgentTone, AgentInsert, AIAgent } from './hooks/useAgents';
 import { getDefaultPrompt } from './agentPrompts';
+import { usePlanLimits } from '@/src/hooks/usePlanLimits';
 
 const FUNCTION_OPTIONS: {
   value: AgentFunctionType; label: string; desc: string; icon: React.ElementType; color: string;
@@ -142,6 +143,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [keywordInput, setKeywordInput] = useState('');
+  const { canUseAgent } = usePlanLimits();
 
   const update = (patch: Partial<FormData>) => setForm(f => ({ ...f, ...patch }));
   const updateEscalate = (patch: Partial<FormData['escalate_rules']>) =>
@@ -249,7 +251,10 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
               {FUNCTION_OPTIONS.map(fn => {
                 const Icon = fn.icon;
                 const active = form.function_type === fn.value;
-                const disabled = ['hunter', 'followup', 'curator', 'supervisor'].includes(fn.value);
+                // Bloqueado: tipos de infra OU tipo não liberado no plano
+                const disabledInfra = ['hunter', 'followup', 'curator', 'supervisor'].includes(fn.value);
+                const disabledByPlan = !disabledInfra && !canUseAgent(fn.value);
+                const disabled = disabledInfra || disabledByPlan;
                 return (
                   <button
                     key={fn.value}
@@ -264,6 +269,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                         }),
                       });
                     }}
+                    title={disabledByPlan ? `Agente ${fn.label} não está disponível no seu plano — faça upgrade` : undefined}
                     className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
                       disabled
                         ? 'border-white/5 bg-[#0F172A] opacity-35 cursor-not-allowed'

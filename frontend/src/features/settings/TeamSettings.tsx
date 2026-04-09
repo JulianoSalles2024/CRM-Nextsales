@@ -6,6 +6,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import GoalsTab from './GoalsTab';
 import FlatCard from '@/components/ui/FlatCard';
+import { PlanGuard } from '@/src/components/PlanGuard';
 
 interface TeamMember {
     id: string;
@@ -437,13 +438,15 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                     </p>
                 </div>
                 {currentPermissions.canManageTeam && (
-                    <button
-                        onClick={() => setInviteModalOpen(true)}
-                        className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200"
-                    >
-                        <UserPlus className="w-4 h-4" />
-                        Convidar
-                    </button>
+                    <PlanGuard limit="max_users" current={activeMembers.length} reason="Limite de usuários atingido no seu plano">
+                        <button
+                            onClick={() => setInviteModalOpen(true)}
+                            className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200"
+                        >
+                            <UserPlus className="w-4 h-4" />
+                            Convidar
+                        </button>
+                    </PlanGuard>
                 )}
             </div>
 

@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Building2, CreditCard,
-  Activity, ArrowLeft, LogOut,
+  Activity, ArrowLeft, LogOut, Bot, Layers,
 } from 'lucide-react'
 import { supabase } from '@/src/lib/supabase'
 
@@ -10,7 +10,9 @@ const navItems = [
   { icon: Users,           label: 'Usuários',    path: '/admin/usuarios'   },
   { icon: Building2,       label: 'Empresas',    path: '/admin/empresas'   },
   { icon: CreditCard,      label: 'Billing',     path: '/admin/billing'    },
+  { icon: Layers,          label: 'Planos',      path: '/admin/planos'     },
   { icon: Activity,        label: 'Plataforma',  path: '/admin/health'     },
+  { icon: Bot,             label: 'Agentes IA',  path: '/admin/agentes'    },
 ]
 
 const ACCENT = '#38BDF8'

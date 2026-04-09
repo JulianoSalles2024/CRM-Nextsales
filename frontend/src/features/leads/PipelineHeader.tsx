@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import type { CardDisplaySettings, Board, Id } from '@/types';
+import { PlanGuard } from '@/src/components/PlanGuard';
 
 interface PipelineHeaderProps {
     cardDisplaySettings: CardDisplaySettings;
@@ -112,16 +113,18 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                                         ))}
                                     </div>
                                     <div className="p-2 border-t border-slate-800">
-                                        <button
-                                            onClick={() => {
-                                                onCreateBoardClick();
-                                                setBoardMenuOpen(false);
-                                            }}
-                                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sky-400 hover:bg-slate-800 hover:text-sky-300 transition-colors text-sm font-medium"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            Criar novo board
-                                        </button>
+                                        <PlanGuard limit="max_pipelines" current={boards.length} reason={`Limite de pipelines atingido no seu plano`}>
+                                            <button
+                                                onClick={() => {
+                                                    onCreateBoardClick();
+                                                    setBoardMenuOpen(false);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sky-400 hover:bg-slate-800 hover:text-sky-300 transition-colors text-sm font-medium"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                Criar novo board
+                                            </button>
+                                        </PlanGuard>
                                     </div>
                                 </motion.div>
                             </>

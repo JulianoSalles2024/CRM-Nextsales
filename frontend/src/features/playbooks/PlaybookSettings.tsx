@@ -5,6 +5,7 @@ import { PlusCircle, Edit, Trash2, MoreVertical, FileText, ChevronDown } from 'l
 import CreateEditPlaybookModal from './CreateEditPlaybookModal';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import FlatCard from '@/components/ui/FlatCard';
+import { PlanGuard } from '@/src/components/PlanGuard';
 
 interface PlaybookSettingsProps {
     initialPlaybooks: Playbook[];
@@ -61,10 +62,12 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                             </div>
                             <p className="text-sm text-slate-400">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
                         </div>
-                        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
-                            <PlusCircle className="w-4 h-4" />
-                            <span>Novo Playbook</span>
-                        </button>
+                        <PlanGuard limit="max_playbooks" current={playbooks.length} reason="Limite de playbooks atingido no seu plano">
+                            <button onClick={() => handleOpenModal()} className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                                <PlusCircle className="w-4 h-4" />
+                                <span>Novo Playbook</span>
+                            </button>
+                        </PlanGuard>
                     </div>
                 </div>
                 <div className="p-6">

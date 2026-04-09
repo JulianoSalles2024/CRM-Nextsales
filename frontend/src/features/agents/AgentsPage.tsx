@@ -2,35 +2,32 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Zap, LayoutGrid, TrendingUp, Bot, Users,
+  Zap, Bot, Users,
 } from 'lucide-react';
 import { useAgents } from './hooks/useAgents';
 import { AgentsCommandCenter } from './AgentsCommandCenter';
 import { AgentsList } from './AgentsList';
 import { AgentWizard } from './AgentWizard';
 import { AgentDetail } from './AgentDetail';
-import { AgentAnalytics } from './AgentAnalytics';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import type { AIAgent } from './hooks/useAgents';
+import { usePlanBlock } from '@/src/components/PlanGuard';
 
-type Tab = 'comando' | 'agentes' | 'analytics';
+type Tab = 'comando' | 'agentes';
 
 const TAB_PATHS: Record<Tab, string> = {
-  comando:   '/agentes/central-de-comando',
-  agentes:   '/agentes/meus-agentes',
-  analytics: '/agentes/analytics',
+  comando: '/agentes/central-de-comando',
+  agentes: '/agentes/meus-agentes',
 };
 
 const PATH_TAB: Record<string, Tab> = {
   '/agentes/central-de-comando': 'comando',
   '/agentes/meus-agentes':       'agentes',
-  '/agentes/analytics':          'analytics',
 };
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'comando',   label: 'Central de Comando', icon: Zap },
-  { id: 'agentes',   label: 'Meus Agentes',        icon: Bot },
-  { id: 'analytics', label: 'Analytics',            icon: TrendingUp },
+  { id: 'comando', label: 'Central de Comando', icon: Zap },
+  { id: 'agentes', label: 'Meus Agentes',        icon: Bot },
 ];
 
 // ── Sliding-pill tab bar ──────────────────────────────────────────────────────
@@ -101,6 +98,7 @@ export const AgentsPage: React.FC = () => {
   const [editingAgent, setEditingAgent] = useState<AIAgent | null>(null);
 
   const { agents, loading, createAgent, updateAgent, toggleActive, archiveAgent } = useAgents();
+  const { check: planCheck } = usePlanBlock();
 
   const handleSaveAgent = async (data: Parameters<typeof createAgent>[0]) => {
     if (editingAgent) {
@@ -172,7 +170,12 @@ export const AgentsPage: React.FC = () => {
               <AgentsList
                 agents={agents}
                 loading={loading}
-                onCreateAgent={() => { setEditingAgent(null); setWizardOpen(true); }}
+                onCreateAgent={() => {
+                  const { blocked, reason } = planCheck({ limit: 'max_agents', current: agents.length, reason: 'Limite de agentes atingido no seu plano' });
+                  if (blocked) { alert(reason + ' — faça upgrade para continuar.'); return; }
+                  setEditingAgent(null);
+                  setWizardOpen(true);
+                }}
                 onToggle={toggleActive}
                 onArchive={archiveAgent}
                 onEdit={handleEditAgent}
@@ -180,9 +183,6 @@ export const AgentsPage: React.FC = () => {
               />
             )}
 
-            {activeTab === 'analytics' && (
-              <AgentAnalytics companyId={companyId} />
-            )}
           </motion.div>
         </AnimatePresence>
       </div>

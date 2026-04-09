@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Zap, Cpu, DollarSign, TrendingUp, ExternalLink,
-  ArrowRight, Bot,
+  Bot, BarChart2,
 } from 'lucide-react';
 import { useAgentAnalytics, type Period } from './hooks/useAgentAnalytics';
 
@@ -28,11 +28,6 @@ function conversionBadge(rate: number): string {
   if (rate >= 20) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20';
   if (rate >= 10) return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20';
   return 'bg-red-500/15 text-red-400 border-red-500/20';
-}
-
-function funnelRate(numerator: number, denominator: number): string {
-  if (!denominator) return '0%';
-  return `${Math.round((numerator / denominator) * 100)}%`;
 }
 
 // ── Period selector ──────────────────────────────────────────────────────────
@@ -80,30 +75,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   </div>
 );
 
-// ── Funnel step ───────────────────────────────────────────────────────────────
-
-interface FunnelStepProps {
-  label: string;
-  count: number;
-  rate?: string;
-  isLast?: boolean;
-}
-
-const FunnelStep: React.FC<FunnelStepProps> = ({ label, count, rate, isLast }) => (
-  <div className="flex items-center gap-2 flex-1">
-    <div className="flex-1 bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
-      <p className="text-lg font-bold text-white">{count.toLocaleString('pt-BR')}</p>
-      <p className="text-xs text-slate-500 mt-0.5">{label}</p>
-      {rate && (
-        <span className="inline-block mt-1.5 text-[10px] bg-sky-500/5 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-full">
-          {rate} taxa
-        </span>
-      )}
-    </div>
-    {!isLast && <ArrowRight className="w-4 h-4 text-slate-700 flex-shrink-0" />}
-  </div>
-);
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface AgentAnalyticsProps {
@@ -113,8 +84,7 @@ interface AgentAnalyticsProps {
 export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => {
   const { summary, agents, loading, period, setPeriod } = useAgentAnalytics(companyId);
 
-  const hasData = !loading && (summary?.total_runs ?? 0) > 0;
-  const noData  = !loading && (summary?.total_runs ?? 0) === 0;
+  const noData = !loading && (summary?.total_runs ?? 0) === 0;
 
   return (
     <div className="space-y-6">
@@ -143,9 +113,9 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
             <SummaryCard
@@ -164,9 +134,23 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
             <SummaryCard
               label="Custo Total"
               value={formatCost(summary?.total_cost ?? 0)}
-              sub="custo estimado"
+              sub="custo estimado USD"
               icon={DollarSign}
               accent="text-emerald-400"
+            />
+            <SummaryCard
+              label="Custo / Execução"
+              value={formatCost((summary?.total_runs ?? 0) > 0 ? (summary?.total_cost ?? 0) / (summary?.total_runs ?? 1) : 0)}
+              sub="custo médio por ciclo"
+              icon={BarChart2}
+              accent="text-amber-400"
+            />
+            <SummaryCard
+              label="Tokens / Execução"
+              value={formatTokens((summary?.total_runs ?? 0) > 0 ? Math.round((summary?.total_tokens ?? 0) / (summary?.total_runs ?? 1)) : 0)}
+              sub="média por ciclo"
+              icon={Cpu}
+              accent="text-indigo-400"
             />
             <SummaryCard
               label="Taxa de Conversão"
@@ -178,42 +162,6 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
           </>
         )}
       </div>
-
-      {/* Funnel */}
-      {!loading && (
-        <div>
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-3">
-            Funil Comercial
-          </p>
-          <div className="flex items-stretch gap-2">
-            <FunnelStep
-              label="Abordagens"
-              count={summary?.total_approaches ?? 0}
-            />
-            <FunnelStep
-              label="Respostas"
-              count={summary?.total_responses ?? 0}
-              rate={funnelRate(summary?.total_responses ?? 0, summary?.total_approaches ?? 0)}
-            />
-            <FunnelStep
-              label="Qualificados"
-              count={summary?.total_qualified ?? 0}
-              rate={funnelRate(summary?.total_qualified ?? 0, summary?.total_responses ?? 0)}
-            />
-            <FunnelStep
-              label="Reuniões"
-              count={summary?.total_meetings ?? 0}
-              rate={funnelRate(summary?.total_meetings ?? 0, summary?.total_qualified ?? 0)}
-            />
-            <FunnelStep
-              label="Vendas"
-              count={summary?.total_sales ?? 0}
-              rate={funnelRate(summary?.total_sales ?? 0, summary?.total_meetings ?? 0)}
-              isLast
-            />
-          </div>
-        </div>
-      )}
 
       {/* Empty state */}
       {noData && (
@@ -238,10 +186,9 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
                 <thead>
                   <tr className="border-b border-slate-800">
                     <th className="text-left px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Agente</th>
-                    <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Execuções</th>
                     <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Tokens</th>
-                    <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Custo</th>
-                    <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Abordagens</th>
+                    <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Custo Total</th>
+                    <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Custo / Exec</th>
                     <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Conversão</th>
                     <th className="text-right px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Tempo Médio</th>
                     <th className="text-center px-4 py-3 text-xs text-slate-500 font-medium uppercase tracking-wide">Status</th>
@@ -270,24 +217,19 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
                         </div>
                       </td>
 
-                      {/* Runs — not in ranking RPC, show approaches as proxy or 0 */}
-                      <td className="px-4 py-3 text-right text-slate-300 tabular-nums">
-                        {agent.total_approaches.toLocaleString('pt-BR')}
-                      </td>
-
                       {/* Tokens */}
                       <td className="px-4 py-3 text-right text-slate-300 tabular-nums">
                         {formatTokens(agent.total_tokens ?? 0)}
                       </td>
 
-                      {/* Cost */}
+                      {/* Cost total */}
                       <td className="px-4 py-3 text-right text-slate-300 tabular-nums">
                         {formatCost(agent.total_cost ?? 0)}
                       </td>
 
-                      {/* Approaches */}
+                      {/* Cost per execution */}
                       <td className="px-4 py-3 text-right text-slate-300 tabular-nums">
-                        {agent.total_approaches.toLocaleString('pt-BR')}
+                        {formatCost(agent.total_approaches > 0 ? (agent.total_cost ?? 0) / agent.total_approaches : 0)}
                       </td>
 
                       {/* Conversion badge */}

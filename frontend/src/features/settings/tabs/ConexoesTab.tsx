@@ -8,6 +8,8 @@ import {
 import { useChannelConnections, ChannelConnection } from '@/src/hooks/useChannelConnections';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { supabase } from '@/src/lib/supabase';
+import { usePlanLimits } from '@/src/hooks/usePlanLimits';
+import { Lock } from 'lucide-react';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
@@ -244,6 +246,7 @@ interface ConexoesTabProps {
 
 const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConnect }) => {
   const { companyId, user, currentUserRole } = useAuth();
+  const { limits, hasFeature, canCreate } = usePlanLimits();
   const { connections, loading, refetch, updateLocalState } = useChannelConnections(
     companyId,
     { userId: user?.id, role: currentUserRole ?? undefined }
@@ -410,15 +413,36 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
         </div>
 
         <div className="flex items-center gap-2">
-          {onOpenConnect && (
-            !myConnectionExists ? (
-              <button
-                onClick={onOpenConnect}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/18 border border-emerald-500/20 text-emerald-400 transition-all"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                Conectar WhatsApp
-              </button>
+          {onOpenConnect && (() => {
+            const waConnections = connections.filter(c => c.channel === 'whatsapp').length;
+            const whatsappAllowed = hasFeature('has_whatsapp');
+            const withinLimit    = canCreate('max_whatsapp_instances', waConnections);
+            const canConnect     = whatsappAllowed && withinLimit;
+            const lockReason     = !whatsappAllowed
+              ? 'WhatsApp não está disponível no seu plano'
+              : !withinLimit
+              ? `Limite de ${limits?.max_whatsapp_instances} instância(s) atingido`
+              : null;
+
+            return !myConnectionExists ? (
+              canConnect ? (
+                <button
+                  onClick={onOpenConnect}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/18 border border-emerald-500/20 text-emerald-400 transition-all"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  Conectar WhatsApp
+                </button>
+              ) : (
+                <div
+                  title={lockReason ?? ''}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-not-allowed select-none"
+                  style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.25)' }}
+                >
+                  <Lock className="w-3 h-3" />
+                  WhatsApp — Upgrade necessário
+                </div>
+              )
             ) : myConnectionIsDown ? (
               <button
                 onClick={handleReconnect}
@@ -436,8 +460,8 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
                 {disconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PhoneOff className="w-3.5 h-3.5" />}
                 Desconectar
               </button>
-            )
-          )}
+            );
+          })()}
           <button
             onClick={() => handleHealthCheck()}
             disabled={checkingIds.size > 0 || connections.length === 0}
