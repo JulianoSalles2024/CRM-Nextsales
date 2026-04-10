@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Admin pode ver a própria subscription
+DROP POLICY IF EXISTS "admin_read_subscriptions" ON public.subscriptions;
 CREATE POLICY "admin_read_subscriptions" ON public.subscriptions
   FOR SELECT USING (
     company_id = my_company_id()
@@ -40,8 +41,20 @@ CREATE TRIGGER subscriptions_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- ── Realtime para subscriptions e invoices ───────────────────
-ALTER PUBLICATION supabase_realtime ADD TABLE public.subscriptions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.invoices;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'subscriptions'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.subscriptions;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'invoices'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.invoices;
+  END IF;
+END $$;
 
 -- ── Criar subscription de trial para empresas existentes ─────
 -- (novas empresas recebem via trigger ou função de signup)

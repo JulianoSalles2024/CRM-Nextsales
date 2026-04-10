@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.billing_events (
 );
 
 ALTER TABLE public.billing_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "service_only" ON public.billing_events;
 CREATE POLICY "service_only" ON public.billing_events USING (false);
 
 -- ── invoices: cobrança por empresa ────────────────────────────
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
 );
 
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "admin_read" ON public.invoices;
 CREATE POLICY "admin_read" ON public.invoices
   FOR SELECT USING (
     company_id = my_company_id()

@@ -9,6 +9,7 @@ import { AgentsCommandCenter } from './AgentsCommandCenter';
 import { AgentsList } from './AgentsList';
 import { AgentWizard } from './AgentWizard';
 import { AgentDetail } from './AgentDetail';
+import { AgentLimitModal } from './AgentLimitModal';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import type { AIAgent } from './hooks/useAgents';
 import { usePlanBlock } from '@/src/components/PlanGuard';
@@ -91,6 +92,7 @@ export const AgentsPage: React.FC = () => {
   );
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
 
   useEffect(() => {
     navigate(TAB_PATHS[activeTab], { replace: true });
@@ -171,8 +173,8 @@ export const AgentsPage: React.FC = () => {
                 agents={agents}
                 loading={loading}
                 onCreateAgent={() => {
-                  const { blocked, reason } = planCheck({ limit: 'max_agents', current: agents.length, reason: 'Limite de agentes atingido no seu plano' });
-                  if (blocked) { alert(reason + ' — faça upgrade para continuar.'); return; }
+                  const { blocked } = planCheck({ limit: 'max_agents', current: agents.length, reason: 'Limite de agentes atingido no seu plano' });
+                  if (blocked) { setLimitModalOpen(true); return; }
                   setEditingAgent(null);
                   setWizardOpen(true);
                 }}
@@ -191,6 +193,14 @@ export const AgentsPage: React.FC = () => {
       {selectedAgent && (
         <AgentDetail agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
       )}
+
+      {/* Limit upgrade modal */}
+      <AgentLimitModal
+        open={limitModalOpen}
+        onClose={() => setLimitModalOpen(false)}
+        currentCount={agents.length}
+        maxCount={1}
+      />
 
       {/* Wizard */}
       {wizardOpen && (

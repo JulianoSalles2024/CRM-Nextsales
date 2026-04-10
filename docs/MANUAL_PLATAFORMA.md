@@ -24,8 +24,9 @@
 17. [Comunidade](#17-comunidade)
 18. [Suporte](#18-suporte)
 19. [Plano & Assinatura](#19-plano--assinatura)
-20. [Fluxo Completo: do Lead ao Fechamento](#20-fluxo-completo-do-lead-ao-fechamento)
-21. [Glossário](#21-glossário)
+20. [Limites por Plano](#20-limites-por-plano)
+21. [Fluxo Completo: do Lead ao Fechamento](#21-fluxo-completo-do-lead-ao-fechamento)
+22. [Glossário](#22-glossário)
 
 ---
 
@@ -1090,4 +1091,29 @@ Enquanto estiver no trial, um banner aparece no topo da tela com:
 
 ---
 
-## 20. Fluxo Completo: do Lead ao Fechamento
+## 20. Limites por Plano
+
+Cada plano contratado define o que a empresa pode usar dentro do CRM. Os limites são aplicados automaticamente — quando um limite é atingido, a ação correspondente fica bloqueada com indicação de upgrade.
+
+| Recurso | Trial | Starter | Growth | Scale |
+|---------|-------|---------|--------|-------|
+| Pipelines | 1 | 1 | 3 | ∞ |
+| Leads ativos | 50 | 500 | 2.000 | ∞ |
+| Usuários/convites | 1 | 2 | 5 | ∞ |
+| Agentes IA | 1 | 1 | 2 | ∞ |
+| Instâncias WhatsApp | 1 | 1 | 2 | ∞ |
+| Playbooks | 1 | 2 | 5 | ∞ |
+| Agente SDR | ✅ | ✅ | ✅ | ✅ |
+| Agente Closer | ❌ | ❌ | ✅ | ✅ |
+| Agente Follow-up | ❌ | ❌ | ✅ | ✅ |
+| Relatórios avançados | ❌ | ❌ | ✅ | ✅ |
+| Portfólio de produtos | ❌ | ❌ | ✅ | ✅ |
+| Acesso à API | ❌ | ❌ | ❌ | ✅ |
+| Suporte prioritário | ❌ | ❌ | ❌ | ✅ |
+| SLA garantido | ❌ | ❌ | ❌ | ✅ |
+
+> Os limites são configurados pelo administrador da plataforma no back-office (`/admin/planos`). Consulte o documento técnico completo em `docs/PLANOS-E-LIMITES.md`.
+
+---
+
+## 21. Fluxo Completo: do Lead ao Fechamento
