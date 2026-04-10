@@ -160,6 +160,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const renderNavItems = mainNavItems.map((item) => {
     if (item.label === 'Dashboard')
       return { ...item, label: 'Visão Geral', originalKey: 'Dashboard' as const };
+    if (item.label === 'Omnichannel')
+      return { ...item, label: 'Chat', originalKey: 'Omnichannel' as const };
+    if (item.label === 'Plano')
+      return { ...item, label: 'Planos', originalKey: 'Plano' as const };
     return { ...item, originalKey: item.label };
   });
 
