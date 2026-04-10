@@ -62,11 +62,18 @@ export function usePlanLimits(): UsePlanLimitsReturn {
   const [limits, setLimits] = useState<PlanLimits | null>(null)
   const [loading, setLoading] = useState(true)
 
+  async function fetchLimits() {
+    const { data, error } = await supabase.rpc('get_my_plan_limits')
+    if (!error && data) setLimits(data as PlanLimits)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    supabase.rpc('get_my_plan_limits').then(({ data, error }) => {
-      if (!error && data) setLimits(data as PlanLimits)
-      setLoading(false)
-    })
+    fetchLimits()
+
+    // Recarrega quando a aba volta ao foco (ex: admin mudou plano em outra aba)
+    window.addEventListener('focus', fetchLimits)
+    return () => window.removeEventListener('focus', fetchLimits)
   }, [])
 
   function canCreate(
