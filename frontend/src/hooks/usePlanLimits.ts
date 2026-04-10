@@ -19,6 +19,8 @@ export interface PlanLimits {
   max_whatsapp_instances: number | null
   max_playbooks: number | null
   max_custom_fields: number | null
+  max_sellers: number | null
+  max_admins: number | null
 
   has_whatsapp: boolean
   has_ai_sdr: boolean
@@ -42,7 +44,8 @@ interface UsePlanLimitsReturn {
   /** Retorna true se o uso atual está dentro do limite (null = ilimitado = sempre true) */
   canCreate: (resource: keyof Pick<PlanLimits,
     'max_pipelines' | 'max_leads' | 'max_users' | 'max_agents' |
-    'max_whatsapp_instances' | 'max_playbooks' | 'max_custom_fields'
+    'max_whatsapp_instances' | 'max_playbooks' | 'max_custom_fields' |
+    'max_sellers' | 'max_admins'
   >, currentCount: number) => boolean
   /** Retorna true se a feature está liberada no plano */
   hasFeature: (flag: keyof Pick<PlanLimits,

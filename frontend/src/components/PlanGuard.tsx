@@ -33,7 +33,8 @@ type FeatureFlag = keyof Pick<PlanLimits,
 
 type LimitKey = keyof Pick<PlanLimits,
   'max_pipelines' | 'max_leads' | 'max_users' | 'max_agents' |
-  'max_whatsapp_instances' | 'max_playbooks' | 'max_custom_fields'
+  'max_whatsapp_instances' | 'max_playbooks' | 'max_custom_fields' |
+  'max_sellers' | 'max_admins'
 >
 
 interface PlanGuardProps {

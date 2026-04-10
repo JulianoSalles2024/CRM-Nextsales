@@ -24,6 +24,8 @@ interface PlanConfig {
   max_whatsapp_instances: number | null
   max_playbooks: number | null
   max_custom_fields: number | null
+  max_sellers: number | null
+  max_admins: number | null
   has_whatsapp: boolean
   has_ai_sdr: boolean
   has_ai_closer: boolean
@@ -49,6 +51,8 @@ const LIMIT_LABELS: Record<string, string> = {
   max_whatsapp_instances:  'Instâncias WhatsApp',
   max_playbooks:           'Playbooks',
   max_custom_fields:       'Campos customizados',
+  max_sellers:             'Vendedores',
+  max_admins:              'Admins',
 }
 
 const FLAG_LABELS: Record<string, string> = {

@@ -6,7 +6,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import GoalsTab from './GoalsTab';
 import FlatCard from '@/components/ui/FlatCard';
-import { PlanGuard } from '@/src/components/PlanGuard';
+import { usePlanLimits } from '@/src/hooks/usePlanLimits';
 
 interface TeamMember {
     id: string;
@@ -76,6 +76,7 @@ const SlidingPillTabs: React.FC<{
 const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdateUsers }) => {
     const { currentPermissions, currentUserRole, companyId } = useAuth();
     const isAdmin = currentUserRole === 'admin';
+    const { limits } = usePlanLimits();
 
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
     const [inviteLinks, setInviteLinks] = useState<InviteLink[]>([]);
@@ -290,6 +291,18 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         setGenerateError(null);
         setEmailSentSuccess(false);
         try {
+            // Valida limite por papel antes de criar o convite
+            if (limits) {
+              const activeSellers = activeMembers.filter(u => u.role === 'Vendedor').length;
+              const activeAdmins  = activeMembers.filter(u => u.role === 'Admin').length;
+              if (inviteRole === 'Vendedor' && limits.max_sellers !== null && activeSellers >= limits.max_sellers) {
+                throw new Error(`Limite de vendedores atingido no seu plano (máx. ${limits.max_sellers}). Faça upgrade para convidar mais.`);
+              }
+              if (inviteRole === 'Admin' && limits.max_admins !== null && activeAdmins >= limits.max_admins) {
+                throw new Error(`Limite de admins atingido no seu plano (máx. ${limits.max_admins}). Faça upgrade para convidar mais.`);
+              }
+            }
+
             const token = crypto.randomUUID();
             let expiresAt: string | null = null;
             if (inviteExpiration === '7 days') {
@@ -438,15 +451,13 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                     </p>
                 </div>
                 {currentPermissions.canManageTeam && (
-                    <PlanGuard limit="max_users" current={activeMembers.length} reason="Limite de usuários atingido no seu plano">
-                        <button
-                            onClick={() => setInviteModalOpen(true)}
-                            className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200"
-                        >
-                            <UserPlus className="w-4 h-4" />
-                            Convidar
-                        </button>
-                    </PlanGuard>
+                    <button
+                        onClick={() => setInviteModalOpen(true)}
+                        className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        Convidar
+                    </button>
                 )}
             </div>
 
